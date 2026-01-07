@@ -17,9 +17,7 @@ export default function Navbar({ userRole, userName }: { userRole?: string | nul
 
                 {/* DYNAMIC LINKS */}
                 <div className="hidden md:flex items-center gap-8">
-                    {!userRole && (
-                        <div />
-                    )}
+                    {/* Guest sees nothing here, just login button on right */}
 
                     {userRole === 'USER' && (
                         <>
@@ -30,8 +28,7 @@ export default function Navbar({ userRole, userName }: { userRole?: string | nul
 
                     {userRole === 'ADMIN' && (
                         <>
-                            <Link href="/admin" className="text-sm font-medium text-[#CFDBD5] hover:text-[#F5CB5C] transition-colors">Admin</Link>
-                            <Link href="/quote/new" className="text-sm font-medium text-[#CFDBD5] hover:text-[#F5CB5C] transition-colors">Nueva Cotización</Link>
+                            <Link href="/admin" className="text-sm font-medium text-[#CFDBD5] hover:text-[#F5CB5C] transition-colors">Admin Board</Link>
                         </>
                     )}
                 </div>
@@ -42,7 +39,7 @@ export default function Navbar({ userRole, userName }: { userRole?: string | nul
                         <>
                             <div className="hidden md:flex flex-col items-end mr-2">
                                 <span className="text-xs font-bold text-[#E8EDDF]">{userName || 'Usuario'}</span>
-                                <span className="text-[10px] text-[#CFDBD5] uppercase tracking-wider">{userRole === 'ADMIN' ? 'Admin Board' : 'Sales Team'}</span>
+                                <span className="text-[10px] text-[#CFDBD5] uppercase tracking-wider">{userRole === 'ADMIN' ? 'Admin Board' : 'Consultor'}</span>
                             </div>
                             <LogoutButton />
                         </>

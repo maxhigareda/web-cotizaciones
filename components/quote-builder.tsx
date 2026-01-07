@@ -321,7 +321,7 @@ graph TD
     }, [state])
 
     return (
-        <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-[#333533] font-sans pt-24">
+        <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-[#333533] font-sans pt-32">
 
             {/* ================= LEFT COLUMN: FORM SCROLL ================= */}
             <div className="w-full lg:w-2/3 h-full overflow-y-auto scrollbar-custom p-6 md:p-8 lg:p-12">

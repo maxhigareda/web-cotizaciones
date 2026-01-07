@@ -23,7 +23,7 @@ export function middleware(request: NextRequest) {
         // Decide: Redirect to login or to dashboard (if user)? 
         // For security, maybe just login, or show 403 (but middleware can just redirect)
         // Let's redirect to login for simplicity or /quote if user
-        return NextResponse.redirect(new URL('/login', request.url))
+        return NextResponse.redirect(new URL('/quote/new', request.url))
     }
 
     return NextResponse.next()

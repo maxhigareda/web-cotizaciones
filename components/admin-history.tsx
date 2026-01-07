@@ -1,13 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { getAllQuotes } from '@/lib/actions'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Download, FileSpreadsheet, Loader2 } from 'lucide-react'
+import { Download, FileSpreadsheet } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
 type Quote = {
@@ -17,19 +15,17 @@ type Quote = {
     estimatedCost: number
     createdAt: Date
     technicalParameters: string
+    user?: {
+        name: string | null
+        email: string | null
+    } | null
 }
 
-export function AdminHistory() {
-    const [quotes, setQuotes] = useState<Quote[]>([])
-    const [loading, setLoading] = useState(true)
+interface AdminHistoryProps {
+    quotes: Quote[]
+}
 
-    useEffect(() => {
-        getAllQuotes().then(data => {
-            setQuotes(data)
-            setLoading(false)
-        })
-    }, [])
-
+export function AdminHistory({ quotes }: AdminHistoryProps) {
     const handleExportExcel = () => {
         const dataToExport = quotes.map(q => {
             const params = JSON.parse(q.technicalParameters)
@@ -39,6 +35,7 @@ export function AdminHistory() {
                 Proyecto: q.projectType,
                 Fecha: format(q.createdAt, 'dd/MM/yyyy HH:mm'),
                 Costo_Estimado: q.estimatedCost,
+                Consultor: q.user?.name || q.user?.email || 'Sistema',
                 Criticidad: params?.criticitness?.enabled ? 'ALTA' : 'NORMAL',
                 Complejidad: params?.complexity || 'N/A'
             }
@@ -50,10 +47,8 @@ export function AdminHistory() {
         XLSX.writeFile(wb, `Cotizaciones_Export_${format(new Date(), 'yyyy-MM-dd')}.xlsx`)
     }
 
-    if (loading) return <div className="p-12 text-center text-[#CFDBD5] animate-pulse">Cargando trazabilidad...</div>
-
     return (
-        <Card className="rounded-[2rem] border border-[#2D2D2D] bg-[#171717] shadow-xl overflow-hidden">
+        <Card className="rounded-[2rem] border border-[#2D2D2D] bg-[#171717] shadow-xl overflow-hidden mt-16">
             <CardHeader className="p-8 border-b border-[#2D2D2D] bg-[#171717] flex flex-row items-center justify-between">
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-[#171717] rounded-xl border border-[#2D2D2D]">
@@ -81,6 +76,7 @@ export function AdminHistory() {
                             <TableRow className="border-[#2D2D2D] hover:bg-transparent">
                                 <TableHead className="text-[#CFDBD5] font-bold uppercase tracking-wider pl-8 h-12 w-[250px]">Cliente</TableHead>
                                 <TableHead className="text-[#CFDBD5] font-bold uppercase tracking-wider h-12">Proyecto</TableHead>
+                                <TableHead className="text-[#CFDBD5] font-bold uppercase tracking-wider h-12">Consultor</TableHead>
                                 <TableHead className="text-[#CFDBD5] font-bold uppercase tracking-wider h-12">Fecha</TableHead>
                                 <TableHead className="text-[#CFDBD5] font-bold uppercase tracking-wider h-12 text-right pr-8">Valor Estimado</TableHead>
                             </TableRow>
@@ -88,20 +84,26 @@ export function AdminHistory() {
                         <TableBody>
                             {quotes.map((quote) => (
                                 <TableRow key={quote.id} className="border-[#2D2D2D] hover:bg-[#2D2D2D]/30 transition-colors group">
-                                    <TableCell className="font-bold text-[#E8EDDF] pl-8 py-6">
+                                    <TableCell className="font-bold text-[#E8EDDF] pl-8 py-5">
                                         {quote.clientName || 'Sin Nombre'}
                                         <span className="block text-xs text-[#CFDBD5] font-normal mt-1 truncate max-w-[200px]">{quote.id}</span>
                                     </TableCell>
-                                    <TableCell className="text-[#CFDBD5]">
+                                    <TableCell className="text-[#CFDBD5] py-5">
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#171717] text-[#F5CB5C] border border-[#F5CB5C]/20">
                                             {quote.projectType || 'General'}
                                         </span>
                                     </TableCell>
-                                    <TableCell className="text-[#CFDBD5]">
+                                    <TableCell className="text-[#CFDBD5] py-5">
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-[#E8EDDF]">{quote.user?.name || 'Sistema'}</span>
+                                            <span className="text-xs text-[#CFDBD5] opacity-60">{quote.user?.email || '-'}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-[#CFDBD5] py-5">
                                         {format(new Date(quote.createdAt), "d MMM yyyy", { locale: es })}
                                         <span className="block text-xs text-[#CFDBD5]">{format(new Date(quote.createdAt), "HH:mm")}</span>
                                     </TableCell>
-                                    <TableCell className="text-right pr-8">
+                                    <TableCell className="text-right pr-8 py-5">
                                         <span className="font-mono font-bold text-[#E8EDDF] text-lg group-hover:text-[#F5CB5C] transition-colors">
                                             {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(quote.estimatedCost)}
                                         </span>
@@ -110,7 +112,7 @@ export function AdminHistory() {
                             ))}
                             {quotes.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="h-32 text-center text-[#CFDBD5]">
+                                    <TableCell colSpan={5} className="h-32 text-center text-[#CFDBD5]">
                                         No hay cotizaciones registradas aún.
                                     </TableCell>
                                 </TableRow>

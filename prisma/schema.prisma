@@ -23,6 +23,9 @@ model Quote {
   staffingRequirements String   // Serialized JSON
   diagramDefinition    String
   createdAt            DateTime @default(now())
+  
+  userId               String?  // Optional for now to avoid breaking existing data immediately, or make Required if we reset
+  user                 User?    @relation(fields: [userId], references: [id])
 }
 
 model User {
@@ -32,4 +35,5 @@ model User {
   password  String
   role      String   @default("USER") // ADMIN or USER
   createdAt DateTime @default(now())
+  quotes    Quote[]
 }

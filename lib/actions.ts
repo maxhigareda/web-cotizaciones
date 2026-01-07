@@ -2,6 +2,7 @@
 
 import { prisma } from './prisma'
 import { TechnicalParameters, CostBreakdown } from './types'
+import { cookies } from 'next/headers'
 
 // Helper to get rates
 async function getRates() {
@@ -135,12 +136,19 @@ export async function calculateQuote(params: TechnicalParameters): Promise<CostB
     }
 }
 
+
+
 export async function saveQuote(data: {
     clientName: string,
     projectType: string,
     params: TechnicalParameters,
     breakdown: CostBreakdown
 }) {
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('session_user_id')?.value
+
+    if (!userId) throw new Error("User ID not found in session")
+
     return await prisma.quote.create({
         data: {
             clientName: data.clientName,
@@ -148,8 +156,21 @@ export async function saveQuote(data: {
             technicalParameters: JSON.stringify(data.params),
             estimatedCost: data.breakdown.totalMonthlyCost,
             staffingRequirements: JSON.stringify(data.breakdown.roles),
-            diagramDefinition: data.breakdown.diagramCode
+            diagramDefinition: data.breakdown.diagramCode,
+            userId: userId // Now linking to the logged-in user
         }
+    })
+}
+
+export async function getUserQuotes() {
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('session_user_id')?.value
+
+    if (!userId) return []
+
+    return await prisma.quote.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' }
     })
 }
 
@@ -174,24 +195,52 @@ export async function updateRoleRate(role: string, newMonthlyRate: number) {
 
 export async function getAllQuotes() {
     return await prisma.quote.findMany({
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
+        include: {
+            user: {
+                select: {
+                    name: true,
+                    email: true
+                }
+            }
+        }
     })
 }
 
 export async function getAdminStats() {
-    const totalQuotes = await prisma.quote.count()
-    const allQuotes = await prisma.quote.findMany()
-    const totalValue = allQuotes.reduce((sum, q) => sum + q.estimatedCost, 0)
-    const avgValue = totalQuotes > 0 ? totalValue / totalQuotes : 0
+    const now = new Date()
+    const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30))
 
-    // Simple mocked top client logic for demo speed
-    // Ideally we'd use a groupBy here but this is fine for MVP
-    const topClient = "Global Corp"
+    // 1. Cotizaciones Mes (Last 30 days)
+    const monthlyQuotesCount = await prisma.quote.count({
+        where: {
+            createdAt: { gte: thirtyDaysAgo }
+        }
+    })
+
+    // 2. Valor Pipeline (Sum estimatedCost last 30 days)
+    const monthlyQuotes = await prisma.quote.findMany({
+        where: {
+            createdAt: { gte: thirtyDaysAgo }
+        },
+        select: { estimatedCost: true }
+    })
+    const pipelineValue = monthlyQuotes.reduce((sum, q) => sum + q.estimatedCost, 0)
+
+    // 3. Usuarios Activos (Unique users who created quotes ever - or last 30 days? Prompt says "Usuarios Activos". Let's assume ever or active recently? Usually active means recently active. Let's do unique users in last 30 days for "Active")
+    // Re-reading prompt: "Conteo de usuarios únicos que han generado al menos una cotización." This sounds like total unique users with > 0 quotes.
+    const uniqueUsers = await prisma.quote.groupBy({
+        by: ['userId'],
+    })
+    const activeUsersCount = uniqueUsers.length
+
+    // 4. Rate (Static for now or derived? Prompt implies "Indicadores (Kpis): Sustituye los valores estáticos". Tasa Conversión isn't explicit in database but I can keep it static or mock it better.)
+    // I'll leave conversion static as it requires "closed" status which we don't strictly have (only created).
 
     return {
-        totalQuotes,
-        totalValue,
-        avgValue,
-        topClient
+        monthlyQuotesCount,
+        pipelineValue,
+        activeUsersCount,
+        conversionRate: 32 // Maintaining static as we don't have "Closed Won" status
     }
 }
