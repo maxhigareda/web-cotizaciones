@@ -302,7 +302,7 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
                 diagramCode: chartCode
             }
 
-            await saveQuote({
+            const savedQuote = await saveQuote({
                 clientName: state.clientName,
                 projectType: state.complexity,
                 params: {
@@ -319,6 +319,23 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
                 },
                 breakdown: breakdown
             })
+
+            // Client-Side Persistence for Vercel Demo (Phantom Mode)
+            try {
+                const currentLocal = JSON.parse(localStorage.getItem('demo_quotes') || '[]')
+
+                // Add specific fields required for display
+                const quoteForStorage = {
+                    ...savedQuote,
+                    userId: 'demo-user', // Ensure visible
+                    createdAt: new Date().toISOString() // Ensure date is string for JSON
+                }
+
+                localStorage.setItem('demo_quotes', JSON.stringify([quoteForStorage, ...currentLocal]))
+            } catch (e) {
+                console.error("Local Persist Failed", e)
+            }
+
             alert("Cotización guardada exitosamente.")
         } catch (e) {
             console.error(e)
