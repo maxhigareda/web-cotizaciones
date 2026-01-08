@@ -21,12 +21,12 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
         const safeServerQuotes = Array.isArray(serverQuotes) ? serverQuotes : []
 
         // Load local "Demo" quotes from browser storage
-        const localQuotesRaw = localStorage.getItem('demo_quotes')
+        const rawValue = typeof window !== 'undefined' ? localStorage.getItem('demo_quotes') : null
         let localQuotes: any[] = []
 
-        if (localQuotesRaw) {
+        if (rawValue && rawValue !== "undefined" && rawValue !== "null") {
             try {
-                const parsed = JSON.parse(localQuotesRaw)
+                const parsed = JSON.parse(rawValue)
                 if (Array.isArray(parsed)) {
                     localQuotes = parsed
                 }
@@ -58,10 +58,10 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
         setMergedQuotes(updated)
 
         // Update Local Storage
-        const localQuotesRaw = localStorage.getItem('demo_quotes')
-        if (localQuotesRaw) {
+        const rawValue = typeof window !== 'undefined' ? localStorage.getItem('demo_quotes') : null
+        if (rawValue && rawValue !== "undefined" && rawValue !== "null") {
             try {
-                const local = JSON.parse(localQuotesRaw)
+                const local = JSON.parse(rawValue)
                 if (Array.isArray(local)) {
                     const newLocal = local.filter((q: any) => q.id !== id)
                     localStorage.setItem('demo_quotes', JSON.stringify(newLocal))

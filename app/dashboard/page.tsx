@@ -8,11 +8,18 @@ import { DashboardQuotesList } from '@/components/dashboard-quotes-list'
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-    const rawQuotes = await getUserQuotes()
-    const quotes = rawQuotes.map(q => ({
-        ...q,
-        createdAt: q.createdAt.toISOString()
-    }))
+    let quotes: any[] = []
+
+    try {
+        const rawQuotes = await getUserQuotes()
+        quotes = rawQuotes.map(q => ({
+            ...q,
+            createdAt: q.createdAt.toISOString()
+        }))
+    } catch (e) {
+        console.error("Dashboard Fetch Error:", e)
+        // Fallback or empty to let client handle it
+    }
 
     return (
         <main className="min-h-screen bg-[#171717] pt-32 pb-12 px-6">
