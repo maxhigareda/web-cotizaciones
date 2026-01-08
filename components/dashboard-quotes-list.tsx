@@ -48,6 +48,8 @@ export function DashboardQuotesList({ serverQuotes }: { serverQuotes: any[] }) {
         }
     }
 
+    if (!isClient) return <div className="p-16 text-center text-[#CFDBD5] animate-pulse">Cargando cotizaciones...</div>
+
     if (mergedQuotes.length === 0) {
         return (
             <Card className="bg-[#1F1F1F] border-[#2D2D2D] rounded-[2rem] p-16 text-center space-y-6">
