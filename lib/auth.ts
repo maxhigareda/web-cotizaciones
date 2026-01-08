@@ -15,6 +15,7 @@ export async function loginAction(formData: FormData) {
 
     let user;
 
+    /*
     try {
         user = await prisma.user.findUnique({
             where: { email }
@@ -22,6 +23,7 @@ export async function loginAction(formData: FormData) {
     } catch (e) {
         console.error("DB Login Failed (Fallback to Demo Auth):", e)
     }
+    */
 
     // Demo Fallback / Hardcoded check if DB fails or User not found
     if (!user) {
