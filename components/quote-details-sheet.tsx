@@ -17,13 +17,14 @@ interface QuoteDetailsSheetProps {
         clientName: string
         projectType: string
         estimatedCost: number
-        createdAt: Date
+        createdAt: Date | string // Allow string from serialization
         technicalParameters: string
     }
 }
 
 export function QuoteDetailsSheet({ quote }: QuoteDetailsSheetProps) {
     const params = JSON.parse(quote.technicalParameters) || {}
+    const dateObj = new Date(quote.createdAt) // Safe conversion
 
     return (
         <Sheet>
@@ -70,7 +71,7 @@ export function QuoteDetailsSheet({ quote }: QuoteDetailsSheetProps) {
                             </div>
                             <div>
                                 <h3 className="text-xs font-bold text-[#CFDBD5] uppercase tracking-wider mb-1">Fecha Creación</h3>
-                                <p className="text-lg font-medium text-[#E8EDDF]">{new Date(quote.createdAt).toLocaleDateString('es-ES', { dateStyle: 'long' })}</p>
+                                <p className="text-lg font-medium text-[#E8EDDF]">{dateObj.toLocaleDateString('es-ES', { dateStyle: 'long' })}</p>
                             </div>
                         </div>
                     </div>
