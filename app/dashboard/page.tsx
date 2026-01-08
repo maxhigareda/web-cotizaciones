@@ -8,7 +8,11 @@ import { DashboardQuotesList } from '@/components/dashboard-quotes-list'
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-    const quotes = await getUserQuotes()
+    const rawQuotes = await getUserQuotes()
+    const quotes = rawQuotes.map(q => ({
+        ...q,
+        createdAt: q.createdAt.toISOString()
+    }))
 
     return (
         <main className="min-h-screen bg-[#171717] pt-32 pb-12 px-6">
