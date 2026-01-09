@@ -6,21 +6,14 @@ import { cookies } from 'next/headers'
 
 // Helper to get rates
 // Helper to get rates
+// Helper to get rates
 async function getRates() {
-    try {
-        const rates = await prisma.roleRate.findMany()
-        return rates.reduce((acc, rate) => {
-            acc[rate.role] = { monthly: rate.monthlyRate, hourly: rate.hourlyRate }
-            return acc
-        }, {} as Record<string, { monthly: number, hourly: number }>)
-    } catch (e) {
-        console.warn("DB Failed (getRates), using mock")
-        return {
-            'Data Engineer': { monthly: 4950, hourly: 30.9 },
-            'Data Analyst': { monthly: 2500, hourly: 15.6 },
-            'Data Science': { monthly: 5100, hourly: 31.8 },
-            'BI': { monthly: 4128, hourly: 25.8 }
-        }
+    // Mock internal logic for calculateQuote if used
+    return {
+        'Data Engineer': { monthly: 4950, hourly: 30.9 },
+        'Data Analyst': { monthly: 2500, hourly: 15.6 },
+        'Data Science': { monthly: 5100, hourly: 31.8 },
+        'BI': { monthly: 4128, hourly: 25.8 }
     }
 }
 
