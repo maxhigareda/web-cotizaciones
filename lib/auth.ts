@@ -45,7 +45,7 @@ export async function loginAction(formData: FormData) {
         else if (email === 'tomasmarzullo04@gmail.com' && password === 'user2026') {
             user = {
                 id: 'demo-user',
-                name: 'Consultor Tomas',
+                name: 'Tomas Marzullo',
                 email,
                 password: await bcrypt.hash('user2026', 10),
                 role: 'USER',
@@ -95,7 +95,9 @@ export async function getSessionRole() {
 }
 
 export async function getSessionUser() {
-    return (await cookies()).get('session_user')?.value || null
+    const val = (await cookies()).get('session_user')?.value || null
+    if (val === 'Consultor Demo' || val === 'Consultor Tomas') return 'Tomas Marzullo'
+    return val
 }
 
 export async function getSessionUserId() {

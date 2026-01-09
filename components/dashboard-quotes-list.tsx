@@ -20,22 +20,20 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
         // Ensure we work with at least a valid array from server
         const safeServerQuotes = Array.isArray(serverQuotes) ? serverQuotes : []
 
-        // Load local "Demo" quotes from browser storage
-        const rawValue = typeof window !== 'undefined' ? localStorage.getItem('demo_quotes') : null
+        // Load local quotes from browser storage (New Key to wipe old demo data)
+        const storageKey = 'quotes_v1_prod'
+        const rawValue = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
         let localQuotes: any[] = []
 
         if (rawValue && rawValue !== "undefined" && rawValue !== "null") {
             try {
                 const parsed = JSON.parse(rawValue)
                 if (Array.isArray(parsed)) {
-                    // Filter out old server-side mocks that might have been persisted
-                    // Only keep user-created quotes (which use 'demo-' prefix now, or real UUIDs)
-                    localQuotes = parsed.filter((q: any) => !q.id.startsWith('mock-'))
-
-                    // If we filtered something out, update storage immediately to clean it
-                    if (localQuotes.length !== parsed.length) {
-                        localStorage.setItem('demo_quotes', JSON.stringify(localQuotes))
-                    }
+                    // Filter out old server-side mocks just in case, but key change should handle it
+                    localQuotes = parsed.filter((q: any) =>
+                        !q.id?.toString().startsWith('mock-') &&
+                        !q.clientName?.includes('(Demo)')
+                    )
                 }
             } catch (e) {
                 console.error("Failed to load local quotes", e)
@@ -65,13 +63,14 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
         setMergedQuotes(updated)
 
         // Update Local Storage
-        const rawValue = typeof window !== 'undefined' ? localStorage.getItem('demo_quotes') : null
+        const storageKey = 'quotes_v1_prod'
+        const rawValue = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
         if (rawValue && rawValue !== "undefined" && rawValue !== "null") {
             try {
                 const local = JSON.parse(rawValue)
                 if (Array.isArray(local)) {
                     const newLocal = local.filter((q: any) => q.id !== id)
-                    localStorage.setItem('demo_quotes', JSON.stringify(newLocal))
+                    localStorage.setItem(storageKey, JSON.stringify(newLocal))
                 }
             } catch (e) { }
         }

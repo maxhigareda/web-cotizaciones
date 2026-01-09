@@ -335,7 +335,8 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
                     createdAt: new Date().toISOString() // Ensure date is string for JSON
                 }
 
-                const rawValue = typeof window !== 'undefined' ? localStorage.getItem('demo_quotes') : null
+                const storageKey = 'quotes_v1_prod'
+                const rawValue = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
                 let currentLocal: any[] = []
 
                 if (rawValue && rawValue !== "undefined" && rawValue !== "null") {
@@ -345,7 +346,7 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
                     } catch (e) { }
                 }
 
-                localStorage.setItem('demo_quotes', JSON.stringify([quoteForStorage, ...currentLocal]))
+                localStorage.setItem(storageKey, JSON.stringify([quoteForStorage, ...currentLocal]))
             } catch (e) {
                 console.error("Local Persist Failed", e)
             }

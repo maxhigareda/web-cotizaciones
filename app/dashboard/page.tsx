@@ -15,7 +15,7 @@ export default async function DashboardPage() {
         quotes = Array.isArray(rawQuotes) ? rawQuotes.map(q => ({
             ...q,
             createdAt: q.createdAt.toISOString()
-        }))
+        })) : []
     } catch (e) {
         console.error("Dashboard Fetch Error:", e)
         // Fallback or empty to let client handle it
