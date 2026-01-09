@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { MermaidDiagram } from "@/components/mermaid-diagram"
-import { Wand2, Download, FileText, Check, ShieldAlert, Network, Cpu, Calculator, Save, Loader2, ClipboardList, Database, Users, Briefcase, Layers, AlertTriangle, Activity, Zap } from "lucide-react"
+import { Wand2, Download, FileText, Check, ShieldAlert, Network, Cpu, Calculator, Save, Loader2, ClipboardList, Database, Users, Briefcase, Layers, AlertTriangle, Activity, Zap, Edit, X, RefreshCw, ImageDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { saveQuote } from "@/lib/actions"
 import html2canvas from 'html2canvas'
@@ -132,11 +132,30 @@ const TECH_OPTIONS = [
 export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, number> }) {
     const [state, setState] = useState<QuoteState>(INITIAL_STATE)
     const [chartCode, setChartCode] = useState('')
+    const [manualDiagramCode, setManualDiagramCode] = useState<string | null>(null)
+    const [isEditingDiagram, setIsEditingDiagram] = useState(false)
+    const [tempDiagramCode, setTempDiagramCode] = useState('')
     const [polishLoading, setPolishLoading] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [isExporting, setIsExporting] = useState(false)
     const [exportType, setExportType] = useState<'pdf' | 'word' | null>(null)
     const router = useRouter()
+
+    const handleDownloadDiagram = async () => {
+        const element = document.getElementById('diagram-capture-target')
+        if (element) {
+            try {
+                const canvas = await html2canvas(element, { backgroundColor: '#ffffff', scale: 2 })
+                const link = document.createElement('a')
+                link.download = `arquitectura-${state.clientName || 'draft'}.png`
+                link.href = canvas.toDataURL('image/png')
+                link.click()
+            } catch (e) {
+                console.error(e)
+                alert("Error al exportar imagen")
+            }
+        }
+    }
 
     const handleExport = async (type: 'pdf' | 'word') => {
         setIsExporting(true)
@@ -448,8 +467,10 @@ graph TD
     class Source,User default
     class Pipe,Store,Vis highlight
         `
-        setChartCode(chart)
-    }, [state])
+        if (manualDiagramCode === null) {
+            setChartCode(chart)
+        }
+    }, [state, manualDiagramCode])
 
     return (
         <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-[#333533] font-sans pt-32">
@@ -812,14 +833,110 @@ graph TD
                 </div >
 
                 {/* Architecture Diagram */}
-                < div className="space-y-6 pt-10 border-t border-[#CFDBD5]/10" >
-                    <h4 className="text-[#CFDBD5] text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                        <Network className="w-4 h-4 text-[#F5CB5C]" /> Arquitectura Dinámica
-                    </h4>
-                    <div id="diagram-capture-target" className="rounded-[2rem] border border-[#CFDBD5]/20 bg-[#333533] p-4 min-h-[250px] flex items-center justify-center relative overflow-hidden bg-white">
-                        <MermaidDiagram chart={chartCode} />
+                {/* Architecture Diagram */}
+                <div className="space-y-6 pt-10 border-t border-[#CFDBD5]/10">
+                    <div className="flex items-center justify-between">
+                        <h4 className="text-[#CFDBD5] text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                            <Network className="w-4 h-4 text-[#F5CB5C]" /> Arquitectura Dinámica
+                        </h4>
+                        <div className="flex gap-2">
+                            {!isEditingDiagram ? (
+                                <>
+                                    {manualDiagramCode && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                if (confirm("¿Restaurar diagrama automático? Se perderán los cambios manuales.")) {
+                                                    setManualDiagramCode(null)
+                                                }
+                                            }}
+                                            className="h-8 px-2 text-[#CFDBD5] hover:text-[#F5CB5C]"
+                                            title="Restaurar Automático"
+                                        >
+                                            <RefreshCw className="w-4 h-4" />
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                            setTempDiagramCode(chartCode)
+                                            setIsEditingDiagram(true)
+                                        }}
+                                        className="h-8 px-2 text-[#F5CB5C] hover:text-[#E8EDDF] hover:bg-[#F5CB5C]/10"
+                                    >
+                                        <Edit className="w-4 h-4 mr-2" /> Editar
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleDownloadDiagram}
+                                        className="h-8 px-2 text-[#CFDBD5] hover:text-[#E8EDDF] hover:bg-[#333533]"
+                                        title="Descargar Imagen"
+                                    >
+                                        <ImageDown className="w-4 h-4" />
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setIsEditingDiagram(false)}
+                                        className="h-8 px-2 text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                                    >
+                                        <X className="w-4 h-4 mr-2" /> Cancelar
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        onClick={() => {
+                                            setManualDiagramCode(tempDiagramCode)
+                                            setChartCode(tempDiagramCode)
+                                            setIsEditingDiagram(false)
+                                        }}
+                                        className="h-8 px-3 bg-[#F5CB5C] text-[#242423] hover:bg-[#E0B84C] font-bold"
+                                    >
+                                        <Check className="w-4 h-4 mr-2" /> Aplicar
+                                    </Button>
+                                </>
+                            )}
+                        </div>
                     </div>
-                </div >
+
+                    {isEditingDiagram ? (
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 animate-in fade-in zoom-in-95 duration-300">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-[#CFDBD5] uppercase">Código Mermaid</label>
+                                <Textarea
+                                    value={tempDiagramCode}
+                                    onChange={(e) => setTempDiagramCode(e.target.value)}
+                                    className="font-mono text-xs bg-[#171717] border-[#2D2D2D] text-[#E8EDDF] resize-none h-[350px] focus-visible:ring-[#F5CB5C]"
+                                    placeholder="graph TD..."
+                                />
+                                <p className="text-[10px] text-[#CFDBD5]/50 flex items-center gap-1">
+                                    <ShieldAlert className="w-3 h-3" />
+                                    La edición manual desactiva las actualizaciones automáticas.
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-[#CFDBD5] uppercase">Vista Previa</label>
+                                <div className="rounded-[1rem] border border-[#CFDBD5]/20 bg-[#333533] p-4 h-[350px] flex items-center justify-center relative overflow-hidden bg-white">
+                                    <MermaidDiagram chart={tempDiagramCode} />
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div id="diagram-capture-target" className="rounded-[2rem] border border-[#CFDBD5]/20 bg-[#333533] p-4 min-h-[250px] flex items-center justify-center relative overflow-hidden bg-white group">
+                            <MermaidDiagram chart={chartCode} />
+                            {manualDiagramCode && (
+                                <div className="absolute top-4 left-4 bg-[#F5CB5C] text-[#242423] text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                                    Editado Manualmente
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
 
                 {/* Tech Summary */}
                 < div className="space-y-6 pt-10 border-t border-[#CFDBD5]/10" >
