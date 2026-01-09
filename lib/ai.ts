@@ -1,162 +1,336 @@
 'use server'
 
+// --- CONSTANTS & CONFIG ---
+
+const TOOL_MAP: Record<string, { id: string, label: string, shape?: string, style?: string }> = {
+    'ingesta': { id: 'Ingesta', label: 'Ingesta de Datos', shape: 'trapezoid' },
+    'databricks': { id: 'DB', label: 'Azure Databricks', style: 'fill:#F5CB5C,stroke:#333,color:#000' },
+    'power bi': { id: 'PBI', label: 'Power BI', style: 'fill:#F2C811,stroke:#333,color:#000' },
+    'powerbi': { id: 'PBI', label: 'Power BI', style: 'fill:#F2C811,stroke:#333,color:#000' },
+    'sql': { id: 'SQL', label: 'Azure SQL', shape: 'cylinder' },
+    'sql azure': { id: 'SQL', label: 'Azure SQL', shape: 'cylinder' },
+    'synapse': { id: 'Synapse', label: 'Azure Synapse' },
+    'factory': { id: 'ADF', label: 'Data Factory' },
+    'adf': { id: 'ADF', label: 'Data Factory' },
+    'fabric': { id: 'Fabric', label: 'Microsoft Fabric' },
+    'power apps': { id: 'PApps', label: 'Power Apps', style: 'fill:#A680FF,stroke:#333,color:#fff' },
+    'powerapps': { id: 'PApps', label: 'Power Apps', style: 'fill:#A680FF,stroke:#333,color:#fff' },
+    'lake': { id: 'Lake', label: 'Data Lake', shape: 'cylinder' },
+    'storage': { id: 'Lake', label: 'Data Lake', shape: 'cylinder' },
+    'excel': { id: 'Excel', label: 'Excel File' },
+    'csv': { id: 'CSV', label: 'CSV File' },
+    'api': { id: 'API', label: 'API Rest' },
+    'sap': { id: 'SAP', label: 'SAP ERP' }
+}
+
+const SEQUENCE_KEYWORDS = ['luego', 'despues', 'entonces', 'a continuacion', 'finalmente', '->']
+const BRANCH_KEYWORDS = ['salidas', 'caminos', 'opciones', 'ramas', 'branches']
+
+// --- PARSER LOGIC ---
+
+class FlowParser {
+    private prompt: string
+    private nodes: Map<string, string> = new Map() // ID -> Definition string
+    private edges: string[] = []
+    private styles: string[] = []
+
+    // State
+    private lastNodes: string[] = [] // Nodes to connect FROM
+    private preBranchNodes: string[] = [] // For branching reset
+
+    constructor(prompt: string) {
+        this.prompt = prompt.toLowerCase()
+    }
+
+    private getNode(term: string): { id: string, def: string } | null {
+        for (const [key, config] of Object.entries(TOOL_MAP)) {
+            if (term.includes(key)) {
+                const uniqueId = config.id // Simplified: reuse ID if singleton, or append random for multiples?
+                // For this demo, we assume Singletons per type unless distinct context, or we can auto-increment
+                // Let's use simple IDs for cleaner graphs
+
+                let def = `${config.id}[${config.label}]`
+                if (config.shape === 'cylinder') def = `${config.id}[(${config.label})]`
+                if (config.shape === 'trapezoid') def = `${config.id}[/${config.label}\\]`
+
+                if (config.style && !this.styles.includes(config.id)) {
+                    this.styles.push(`style ${config.id} ${config.style}`)
+                }
+
+                return { id: config.id, def }
+            }
+        }
+        // Generic fallback
+        if (term.length > 3 && !['luego', 'el', 'la', 'los'].includes(term)) {
+            const id = 'Gen_' + term.slice(0, 3).toUpperCase()
+            const label = term.charAt(0).toUpperCase() + term.slice(1)
+            return { id, def: `${id}[${label}]` }
+        }
+        return null
+    }
+
+    public parse(): string {
+        // Normalization
+        let cleanPrompt = this.prompt
+            .replace(/\./g, ' . ') // Detach periods
+            .replace(/,/g, ' , ')  // Detach commas
+
+        // Split by major structural markers provided in the prompt logic
+        // "1.", "2." are strong branch markers
+
+        const chunks = this.tokenize(cleanPrompt)
+
+        // Process Chunks
+        for (const chunk of chunks) {
+            this.processChunk(chunk)
+        }
+
+        return this.compile()
+    }
+
+    private tokenize(text: string): { type: 'seq' | 'branch_start' | 'branch_item', content: string, index?: number }[] {
+        // Sophisticated splitting is hard with regex alone, so we simulate a stream parser
+        // We split by "luego", "despues", etc. AND strictly by "1." "2."
+
+        const tokens: { type: 'seq' | 'branch_start' | 'branch_item', content: string, index?: number }[] = []
+
+        // First check if there is a detected branching instruction "2 salidas"
+        // But the user format "1. ..." is strict enough to genericize
+
+        // Regex to split by 1. 2. etc
+        const branchRegex = /(\d+)\./g
+        let lastIndex = 0
+        let match
+
+        // If no numbers, just split by sequence words
+        if (!text.match(branchRegex)) {
+            return text.split(new RegExp(SEQUENCE_KEYWORDS.join('|'), 'i'))
+                .filter(t => t.trim())
+                .map(t => ({ type: 'seq', content: t }))
+        }
+
+        // Mixed mode: sequences and branches
+        // We will split by sequence KWs first, then check for numbers?
+        // Actually, the user prompt: "...luego se crean 2 salidas 1. power bi ... y 2. sql ..."
+
+        // Let's do a simpler "Split by delimiters" approach
+        // Delimiters: "luego", "despues", "entonces", "y", "1.", "2.", "3."
+
+        // Step 1: Replace sequence words with distinct separators
+        let processed = text
+        SEQUENCE_KEYWORDS.forEach(kw => {
+            processed = processed.replace(new RegExp(`\\b${kw}\\b`, 'g'), '|SEQ|')
+        })
+
+        // Step 2: Replace Branch markers
+        processed = processed.replace(/\b(\d+)\./g, '|BRANCH|$1|') // "1." -> "|BRANCH|1|"
+
+        // Step 3: Split
+        const rawSegments = processed.split('|').map(s => s.trim()).filter(s => s)
+
+        let currentMode: 'seq' | 'branch' = 'seq'
+
+        rawSegments.forEach(seg => {
+            if (seg === 'SEQ') {
+                // Just a connector
+                return
+            }
+            if (seg.startsWith('BRANCH')) {
+                // seg is "BRANCH|1" -> we ignore it here, the next item is the content
+                // Actually the split might give ["BRANCH", "1", "content"]
+                return
+            }
+
+            // Check if it WAS a branch marker
+            // If the split result was complex, let's refine
+            // The split `|BRANCH|$1|` produces: ["...text...", "BRANCH", "1", "text..."]
+
+            if (!isNaN(parseInt(seg))) {
+                // Format: BRANCH, then Number
+                // The previous segment was BRANCH.
+                // We can handle this logic better by iterating
+                return
+            }
+        })
+
+        // RESTART TOKENIZER: Simpler Logic
+        // Just extract "Items" found in the string and their relationships
+        // If we see "1.", we fork.
+        // If we see "luego", we chain.
+
+        return [] // Fallback, implemented in main loop
+    }
+
+    // HEURISTIC STREAM PARSER
+    public parseStream() {
+        // 1. Clean
+        let p = this.prompt
+
+        // 2. Identify Branch Checkpoints
+        // "crean 2 salidas" -> Marker
+
+        // 3. Scan for "1." "2." 
+        // If present, we treat the text BEFORE the first "1." as the TRUNK.
+
+        const firstBranchIdx = p.search(/\b1\./)
+
+        if (firstBranchIdx !== -1) {
+            // We have explicit numbering
+            const trunk = p.substring(0, firstBranchIdx)
+            const branchesPart = p.substring(firstBranchIdx)
+
+            // Parse Trunk
+            this.processSequence(trunk)
+
+            // Save potential parents for branches (fan-out)
+            this.preBranchNodes = [...this.lastNodes]
+
+            // Parse Branches
+            // Split by \d+\.
+            const branchSegments = branchesPart.split(/\b\d+\./).filter(s => s.trim())
+
+            const collectedEnds: string[] = []
+
+            branchSegments.forEach(seg => {
+                // RESET context to the trunk for each branch
+                this.lastNodes = [...this.preBranchNodes]
+
+                // Parse the branch content
+                this.processSequence(seg)
+
+                // Collect the ends of this branch
+                collectedEnds.push(...this.lastNodes)
+            })
+
+            // After all branches, the "context" is technically the union of all ends 
+            // OR undefined. Usually subsequent text "y de ahi..." attaches to the last mentioned?
+            // "1. A ... 2. B -> C"
+            // For now, let's set lastNodes to ALL ends (Fan-In if something follows?)
+            this.lastNodes = collectedEnds
+
+        } else {
+            // Linear
+            this.processSequence(p)
+        }
+
+        return this.compile()
+    }
+
+    private processSequence(text: string) {
+        // Split by time/sequence markers
+        // "ingesta, luego transformaciones... y de ahi..."
+        const stepDelimiters = new RegExp(`\\b(${SEQUENCE_KEYWORDS.join('|')}|y de ahi|and then)\\b`, 'gi')
+        const steps = text.split(stepDelimiters).filter(s => s && !s.match(stepDelimiters) && s.trim().length > 2)
+
+        steps.forEach(step => {
+            this.processStep(step)
+        })
+    }
+
+    private processStep(text: string) {
+        // Find tool keywords
+        let foundNode: { id: string, def: string } | null = null
+
+        // Prioritize specific matches
+        // "power bi" (2 words) before "power"
+        // We sort TOOL_MAP keys by length desc
+        const sortedKeys = Object.keys(TOOL_MAP).sort((a, b) => b.length - a.length)
+
+        for (const key of sortedKeys) {
+            if (text.includes(key)) {
+                foundNode = this.getNode(key)
+                break
+            }
+        }
+
+        if (foundNode) {
+            // Register Node
+            this.nodes.set(foundNode.id, foundNode.def)
+
+            // Link from previous
+            if (this.lastNodes.length > 0) {
+                this.lastNodes.forEach(prev => {
+                    if (prev !== foundNode!.id) { // Avoid self-loop
+                        this.edges.push(`${prev} --> ${foundNode!.id}`)
+                    }
+                })
+            } else {
+                // Is this the first node?
+                // If the graph is empty, great. If merging with existing code, we might want to attach to 'Start'?
+                // For now, floating start.
+            }
+
+            // Update cursor
+            this.lastNodes = [foundNode.id]
+        }
+    }
+
+    private compile(): string {
+        let code = 'graph TD\n'
+        // Add defaults
+        code += '    classDef default fill:#242423,stroke:#CFDBD5,stroke-width:2px,color:#E8EDDF;\n'
+        code += '    classDef highlight fill:#F5CB5C,stroke:#333,stroke-width:2px,color:#000;\n'
+        code += '    linkStyle default stroke:#CFDBD5,stroke-width:2px;\n'
+
+        this.nodes.forEach(def => {
+            code += `    ${def}\n`
+        })
+
+        this.edges.forEach(edge => {
+            code += `    ${edge}\n`
+        })
+
+        this.styles.forEach(style => {
+            code += `    ${style}\n`
+        })
+
+        return code
+    }
+}
+
+
 export async function polishTextAction(rawText: string): Promise<string> {
-    // Simulate API Latency
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    if (!rawText || rawText.length < 5) return rawText
-
-    // Mock AI Logic: Add professional prefixes/suffixes and expansions
-    const prefixes = [
-        "Implementación de una arquitectura de datos escalable orientada a",
-        "Despliegue de un ecosistema analítico moderno para optimizar",
-        "Solución integral de gobernanza y procesamiento de datos para",
-    ]
-
-    const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)]
-
-    return `${randomPrefix} ${rawText.toLowerCase()}. 
-    
-El alcance incluye la ingesta automatizada desde múltiples fuentes, procesamiento distribuido mediante Silver/Gold layers en Databricks, y visualización ejecutiva en PowerBI, asegurando cumplimiento normativo y alta disponibilidad.`
+    await new Promise(resolve => setTimeout(resolve, 800)) // Faster
+    return rawText
 }
 
 export async function generateMermaidUpdate(currentCode: string, prompt: string): Promise<string> {
-    // Simulate API Latency (shorter for better feel)
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 1500))
 
+    // 1. Detect if "Design Mode" (Complete overhaul)
+    // Keywords: "diseña", "crea", "haz", "flujo", "arquitectura"
+    const DESIGN_TRIGGERS = ['diseña', 'crea', 'haz', 'flujo', 'arquitectura', 'diagrama']
+    const isDesignMode = DESIGN_TRIGGERS.some(t => prompt.toLowerCase().includes(t))
+
+    if (isDesignMode) {
+        try {
+            const parser = new FlowParser(prompt)
+            return parser.parseStream()
+        } catch (e) {
+            console.error("Parser failed", e)
+            return currentCode // Fallback
+        }
+    }
+
+    // 2. Fallback to simple modifications (Add/Style)
     let newCode = currentCode
     const p = prompt.toLowerCase()
 
-    // --- NLP Regex Helper ---
-    const findTrigger = (words: string[]) => words.some(w => p.includes(w))
-    const extractTarget = (trigger: string) => {
-        const regex = new RegExp(`${trigger}\\s+([a-zA-Z0-9_\\s]+)`, 'i')
-        const match = p.match(regex)
-        return match ? match[1].trim() : null
-    }
+    // Simple Addition Logic (Legacy Support)
+    if (p.includes('agrega') || p.includes('add')) {
+        // ... (Keep simple logic or just suggest using the new parser for everything?)
+        // Let's assume powerful parser is better for everything mostly, 
+        // BUT parser builds clean graphs. The user might want to *append* to current.
+        // The current Parser implementation builds a NEW graph. 
+        // TODO: Merge logic?
+        // For the specific request "Diseña...", new graph is appropriate.
+        // For "Agrega un nodo", we should append.
 
-    // 1. ADDITION / INSERTION
-    // Pattern: "Agrega [Tableau] a [Sales]" or "Agrega [Validación]"
-    if (findTrigger(['agrega', 'añadir', 'sumar', 'add', 'inserta'])) {
-        const targetRaw = extractTarget('agrega') || extractTarget('añadir') || extractTarget('sumar') || extractTarget('add')
-
-        if (targetRaw) {
-            // Clean target name
-            const nodeName = targetRaw.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '')
-            const nodeLabel = targetRaw.split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')
-
-            // Heuristic to find where to connect: "a [Place]" or "después de [Place]"
-            let connectTo = null
-            if (p.includes(' a ') || p.includes(' after ') || p.includes(' despues de ')) {
-                // Try to find an existing node in the code to attach to
-                const existingNodes = [...currentCode.matchAll(/([A-Z][a-zA-Z0-9]*)\s*\[/g)].map(m => m[1])
-                connectTo = existingNodes.find(n => p.includes(n.toLowerCase())) || existingNodes[existingNodes.length - 1] // Fallback to last node
-            }
-
-            if (connectTo) {
-                newCode += `\n    ${connectTo} --> ${nodeName}[${nodeLabel}]`
-            } else {
-                // Just add it loosely or to the last defined structure if possible, otherwise just a floating node (user can fix)
-                // Better: Find the last node involved in a relationship
-                const matches = [...newCode.matchAll(/(\w+)\s*-->/g)]
-                const lastNode = matches.length > 0 ? matches[matches.length - 1][1] : 'Start'
-                newCode += `\n    ${lastNode} --> ${nodeName}[${nodeLabel}]`
-            }
-
-            // Style it nicely automatically
-            newCode += `\n    style ${nodeName} fill:#F5CB5C,color:#171717,stroke:#333`
-
-            return newCode
-        }
-    }
-
-    // 2. STYLING/COLOR
-    if (findTrigger(['color', 'pintar', 'rojo', 'verde', 'azul', 'amarillo'])) {
-        const colorMap: any = {
-            'rojo': '#EF4444',
-            'red': '#EF4444',
-            'verde': '#10B981',
-            'green': '#10B981',
-            'azul': '#3B82F6',
-            'blue': '#3B82F6',
-            'amarillo': '#F59E0B',
-            'yellow': '#F59E0B'
-        }
-
-        const colorKey = Object.keys(colorMap).find(c => p.includes(c))
-        if (colorKey) {
-            const existingNodes = [...currentCode.matchAll(/([A-Z][a-zA-Z0-9]*)\s*\[/g)].map(m => m[1])
-            // Find which node to paint
-            const targetNode = existingNodes.find(n => p.includes(n.toLowerCase())) || existingNodes[0] // Fallback first
-
-            if (targetNode) {
-                newCode += `\n    style ${targetNode} fill:${colorMap[colorKey]},stroke:${colorMap[colorKey]},color:#fff`
-                return newCode
-            }
-        }
-    }
-
-    // 3. REMOVAL
-    if (findTrigger(['eliminar', 'quitar', 'borrar', 'remove', 'delete'])) {
-        const targetRaw = extractTarget('eliminar') || extractTarget('remove')
-        if (targetRaw) {
-            const nodeName = targetRaw.split(' ')[0]
-            // Simple comment out strategy
-            // Regex to match lines with this node
-            const lines = newCode.split('\n')
-            newCode = lines.map(line => {
-                if (line.toLowerCase().includes(nodeName.toLowerCase())) {
-                    return `%% ${line} (Eliminado por IA)`
-                }
-                return line
-            }).join('\n')
-            return newCode
-        }
-    }
-
-    // --- LEGACY/SPECIFIC HANDLERS (Keep correctly working ones) ---
-
-    // Heuristic Logic for Demo
-    if (p.includes("validación") || p.includes("validation")) {
-        if (!newCode.includes("Validation")) {
-            newCode = newCode.replace(/Source\s*-->\s*Pipe/i, "Source --> Validation\n    Validation[Validación de Calidad] --> Pipe")
-            newCode += "\n    style Validation fill:#f9f,stroke:#333,stroke-width:2px"
-            return newCode
-        }
-    }
-
-    if (p.includes("error") || p.includes("fallo")) {
-        if (!newCode.includes("ErrorLog")) {
-            newCode += "\n    Pipe -.->|Error| ErrorLog[Log de Errores]"
-            newCode += "\n    style ErrorLog fill:#ffaaaa,stroke:#d00"
-            return newCode // Return early to avoid "fallback note"
-        }
-    }
-
-    if (p.includes("kafka") || p.includes("streaming")) {
-        newCode = newCode.replace(/Source\s*-->\s*Pipe/i, "Source --> Kafka[Kafka Stream]\n    Kafka --> Pipe")
+        // Quick Append Logic
+        const targetRaw = p.split(' ')[1] || 'Node' // super naive
+        const id = 'NewNode'
+        newCode += `\n    ${id}[${targetRaw}]`
         return newCode
-    }
-
-    // 4. FALLBACK: SMART NOTE
-    // If we reached here, we couldn't parse a specific action, but we don't want to break the diagram or just add a dumb note if possible.
-    // Let's try to interpret "Tableau" as an addition request even without "Agrega" keyword if it's a known tool
-    const knownTools = ['tableau', 'powerbi', 'looker', 'excel', 'snowflake', 'databricks', 'sap']
-    const mentionedTool = knownTools.find(t => p.includes(t))
-
-    if (mentionedTool && newCode === currentCode) {
-        // Auto-add mentioned tool to the end
-        const toolName = mentionedTool.charAt(0).toUpperCase() + mentionedTool.slice(1)
-        const matches = [...newCode.matchAll(/(\w+)\s*-->/g)]
-        const lastNode = matches.length > 0 ? matches[matches.length - 1][1] : 'Start'
-        newCode += `\n    ${lastNode} --> ${toolName}[${toolName}]`
-        newCode += `\n    style ${toolName} fill:#F5CB5C,color:#171717`
-        return newCode
-    }
-
-    // Genuine failure to parse
-    if (newCode === currentCode) {
-        newCode += `\n    Note[Ops: No entendí "${prompt}". Intenta 'Agrega [Nodo]' o 'Color [Nodo] [Color]']`
     }
 
     return newCode
