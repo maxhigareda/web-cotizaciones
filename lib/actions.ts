@@ -151,6 +151,8 @@ export async function saveQuote(data: {
         return {
             id: 'mock-quote-id',
             ...data,
+            technicalParameters: JSON.stringify(data.params),
+            staffingRequirements: JSON.stringify(data.breakdown.roles),
             estimatedCost: data.breakdown.totalMonthlyCost
         }
     }

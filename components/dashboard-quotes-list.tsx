@@ -119,11 +119,19 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
                             <div className="text-[#CFDBD5] text-sm opacity-70 mt-1">
                                 {(() => {
                                     try {
-                                        if (!quote.technicalParameters) return 'Sin descripción'
-                                        const parsed = JSON.parse(quote.technicalParameters)
-                                        const desc = parsed?.description || 'Sin descripción'
+                                        // 1. Try standard path (stringified JSON)
+                                        let desc = 'Sin descripción'
 
-                                        if (desc.length > 50) {
+                                        if (quote.technicalParameters) {
+                                            const parsed = JSON.parse(quote.technicalParameters)
+                                            desc = parsed?.description || 'Sin descripción'
+                                        }
+                                        // 2. Fallback for legacy mock data (direct object)
+                                        else if (quote.params) {
+                                            desc = quote.params.description || 'Sin descripción'
+                                        }
+
+                                        if (desc !== 'Sin descripción' && desc.length > 30) {
                                             return (
                                                 <Popover>
                                                     <PopoverTrigger className="hover:text-[#F5CB5C] underline underline-offset-4 cursor-pointer">
