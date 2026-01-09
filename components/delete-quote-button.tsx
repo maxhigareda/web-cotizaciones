@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Trash2, AlertTriangle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { deleteQuote } from '@/lib/actions'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 interface DeleteQuoteButtonProps {
