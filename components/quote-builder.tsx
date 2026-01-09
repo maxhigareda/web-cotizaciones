@@ -146,18 +146,63 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
     const router = useRouter()
 
     const handleDownloadDiagram = async () => {
-        const element = document.getElementById('diagram-capture-target')
-        if (element) {
-            try {
-                const canvas = await html2canvas(element, { backgroundColor: '#ffffff', scale: 2 })
+        const element = document.getElementById('diagram-capture-target-id') // Ensure we target the SVG container specifically
+        if (!element) return
+
+        try {
+            // Find the SVG inside the container
+            const svgElement = element.querySelector('svg')
+            if (!svgElement) {
+                alert("No se encontró el diagrama para exportar.")
+                return
+            }
+
+            // Get SVG data
+            const serializer = new XMLSerializer()
+            let source = serializer.serializeToString(svgElement)
+
+            // Add namespaces if missing
+            if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+                source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
+            }
+            if (!source.match(/^<svg[^>]+xmlns:xlink="http\:\/\/www\.w3\.org\/1000\/xlink"/)) {
+                source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"')
+            }
+
+            // Create Image from SVG
+            const img = new Image()
+            const svgBlob = new Blob([source], { type: "image/svg+xml;charset=utf-8" })
+            const url = URL.createObjectURL(svgBlob)
+
+            img.onload = () => {
+                const canvas = document.createElement('canvas')
+                // Use actual bounding box or viewbox
+                const bbox = svgElement.getBoundingClientRect()
+                canvas.width = bbox.width * 2 // High res
+                canvas.height = bbox.height * 2
+                const ctx = canvas.getContext('2d')
+                if (!ctx) return
+
+                // Fill White Background
+                ctx.fillStyle = "#ffffff"
+                ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+                // Draw SVG
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+
+                // Download
                 const link = document.createElement('a')
                 link.download = `arquitectura-${state.clientName || 'draft'}.png`
                 link.href = canvas.toDataURL('image/png')
                 link.click()
-            } catch (e) {
-                console.error(e)
-                alert("Error al exportar imagen")
+
+                URL.revokeObjectURL(url)
             }
+            img.src = url
+
+        } catch (e) {
+            console.error(e)
+            alert("Error al exportar imagen")
         }
     }
 
@@ -198,34 +243,49 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
             const element = document.getElementById('diagram-capture-target')
             if (element) {
                 // Temporary style for valid capture (white background often helps readability in docs)
-                const canvas = await html2canvas(element, {
-                    backgroundColor: '#ffffff',
-                    scale: 2 // Retain quality
-                })
-                diagramImage = canvas.toDataURL('image/png')
+                try {
+                    const canvas = await html2canvas(element, { backgroundColor: '#ffffff', scale: 2 })
+                    diagramImage = canvas.toDataURL('image/png')
+                } catch (e) { console.error("Export capture failed", e) }
             }
 
-            const exportData = {
-                ...state,
-                totalMonthlyCost,
-                l2SupportCost,
-                riskCost,
-                totalWithRisk,
-                criticitnessLevel,
+            const quoteData = {
+                clientName: state.clientName,
+                totalCost: totalWithRisk, // Use risk adjusted
+                items: [
+                    ...Object.entries(state.roles)
+                        .filter(([_, count]) => count > 0)
+                        .map(([role, count]) => ({
+                            name: role,
+                            quantity: count,
+                            price: 0 // We don't have individual role prices easily accessible here without Recalculating, but total is correct
+                        })),
+                    // Add Services
+                    state.pipelinesCount > 0 && { name: `Pipelines de Ingesta (${state.complexity})`, quantity: state.pipelinesCount, price: findRate('Pipe') },
+                    state.notebooksCount > 0 && { name: `Notebooks/Datasets (${state.complexity})`, quantity: state.notebooksCount, price: findRate('Dataset') },
+                    state.dashboardsCount > 0 && { name: `Dashboards (${state.complexity})`, quantity: state.dashboardsCount, price: findRate('Dashboard') },
+                    state.dsModelsCount > 0 && { name: `Modelos IA (${state.complexity})`, quantity: state.dsModelsCount, price: findRate('Algoritmo') },
+                ].filter(Boolean),
                 diagramImage
             }
 
-            // Dynamic import
-            const mod = await import("@/lib/export")
-            if (type === 'pdf') {
-                await mod.exportToPDF(exportData as any)
-            } else {
-                await mod.exportToWord(exportData as any)
-            }
+            const response = await fetch('/api/generate-pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(quoteData),
+            })
 
-        } catch (error) {
-            console.error("Export failed", error)
-            alert("Error generando el documento")
+            if (!response.ok) throw new Error('Failed to generate PDF')
+
+            const blob = await response.blob()
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `cotizacion-${state.clientName || 'cliente'}.${type === 'pdf' ? 'pdf' : 'docx'}`
+            a.click()
+        } catch (e) {
+            console.error(e)
+            alert("Error al exportar documento")
         } finally {
             setIsExporting(false)
             setExportType(null)
