@@ -146,7 +146,7 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
     const router = useRouter()
 
     const handleDownloadDiagram = async () => {
-        const element = document.getElementById('diagram-capture-target-id') // Ensure we target the SVG container specifically
+        const element = document.getElementById('diagram-capture-target') // Correct ID
         if (!element) return
 
         try {
