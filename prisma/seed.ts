@@ -4,7 +4,8 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
-    // 1. Seed Roles/Rates
+    // 1. Seed Roles/Rates - DEPRECATED: Now handled via ServiceRates in Admin/LocalStorage
+    /*
     const rates = [
         { role: 'Data Analyst', monthlyRate: 2500, baseHours: 160 },
         { role: 'Data Science', monthlyRate: 5100, baseHours: 160 },
@@ -13,22 +14,10 @@ async function main() {
     ]
 
     for (const rate of rates) {
-        await prisma.roleRate.upsert({
-            where: { role: rate.role },
-            update: {
-                monthlyRate: rate.monthlyRate,
-                baseHours: rate.baseHours,
-                hourlyRate: rate.monthlyRate / rate.baseHours
-            },
-            create: {
-                role: rate.role,
-                monthlyRate: rate.monthlyRate,
-                baseHours: rate.baseHours,
-                hourlyRate: rate.monthlyRate / rate.baseHours
-            },
-        })
+        // Removed prisma.roleRate usage
     }
-    console.log('Rates seeded successfully.')
+    */
+    console.log('Skipping legacy rates seeding.')
 
     // 2. Seed Users
     const hashedPasswordAdmin = await bcrypt.hash('admin2026', 10)
