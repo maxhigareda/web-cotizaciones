@@ -1,7 +1,8 @@
 import Navbar from './navbar'
-import { getSessionRole } from '@/lib/auth'
+import { getSessionRole, getSessionUser } from '@/lib/auth'
 
 export async function NavWrapper() {
     const role = await getSessionRole()
-    return <Navbar userRole={role} />
+    const user = await getSessionUser()
+    return <Navbar userRole={role} userName={user} />
 }

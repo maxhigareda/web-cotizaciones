@@ -199,7 +199,6 @@ export async function getAllQuotes() {
             include: { user: { select: { name: true, email: true } } }
         })
     } catch (e) {
-    } catch (e) {
         // Mock Admin Data
         return []
     }
