@@ -180,15 +180,7 @@ export async function updateRoleRate(role: string, newMonthlyRate: number) {
     return { success: true }
 }
 
-async function getRates() {
-    // Mock internal logic for calculateQuote if used
-    return {
-        'Data Engineer': { monthly: 4950, hourly: 30.9 },
-        'Data Analyst': { monthly: 2500, hourly: 15.6 },
-        'Data Science': { monthly: 5100, hourly: 31.8 },
-        'BI': { monthly: 4128, hourly: 25.8 }
-    }
-}
+
 
 export async function getAllQuotes() {
     try {
