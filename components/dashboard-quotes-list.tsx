@@ -27,44 +27,10 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
 
     useEffect(() => {
         setIsClient(true)
-
-        // Ensure we work with at least a valid array from server
-        const safeServerQuotes = Array.isArray(serverQuotes) ? serverQuotes : []
-
-        // Load local quotes from browser storage (New Key to wipe old demo data)
-        const storageKey = 'quotes_v1_prod'
-        const rawValue = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
-        let localQuotes: any[] = []
-
-        if (rawValue && rawValue !== "undefined" && rawValue !== "null") {
-            try {
-                const parsed = JSON.parse(rawValue)
-                if (Array.isArray(parsed)) {
-                    // Filter out old server-side mocks just in case, but key change should handle it
-                    localQuotes = parsed.filter((q: any) =>
-                        !q.id?.toString().startsWith('mock-') &&
-                        !q.clientName?.includes('(Demo)')
-                    )
-                }
-            } catch (e) {
-                console.error("Failed to load local quotes", e)
-            }
-        }
-
-        // Merge: Local first (newer), then Server
-        const combined = [...localQuotes, ...safeServerQuotes]
-
-        // Deduplicate by ID
-        const unique = Array.from(new Map(combined.map(item => [item?.id || Math.random(), item])).values())
-
-        // Filter invalid items
-        const validQuotes = unique.filter(q => q && q.createdAt)
-
-        // Sort descending date
+        // Strictly use server quotes, no local merging
+        const validQuotes = Array.isArray(serverQuotes) ? serverQuotes : []
         validQuotes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-
         setMergedQuotes(validQuotes)
-
     }, [serverQuotes])
 
     // Handler to remove deleted items from UI immediately
@@ -73,18 +39,7 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
         const updated = mergedQuotes.filter(q => q.id !== id)
         setMergedQuotes(updated)
 
-        // Update Local Storage
-        const storageKey = 'quotes_v1_prod'
-        const rawValue = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
-        if (rawValue && rawValue !== "undefined" && rawValue !== "null") {
-            try {
-                const local = JSON.parse(rawValue)
-                if (Array.isArray(local)) {
-                    const newLocal = local.filter((q: any) => q.id !== id)
-                    localStorage.setItem(storageKey, JSON.stringify(newLocal))
-                }
-            } catch (e) { }
-        }
+
     }
 
     // Hydration guard
@@ -188,20 +143,7 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
                                         const newQuotes = mergedQuotes.map(q => q.id === updated.id ? { ...q, status: updated.status } : q)
                                         setMergedQuotes(newQuotes)
 
-                                        // 2. Update Local Storage (Persistence fallback)
-                                        const storageKey = 'quotes_v1_prod'
-                                        const rawValue = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
-                                        if (rawValue) {
-                                            try {
-                                                const local = JSON.parse(rawValue)
-                                                if (Array.isArray(local)) {
-                                                    const updatedLocal = local.map((q: any) => q.id === updated.id ? { ...q, status: updated.status } : q)
-                                                    localStorage.setItem(storageKey, JSON.stringify(updatedLocal))
-                                                }
-                                            } catch (e) {
-                                                console.error("Failed to update local storage", e)
-                                            }
-                                        }
+
                                     }}
                                 />
                             )}

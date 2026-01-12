@@ -442,36 +442,8 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
                 breakdown: breakdown
             })
 
-            // Client-Side Persistence for Vercel Demo (Phantom Mode)
-            try {
-                // Ensure unique ID for client-side storage to avoid "mock-id" collisions
-                const uniqueId = `demo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+            // Client-Side Persistence Removed - Strictly rely on Server DB
 
-                // Add specific fields required for display
-                const quoteForStorage = {
-                    ...(savedQuote as any),
-                    // Ensure estimatedCost is captured even if server returned a mock without it
-                    estimatedCost: (savedQuote as any).estimatedCost || (savedQuote as any).breakdown?.totalMonthlyCost || 0,
-                    id: uniqueId, // Override mock ID with unique client ID
-                    userId: 'demo-user', // Ensure visible
-                    createdAt: new Date().toISOString() // Ensure date is string for JSON
-                }
-
-                const storageKey = 'quotes_v1_prod'
-                const rawValue = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
-                let currentLocal: any[] = []
-
-                if (rawValue && rawValue !== "undefined" && rawValue !== "null") {
-                    try {
-                        const parsed = JSON.parse(rawValue)
-                        if (Array.isArray(parsed)) currentLocal = parsed
-                    } catch (e) { }
-                }
-
-                localStorage.setItem(storageKey, JSON.stringify([quoteForStorage, ...currentLocal]))
-            } catch (e) {
-                console.error("Local Persist Failed", e)
-            }
 
             alert("Cotización guardada exitosamente.")
             router.push('/dashboard')

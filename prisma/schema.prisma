@@ -29,7 +29,7 @@ model Quote {
   diagramDefinition    String
   createdAt            DateTime @default(now())
   
-  userId               String?  // Optional for now to avoid breaking existing data immediately, or make Required if we reset
+  userId               String   // Required to prevent orphan quotes
   user                 User?    @relation(fields: [userId], references: [id])
   status               String   @default("BORRADOR") // BORRADOR, ENVIADA, APROBADA, RECHAZADA
 }
