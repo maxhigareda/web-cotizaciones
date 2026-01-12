@@ -29,9 +29,10 @@ interface QuoteDetailsSheetProps {
         diagramDefinition?: string
         status?: string
     }
+    onQuoteUpdated?: (updatedQuote: any) => void
 }
 
-export function QuoteDetailsSheet({ quote }: QuoteDetailsSheetProps) {
+export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetProps) {
     const router = useRouter()
     let params: any = {}
     if (quote?.technicalParameters) {
@@ -53,6 +54,11 @@ export function QuoteDetailsSheet({ quote }: QuoteDetailsSheetProps) {
         setIsUpdatingStatus(true)
         // Optimistic update
         setStatus(val)
+        // Callback to parent immediately for UI sync
+        if (onQuoteUpdated) {
+            onQuoteUpdated({ ...quote, status: val })
+        }
+
         try {
             await updateQuoteStatus(quote.id, val)
             router.refresh()
@@ -61,6 +67,10 @@ export function QuoteDetailsSheet({ quote }: QuoteDetailsSheetProps) {
             // Revert on error
             setStatus(quote.status || 'BORRADOR')
             alert("Error al actualizar estado")
+            // Revert parent too
+            if (onQuoteUpdated) {
+                onQuoteUpdated({ ...quote, status: quote.status || 'BORRADOR' })
+            }
         } finally {
             setIsUpdatingStatus(false)
         }

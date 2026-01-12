@@ -176,7 +176,20 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
                         </div>
                         <div className="col-span-2 flex justify-end gap-2">
                             {/* Safe check for quote before passing */}
-                            {quote && <QuoteDetailsSheet quote={{ ...quote, estimatedCost: Number(quote.estimatedCost) || 0, status: quote.status || 'BORRADOR' }} />}
+                            {quote && (
+                                <QuoteDetailsSheet
+                                    quote={{
+                                        ...quote,
+                                        estimatedCost: Number(quote.estimatedCost) || 0,
+                                        status: quote.status || 'BORRADOR'
+                                    }}
+                                    onQuoteUpdated={(updated) => {
+                                        // Immediately update the local state to reflect changes without reload
+                                        const newQuotes = mergedQuotes.map(q => q.id === updated.id ? { ...q, status: updated.status } : q)
+                                        setMergedQuotes(newQuotes)
+                                    }}
+                                />
+                            )}
                             {/* Delete button manages the dialog and calls back on success */}
                             <DeleteQuoteButton
                                 quoteId={quote.id}
