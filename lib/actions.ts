@@ -127,8 +127,10 @@ export async function saveQuote(data: {
 
     if (!userId) throw new Error("User ID not found in session")
 
+    console.log("Saving quote for user:", userId) // DEBUG
+
     try {
-        return await prisma.quote.create({
+        const result = await prisma.quote.create({
             data: {
                 clientName: data.clientName,
                 projectType: data.projectType,
@@ -136,18 +138,15 @@ export async function saveQuote(data: {
                 estimatedCost: data.breakdown.totalMonthlyCost,
                 staffingRequirements: JSON.stringify(data.breakdown.roles),
                 diagramDefinition: data.breakdown.diagramCode,
-                userId: userId
+                userId: userId,
+                status: 'BORRADOR'
             }
         })
+        console.log("Quote saved successfully:", result.id) // DEBUG
+        return result
     } catch (e) {
-        console.warn("DB Failed (saveQuote), mocking success")
-        return {
-            id: 'mock-quote-id',
-            ...data,
-            technicalParameters: JSON.stringify(data.params),
-            staffingRequirements: JSON.stringify(data.breakdown.roles),
-            estimatedCost: data.breakdown.totalMonthlyCost
-        }
+        console.error("CRITICAL DB ERROR (saveQuote):", e)
+        throw e
     }
 }
 
@@ -158,13 +157,15 @@ export async function getUserQuotes() {
     if (!userId) return []
 
     try {
-        return await prisma.quote.findMany({
+        const quotes = await prisma.quote.findMany({
             where: { userId },
             orderBy: { createdAt: 'desc' }
         })
+        console.log(`Found ${quotes.length} quotes for user ${userId}`) // DEBUG
+        return quotes
     } catch (e) {
-        console.warn("DB Failed (getUserQuotes), returning clean list for Vercel")
-        return [] // Use client-side storage only on Vercel
+        console.error("DB Failed (getUserQuotes)", e)
+        return []
     }
 }
 
@@ -200,6 +201,7 @@ export async function getAdminStats() {
     unstable_noStore()
     try {
         const totalQuotes = await prisma.quote.count()
+        console.log("Admin Stats - Total Quotes:", totalQuotes) // DEBUG
 
         // Pipeline Value (Sum of estimatedCost)
         const pipelineAgg = await prisma.quote.aggregate({
@@ -224,6 +226,8 @@ export async function getAdminStats() {
         const enviadaCount = await prisma.quote.count({ where: { status: 'ENVIADA' } })
         const aprobadaCount = await prisma.quote.count({ where: { status: 'APROBADA' } })
         const rechazadaCount = await prisma.quote.count({ where: { status: 'RECHAZADA' } })
+
+        console.log("Status Counts:", { borradorCount, enviadaCount, aprobadaCount, rechazadaCount }) // DEBUG
 
         const statusCounts: Record<string, number> = {
             'BORRADOR': borradorCount,
