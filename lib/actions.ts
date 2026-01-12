@@ -170,18 +170,17 @@ export async function getUserQuotes() {
 }
 
 export async function getRoleRates() {
-    // Mock for admin rates editor (though now we use ServiceRates, this might be legacy call)
-    return [
-        { role: 'Data Engineer', monthlyRate: 4950, hourlyRate: 30.9, baseHours: 160 },
-        { role: 'Data Scientist', monthlyRate: 5100, hourlyRate: 31.8, baseHours: 160 }
-    ] as any[]
+    try {
+        return await prisma.serviceRate.findMany()
+    } catch (e) {
+        console.error("Failed to get rates", e)
+        return []
+    }
 }
 
 export async function updateRoleRate(role: string, newMonthlyRate: number) {
     return { success: true }
 }
-
-
 
 export async function getAllQuotes() {
     try {
@@ -190,7 +189,7 @@ export async function getAllQuotes() {
             include: { user: { select: { name: true, email: true } } }
         })
     } catch (e) {
-        // Mock Admin Data
+        console.error("DB Failed (getAllQuotes)", e)
         return []
     }
 }
