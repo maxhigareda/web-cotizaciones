@@ -262,6 +262,8 @@ export async function updateQuoteDiagram(quoteId: string, newDiagramCode: string
     }
 }
 
+import { revalidatePath } from 'next/cache'
+
 export async function updateQuoteStatus(quoteId: string, status: string) {
     const cookieStore = await cookies()
     const userId = cookieStore.get('session_user_id')?.value
@@ -273,6 +275,7 @@ export async function updateQuoteStatus(quoteId: string, status: string) {
             where: { id: quoteId },
             data: { status }
         })
+        revalidatePath('/dashboard')
         return { success: true }
     } catch (e) {
         console.error("Failed to update status", e)

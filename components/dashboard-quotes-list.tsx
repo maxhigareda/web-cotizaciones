@@ -184,9 +184,24 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
                                         status: quote.status || 'BORRADOR'
                                     }}
                                     onQuoteUpdated={(updated) => {
-                                        // Immediately update the local state to reflect changes without reload
+                                        // 1. Immediately update the local state (React)
                                         const newQuotes = mergedQuotes.map(q => q.id === updated.id ? { ...q, status: updated.status } : q)
                                         setMergedQuotes(newQuotes)
+
+                                        // 2. Update Local Storage (Persistence fallback)
+                                        const storageKey = 'quotes_v1_prod'
+                                        const rawValue = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
+                                        if (rawValue) {
+                                            try {
+                                                const local = JSON.parse(rawValue)
+                                                if (Array.isArray(local)) {
+                                                    const updatedLocal = local.map((q: any) => q.id === updated.id ? { ...q, status: updated.status } : q)
+                                                    localStorage.setItem(storageKey, JSON.stringify(updatedLocal))
+                                                }
+                                            } catch (e) {
+                                                console.error("Failed to update local storage", e)
+                                            }
+                                        }
                                     }}
                                 />
                             )}
