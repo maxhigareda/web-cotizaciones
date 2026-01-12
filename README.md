@@ -4,6 +4,7 @@ Aplicación web profesional para la estimación de costos y dimensionamiento de 
 
 ## 🚀 Características Principales
 
+<!-- Trigger Deploy: 2026-01-12 -->
 ### 💼 Panel de Gestión (Dashboard)
 - **Mis Cotizaciones**: Historial personal de proyectos cotizados.
 - **Detalle Interactivo**: Visualización de parámetros y costos mediante paneles laterales (Sheet).
