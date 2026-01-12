@@ -32,34 +32,62 @@ export async function loginAction(formData: FormData) {
     if (!user) {
         // Fallback for Admin
         if (email === 'admin@antigravity.com' && password === 'admin2026') {
-            user = {
+            const fallbackAdmin = {
                 id: 'demo-admin',
                 name: 'Admin Demo',
                 email,
                 password: await bcrypt.hash('admin2026', 10),
                 role: 'ADMIN',
-                createdAt: new Date()
+            }
+            // Ensure DB record exists
+            try {
+                user = await prisma.user.upsert({
+                    where: { email },
+                    update: {},
+                    create: fallbackAdmin
+                })
+            } catch (e) {
+                console.error("Failed to upsert demo admin", e)
+                user = { ...fallbackAdmin, createdAt: new Date() } // temporary memory fallback
             }
         }
         // Fallback for User
         else if (email === 'tomasmarzullo04@gmail.com' && password === 'user2026') {
-            user = {
+            const fallbackUser = {
                 id: 'demo-user',
                 name: 'Tomas Marzullo',
                 email,
                 password: await bcrypt.hash('user2026', 10),
                 role: 'USER',
-                createdAt: new Date()
+            }
+            try {
+                user = await prisma.user.upsert({
+                    where: { email },
+                    update: {},
+                    create: fallbackUser
+                })
+            } catch (e) {
+                console.error("Failed to upsert demo user", e)
+                user = { ...fallbackUser, createdAt: new Date() }
             }
         }
         else if (email === 'maxhigareda@thestoreintelligence.com' && password === 'max2026') {
-            user = {
+            const fallbackMax = {
                 id: 'demo-max',
                 name: 'Max Higareda',
                 email,
                 password: await bcrypt.hash('max2026', 10),
                 role: 'USER',
-                createdAt: new Date()
+            }
+            try {
+                user = await prisma.user.upsert({
+                    where: { email },
+                    update: {},
+                    create: fallbackMax
+                })
+            } catch (e) {
+                console.error("Failed to upsert demo max", e)
+                user = { ...fallbackMax, createdAt: new Date() }
             }
         }
     }
