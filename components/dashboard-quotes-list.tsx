@@ -76,13 +76,28 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
                 <div className="col-span-2 text-right">Acciones</div>
             </div>
 
+const getStatusTooltip = (status: string) => {
+    switch ((status || '').toUpperCase()) {
+        case 'ENVIADA': return "Enviada al cliente, esperando respuesta."
+            case 'APROBADA': return "Cliente aceptó la propuesta. ¡Éxito!"
+            case 'RECHAZADA': return "Esta cotización no fue aceptada por el cliente."
+            default: return "Cotización en progreso, no visible para el cliente." // BORRADOR
+    }
+}
+
+            // ... inside component ...
+
             {mergedQuotes.map((quote) => (
-                <Card key={quote.id || Math.random()} className="bg-[#1F1F1F] border-[#2D2D2D] rounded-[1.5rem] p-6 hover:border-[#F5CB5C]/30 transition-all group">
+                <Card key={quote.id || Math.random()} className="bg-[#1F1F1F] border-[#2D2D2D] rounded-[1.5rem] p-6 hover:border-[#F5CB5C]/50 hover:shadow-[0_0_20px_rgba(245,203,92,0.1)] transition-all duration-300 group cursor-default">
                     <div className="grid grid-cols-12 gap-4 items-center">
                         <div className="col-span-4">
                             <div className="flex items-center gap-3">
                                 <h4 className="text-[#E8EDDF] font-bold text-lg truncate max-w-[200px]">{quote.clientName || 'Sin Nombre'}</h4>
-                                <Badge variant="outline" className={getStatusStyles(quote.status)}>
+                                <Badge
+                                    variant="outline"
+                                    className={`${getStatusStyles(quote.status)} cursor-help transition-all hover:scale-105`}
+                                    title={getStatusTooltip(quote.status)}
+                                >
                                     {(quote.status || 'BORRADOR').toUpperCase()}
                                 </Badge>
                             </div>
