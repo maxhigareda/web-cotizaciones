@@ -19,6 +19,15 @@ const getStatusStyles = (status: string) => {
     }
 }
 
+const getStatusTooltip = (status: string) => {
+    switch ((status || '').toUpperCase()) {
+        case 'ENVIADA': return "Enviada al cliente, esperando respuesta."
+        case 'APROBADA': return "Cliente aceptó la propuesta. ¡Éxito!"
+        case 'RECHAZADA': return "Esta cotización no fue aceptada por el cliente."
+        default: return "Cotización en progreso, no visible para el cliente." // BORRADOR
+    }
+}
+
 export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[] }) {
     // Initialize with empty array to match potential empty server props,
     // actual data merging happens in useEffect to prevent hydration mismatch
@@ -76,16 +85,6 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
                 <div className="col-span-2 text-right">Acciones</div>
             </div>
 
-const getStatusTooltip = (status: string) => {
-    switch ((status || '').toUpperCase()) {
-        case 'ENVIADA': return "Enviada al cliente, esperando respuesta."
-            case 'APROBADA': return "Cliente aceptó la propuesta. ¡Éxito!"
-            case 'RECHAZADA': return "Esta cotización no fue aceptada por el cliente."
-            default: return "Cotización en progreso, no visible para el cliente." // BORRADOR
-    }
-}
-
-            // ... inside component ...
 
             {mergedQuotes.map((quote) => (
                 <Card key={quote.id || Math.random()} className="bg-[#1F1F1F] border-[#2D2D2D] rounded-[1.5rem] p-6 hover:border-[#F5CB5C]/50 hover:shadow-[0_0_20px_rgba(245,203,92,0.1)] transition-all duration-300 group cursor-default">
