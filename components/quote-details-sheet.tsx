@@ -192,45 +192,32 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                                 <Network className="w-5 h-5 text-[#F5CB5C]" />
                                 Arquitectura Propuesta
                             </h3>
-                            {/* Header Actions - Edit Only */}
-                            {quote.diagramDefinition && (
-                                !isEditingDiagram ? (
+                            {/* Header Actions - Save/Cancel Only (Visible during Edit) */}
+                            {quote.diagramDefinition && isEditingDiagram && (
+                                <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => {
-                                            setEditedDiagramCode(quote.diagramDefinition || '')
-                                            setIsEditingDiagram(true)
-                                        }}
-                                        className="text-[#F5CB5C] hover:text-[#E8EDDF] hover:bg-[#F5CB5C]/10 ml-auto"
+                                        onClick={() => setIsEditingDiagram(false)}
+                                        className="text-red-400 hover:text-red-300 hover:bg-red-400/10 flex-1 sm:flex-none"
+                                        disabled={isSavingDiagram}
                                     >
-                                        <Edit className="w-4 h-4 mr-2" /> Editar
+                                        <X className="w-4 h-4 mr-1" /> Cancelar
                                     </Button>
-                                ) : (
-                                    <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => setIsEditingDiagram(false)}
-                                            className="text-red-400 hover:text-red-300 hover:bg-red-400/10 flex-1 sm:flex-none"
-                                            disabled={isSavingDiagram}
-                                        >
-                                            <X className="w-4 h-4 mr-1" /> Cancelar
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            onClick={handleSaveDiagram}
-                                            className="bg-[#F5CB5C] text-[#242423] hover:bg-[#E0B84C] font-bold flex-1 sm:flex-none min-w-[100px]"
-                                            disabled={isSavingDiagram}
-                                        >
-                                            {isSavingDiagram ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
-                                            Guardar
-                                        </Button>
-                                    </div>
-                                )
+                                    <Button
+                                        size="sm"
+                                        onClick={handleSaveDiagram}
+                                        className="bg-[#F5CB5C] text-[#242423] hover:bg-[#E0B84C] font-bold flex-1 sm:flex-none min-w-[100px]"
+                                        disabled={isSavingDiagram}
+                                    >
+                                        {isSavingDiagram ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                                        Guardar
+                                    </Button>
+                                </div>
                             )}
                         </div>
 
+                        {/* AI Assistant Input */}
                         {quote.diagramDefinition || isEditingDiagram ? (
                             isEditingDiagram ? (
                                 <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-300">
@@ -290,32 +277,45 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                                         <MermaidDiagram chart={quote.diagramDefinition || ''} />
                                     </div>
 
-                                    {/* Download Button - Bottom Full Width */}
-                                    <Button
-                                        variant="outline"
-                                        onClick={async () => {
-                                            const element = document.getElementById('diagram-container');
-                                            if (element) {
-                                                try {
-                                                    const html2canvas = (await import('html2canvas')).default
-                                                    const canvas = await html2canvas(element, {
-                                                        backgroundColor: "#ffffff",
-                                                        scale: 2 // High Resolution
-                                                    })
-                                                    const a = document.createElement("a")
-                                                    a.download = `arquitectura_${quote.clientName.replace(/\s+/g, '_')}.png`
-                                                    a.href = canvas.toDataURL("image/png")
-                                                    a.click()
-                                                } catch (err) {
-                                                    console.error("Export failed", err)
-                                                    alert("No se pudo descargar el diagrama.")
+                                    <div className="flex flex-col gap-3">
+                                        {/* Edit Button - Replaces Header Action */}
+                                        <Button
+                                            onClick={() => {
+                                                setEditedDiagramCode(quote.diagramDefinition || '')
+                                                setIsEditingDiagram(true)
+                                            }}
+                                            className="w-full bg-[#F5CB5C]/10 text-[#F5CB5C] border border-[#F5CB5C]/30 hover:bg-[#F5CB5C] hover:text-[#242423] font-bold transition-all"
+                                        >
+                                            <Edit className="w-4 h-4 mr-2" /> Editar Diagrama
+                                        </Button>
+
+                                        {/* Download Button */}
+                                        <Button
+                                            variant="outline"
+                                            onClick={async () => {
+                                                const element = document.getElementById('diagram-container');
+                                                if (element) {
+                                                    try {
+                                                        const html2canvas = (await import('html2canvas')).default
+                                                        const canvas = await html2canvas(element, {
+                                                            backgroundColor: "#ffffff",
+                                                            scale: 2 // High Resolution
+                                                        })
+                                                        const a = document.createElement("a")
+                                                        a.download = `arquitectura_${quote.clientName.replace(/\s+/g, '_')}.png`
+                                                        a.href = canvas.toDataURL("image/png")
+                                                        a.click()
+                                                    } catch (err) {
+                                                        console.error("Export failed", err)
+                                                        alert("No se pudo descargar el diagrama.")
+                                                    }
                                                 }
-                                            }
-                                        }}
-                                        className="w-full border-dashed border-[#CFDBD5]/30 text-[#CFDBD5] hover:text-[#E8EDDF] hover:bg-[#2D2D2D] hover:border-[#F5CB5C] transition-all"
-                                    >
-                                        <Download className="w-4 h-4 mr-2" /> Descargar Diagrama PNG
-                                    </Button>
+                                            }}
+                                            className="w-full border-dashed border-[#CFDBD5]/30 text-[#CFDBD5] hover:text-[#E8EDDF] hover:bg-[#2D2D2D] hover:border-[#F5CB5C] transition-all"
+                                        >
+                                            <Download className="w-4 h-4 mr-2" /> Descargar Diagrama PNG
+                                        </Button>
+                                    </div>
                                 </div>
                             )
                         ) : (
