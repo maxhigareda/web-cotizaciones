@@ -231,53 +231,54 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                             )}
                         </div>
 
-                        {/* AI Assistant Input */}
-                        {!isEditingDiagram && (
-                            <div className="relative animate-in fade-in slide-in-from-top-2 duration-500">
-                                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                                    <Sparkles className="h-4 w-4 text-[#F5CB5C]" />
-                                </div>
-                                <Input
-                                    placeholder="IA: Describe un cambio (ej: 'Agrega un nodo de Power BI conectado al Lake')"
-                                    className="pl-10 pr-12 bg-[#171717] border-[#2D2D2D] text-[#E8EDDF] placeholder:text-[#CFDBD5]/30 focus-visible:ring-[#F5CB5C] h-10 transition-all hover:border-[#F5CB5C]/50"
-                                    value={aiPrompt}
-                                    onChange={(e) => setAiPrompt(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && aiPrompt && !isGeneratingAI) {
-                                            handleAIGenerate()
-                                        }
-                                    }}
-                                />
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="absolute right-1 top-1 h-8 w-8 text-[#F5CB5C] hover:text-[#E8EDDF] hover:bg-[#F5CB5C]/20"
-                                    onClick={handleAIGenerate}
-                                    disabled={!aiPrompt || isGeneratingAI}
-                                >
-                                    {isGeneratingAI ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-                                </Button>
-                            </div>
-                        )}
-
                         {quote.diagramDefinition || isEditingDiagram ? (
                             isEditingDiagram ? (
-                                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 animate-in fade-in zoom-in-95 duration-300">
+                                <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-300">
+                                    {/* AI Assistant - Visible ONLY in Edit Mode */}
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                            <Sparkles className="h-4 w-4 text-[#F5CB5C]" />
+                                        </div>
+                                        <Input
+                                            placeholder="IA: Describe un cambio (ej: 'Agrega un nodo de Power BI conectado al Lake')"
+                                            className="pl-10 pr-12 bg-[#171717] border-[#2D2D2D] text-[#E8EDDF] placeholder:text-[#CFDBD5]/30 focus-visible:ring-[#F5CB5C] h-10 transition-all hover:border-[#F5CB5C]/50"
+                                            value={aiPrompt}
+                                            onChange={(e) => setAiPrompt(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && aiPrompt && !isGeneratingAI) {
+                                                    handleAIGenerate()
+                                                }
+                                            }}
+                                        />
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="absolute right-1 top-1 h-8 w-8 text-[#F5CB5C] hover:text-[#E8EDDF] hover:bg-[#F5CB5C]/20"
+                                            onClick={handleAIGenerate}
+                                            disabled={!aiPrompt || isGeneratingAI}
+                                        >
+                                            {isGeneratingAI ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                                        </Button>
+                                    </div>
+
+                                    {/* Code Editor - Full Width */}
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-[#CFDBD5] uppercase">Código Mermaid</label>
                                         <Textarea
                                             value={editedDiagramCode}
                                             onChange={(e) => setEditedDiagramCode(e.target.value)}
-                                            className="font-mono text-xs bg-[#171717] border-[#2D2D2D] text-[#E8EDDF] resize-none h-[300px] focus-visible:ring-[#F5CB5C]"
+                                            className="font-mono text-xs bg-[#171717] border-[#2D2D2D] text-[#E8EDDF] resize-none h-[200px] focus-visible:ring-[#F5CB5C]"
                                         />
                                         <p className="text-[10px] text-[#CFDBD5]/50">
                                             Edita los nodos y conexiones para actualizar el diagrama en tiempo real.
                                         </p>
                                     </div>
+
+                                    {/* Preview - Full Width */}
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-[#CFDBD5] uppercase">Vista Previa</label>
-                                        <div className="bg-white rounded-xl overflow-hidden h-[300px] flex items-center justify-center border border-[#2D2D2D]">
-                                            <div className="scale-75 origin-center w-full">
+                                        <div className="bg-white rounded-xl overflow-hidden min-h-[400px] flex items-center justify-center border border-[#2D2D2D]">
+                                            <div className="scale-90 origin-center w-full">
                                                 <MermaidDiagram chart={editedDiagramCode} />
                                             </div>
                                         </div>
