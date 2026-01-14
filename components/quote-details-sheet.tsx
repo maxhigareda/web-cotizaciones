@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowRight, Calendar, DollarSign, FileText, User, Edit, Save, X, Loader2, Network } from "lucide-react"
+import { ArrowRight, Calendar, DollarSign, FileText, User, Edit, Save, X, Loader2, Network, Download } from "lucide-react"
 import { MermaidDiagram } from "./mermaid-diagram"
 import { updateQuoteDiagram, updateQuoteStatus } from "@/lib/actions"
 import { useRouter } from "next/navigation"
@@ -170,41 +170,80 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                                 <Network className="w-5 h-5 text-[#F5CB5C]" />
                                 Arquitectura Propuesta
                             </h3>
-                            {quote.diagramDefinition && !isEditingDiagram && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                        setEditedDiagramCode(quote.diagramDefinition || '')
-                                        setIsEditingDiagram(true)
-                                    }}
-                                    className="text-[#F5CB5C] hover:text-[#E8EDDF] hover:bg-[#F5CB5C]/10"
-                                >
-                                    <Edit className="w-4 h-4 mr-2" /> Editar
-                                </Button>
-                            )}
-                            {isEditingDiagram && (
-                                <div className="flex gap-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setIsEditingDiagram(false)}
-                                        className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
-                                        disabled={isSavingDiagram}
-                                    >
-                                        <X className="w-4 h-4 mr-2" /> Cancelar
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        onClick={handleSaveDiagram}
-                                        className="bg-[#F5CB5C] text-[#242423] hover:bg-[#E0B84C] font-bold"
-                                        disabled={isSavingDiagram}
-                                    >
-                                        {isSavingDiagram ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                                        Guardar
-                                    </Button>
-                                </div>
-                            )}
+                            <div className="flex gap-2">
+                                {quote.diagramDefinition && !isEditingDiagram && (
+                                    <>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={async () => {
+                                                const svg = document.querySelector('.mermaid svg')
+                                                if (svg) {
+                                                    const svgData = new XMLSerializer().serializeToString(svg)
+                                                    const canvas = document.createElement("canvas")
+                                                    const ctx = canvas.getContext("2d")
+                                                    const img = new Image()
+                                                    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" })
+                                                    const url = URL.createObjectURL(svgBlob)
+
+                                                    img.onload = () => {
+                                                        canvas.width = img.width
+                                                        canvas.height = img.height
+                                                        if (ctx) {
+                                                            ctx.fillStyle = "white"
+                                                            ctx.fillRect(0, 0, canvas.width, canvas.height)
+                                                            ctx.drawImage(img, 0, 0)
+                                                        }
+                                                        const a = document.createElement("a")
+                                                        a.download = `arquitectura_${quote.clientName.replace(/\s+/g, '_')}.png`
+                                                        a.href = canvas.toDataURL("image/png")
+                                                        a.click()
+                                                        URL.revokeObjectURL(url)
+                                                    }
+                                                    img.src = url
+                                                }
+                                            }}
+                                            className="text-[#CFDBD5] hover:text-[#E8EDDF] hover:bg-[#2D2D2D]"
+                                            title="Descargar Diagrama"
+                                        >
+                                            <Download className="w-4 h-4 mr-2" /> Descargar
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                setEditedDiagramCode(quote.diagramDefinition || '')
+                                                setIsEditingDiagram(true)
+                                            }}
+                                            className="text-[#F5CB5C] hover:text-[#E8EDDF] hover:bg-[#F5CB5C]/10"
+                                        >
+                                            <Edit className="w-4 h-4 mr-2" /> Editar
+                                        </Button>
+                                    </>
+                                )}
+                                {isEditingDiagram && (
+                                    <>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setIsEditingDiagram(false)}
+                                            className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                                            disabled={isSavingDiagram}
+                                        >
+                                            <X className="w-4 h-4 mr-2" /> Cancelar
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            onClick={handleSaveDiagram}
+                                            className="bg-[#F5CB5C] text-[#242423] hover:bg-[#E0B84C] font-bold"
+                                            disabled={isSavingDiagram}
+                                        >
+                                            {isSavingDiagram ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                                            Guardar
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
                         </div>
 
                         {quote.diagramDefinition || isEditingDiagram ? (
