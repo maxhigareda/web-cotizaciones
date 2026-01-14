@@ -119,7 +119,7 @@ export async function calculateQuote(params: TechnicalParameters): Promise<CostB
 
 // Helper: Send to Monday via n8n
 // Helper: Send to Monday via n8n
-async function sendToMonday(quote: any, params: any, breakdown: any) {
+async function sendToMonday(quote: any, params: any, breakdown: any, userName: string) {
     const webhookUrl = process.env.N8N_MONDAY_WEBHOOK
     if (!webhookUrl) return { synced: false, reason: "No Webhook URL configured" }
 
@@ -127,6 +127,7 @@ async function sendToMonday(quote: any, params: any, breakdown: any) {
         const payload = {
             action: "create",
             id: Number(quote.id) || quote.id,
+            userName: userName, // Added field
             clientName: quote.clientName,
             project: quote.projectType,
             description: params.description || '',
@@ -187,6 +188,15 @@ export async function saveQuote(data: {
         return { success: false, error: "No user logged in" }
     }
 
+    // Fetch user details for Webhook
+    let userEmail = "unknown"
+    try {
+        const user = await prisma.user.findUnique({ where: { id: userId } })
+        if (user) userEmail = user.email
+    } catch (e) {
+        console.warn("Failed to fetch user email for webhook", e)
+    }
+
     console.log("Saving quote for user:", userId)
 
     try {
@@ -204,7 +214,7 @@ export async function saveQuote(data: {
         })
 
         // Trigger Monday Sync (Fire and forget, but return status)
-        const syncResult = await sendToMonday(result, data.params, data.breakdown)
+        const syncResult = await sendToMonday(result, data.params, data.breakdown, userEmail)
 
         return { success: true, quote: result, sync: syncResult }
     } catch (e: any) {
@@ -358,7 +368,7 @@ export async function updateQuoteDiagram(quoteId: string, newDiagramCode: string
 
 
 
-async function sendStatusUpdateToMonday(quote: any, userId: string) {
+async function sendStatusUpdateToMonday(quote: any, userId: string, userName: string) {
     const webhookUrl = process.env.N8N_MONDAY_WEBHOOK
     if (!webhookUrl) return
 
@@ -366,6 +376,7 @@ async function sendStatusUpdateToMonday(quote: any, userId: string) {
         const payload = {
             action: "update",
             id: Number(quote.id) || quote.id,
+            userName: userName, // Added field
             status: quote.status,
             clientName: quote.clientName,
             totalCost: Number(quote.estimatedCost),
@@ -389,6 +400,15 @@ export async function updateQuoteStatus(quoteId: string, status: string) {
 
     if (!userId) throw new Error("Unauthorized")
 
+    // Fetch user details for Webhook
+    let userEmail = "unknown"
+    try {
+        const user = await prisma.user.findUnique({ where: { id: userId } })
+        if (user) userEmail = user.email
+    } catch (e) {
+        console.warn("Failed to fetch user email for webhook", e)
+    }
+
     try {
         const updatedQuote = await prisma.quote.update({
             where: { id: quoteId },
@@ -396,7 +416,7 @@ export async function updateQuoteStatus(quoteId: string, status: string) {
         })
 
         // Notify n8n of status change
-        await sendStatusUpdateToMonday(updatedQuote, userId)
+        await sendStatusUpdateToMonday(updatedQuote, userId, userEmail)
 
         revalidatePath('/dashboard')
         revalidatePath('/admin')
