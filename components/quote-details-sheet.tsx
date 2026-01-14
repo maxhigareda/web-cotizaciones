@@ -112,7 +112,7 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                                 Información completa del proyecto y parámetros.
                             </SheetDescription>
                         </div>
-                        <div className="w-[180px]">
+                        <div className="w-[180px] mr-8">
                             <Select value={status} onValueChange={handleStatusChange} disabled={isUpdatingStatus}>
                                 <SelectTrigger className="bg-[#1F1F1F] border-[#2D2D2D] text-[#E8EDDF] font-bold">
                                     <SelectValue />
