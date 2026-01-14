@@ -105,14 +105,14 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
             </SheetTrigger>
             <SheetContent className="bg-[#171717] border-l-[#2D2D2D] w-[400px] sm:w-[600px] md:w-[800px] overflow-y-auto">
                 <SheetHeader className="mb-8 space-y-4">
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-end justify-between">
                         <div>
                             <SheetTitle className="text-2xl font-black text-[#E8EDDF]">Detalle de Cotización</SheetTitle>
                             <SheetDescription className="text-[#CFDBD5] text-base">
                                 Información completa del proyecto y parámetros.
                             </SheetDescription>
                         </div>
-                        <div className="w-[180px] mr-8">
+                        <div className="w-[180px]">
                             <Select value={status} onValueChange={handleStatusChange} disabled={isUpdatingStatus}>
                                 <SelectTrigger className="bg-[#1F1F1F] border-[#2D2D2D] text-[#E8EDDF] font-bold">
                                     <SelectValue />
