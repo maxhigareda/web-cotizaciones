@@ -289,26 +289,54 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                     </div>
 
                     {/* Technical Specs */}
-                    <div className="space-y-4">
+                    <div className="space-y-4 pb-8">
                         <h3 className="text-lg font-bold text-[#E8EDDF] px-2 flex items-center gap-2">
                             Especificaciones Técnicas
                         </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 bg-[#1F1F1F] rounded-2xl border border-[#2D2D2D]">
-                                <span className="text-xs text-[#CFDBD5]/60 uppercase font-bold block mb-1">Usuarios</span>
-                                <span className="text-lg font-medium text-[#E8EDDF]">{params.usersCount || 0}</span>
+                        {/* Expanded Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {/* Row 1: Users & Data */}
+                            <div className="p-4 bg-[#1F1F1F] rounded-2xl border border-[#2D2D2D] hover:border-[#F5CB5C]/30 transition-colors">
+                                <span className="text-[10px] text-[#CFDBD5]/60 uppercase font-black block mb-2 tracking-widest">Usuarios</span>
+                                <span className="text-xl font-bold text-[#E8EDDF]">{params.usersCount || 0}</span>
                             </div>
-                            <div className="p-4 bg-[#1F1F1F] rounded-2xl border border-[#2D2D2D]">
-                                <span className="text-xs text-[#CFDBD5]/60 uppercase font-bold block mb-1">Volumen Datos</span>
-                                <span className="text-lg font-medium text-[#E8EDDF]">{params.dataVolume || 'N/A'}</span>
+                            <div className="p-4 bg-[#1F1F1F] rounded-2xl border border-[#2D2D2D] hover:border-[#F5CB5C]/30 transition-colors">
+                                <span className="text-[10px] text-[#CFDBD5]/60 uppercase font-black block mb-2 tracking-widest">Volumen</span>
+                                <span className="text-xl font-bold text-[#E8EDDF]">{params.dataVolume || 'N/A'}</span>
                             </div>
-                            <div className="p-4 bg-[#1F1F1F] rounded-2xl border border-[#2D2D2D]">
-                                <span className="text-xs text-[#CFDBD5]/60 uppercase font-bold block mb-1">Complejidad</span>
-                                <span className="text-lg font-medium text-[#E8EDDF] capitalize">{params.reportComplexity || 'N/A'}</span>
+
+                            {/* Row 2: Complexity & Frequency */}
+                            <div className="p-4 bg-[#1F1F1F] rounded-2xl border border-[#2D2D2D] hover:border-[#F5CB5C]/30 transition-colors">
+                                <span className="text-[10px] text-[#CFDBD5]/60 uppercase font-black block mb-2 tracking-widest">Complejidad</span>
+                                <span className="text-lg font-medium text-[#F5CB5C] capitalize truncate" title={params.complexity || params.reportComplexity}>
+                                    {params.complexity || params.reportComplexity || 'N/A'}
+                                </span>
                             </div>
-                            <div className="p-4 bg-[#1F1F1F] rounded-2xl border border-[#2D2D2D]">
-                                <span className="text-xs text-[#CFDBD5]/60 uppercase font-bold block mb-1">Frecuencia</span>
-                                <span className="text-lg font-medium text-[#E8EDDF] capitalize">{params.updateFrequency || 'N/A'}</span>
+                            <div className="p-4 bg-[#1F1F1F] rounded-2xl border border-[#2D2D2D] hover:border-[#F5CB5C]/30 transition-colors">
+                                <span className="text-[10px] text-[#CFDBD5]/60 uppercase font-black block mb-2 tracking-widest">Frecuencia</span>
+                                <span className="text-lg font-medium text-[#F5CB5C] capitalize truncate" title={params.updateFrequency}>
+                                    {params.updateFrequency || 'N/A'}
+                                </span>
+                            </div>
+
+                            {/* Row 3: Pipelines & Notebooks */}
+                            <div className="p-4 bg-[#1F1F1F] rounded-2xl border border-[#2D2D2D] hover:border-[#F5CB5C]/30 transition-colors">
+                                <span className="text-[10px] text-[#CFDBD5]/60 uppercase font-black block mb-2 tracking-widest">Pipelines</span>
+                                <span className="text-xl font-bold text-[#E8EDDF]">{params.pipelinesCount || 0}</span>
+                            </div>
+                            <div className="p-4 bg-[#1F1F1F] rounded-2xl border border-[#2D2D2D] hover:border-[#F5CB5C]/30 transition-colors">
+                                <span className="text-[10px] text-[#CFDBD5]/60 uppercase font-black block mb-2 tracking-widest">Notebooks</span>
+                                <span className="text-xl font-bold text-[#E8EDDF]">{params.notebooksCount || 0}</span>
+                            </div>
+
+                            {/* Row 4: Reports & Automations (if exist) */}
+                            <div className="p-4 bg-[#1F1F1F] rounded-2xl border border-[#2D2D2D] hover:border-[#F5CB5C]/30 transition-colors">
+                                <span className="text-[10px] text-[#CFDBD5]/60 uppercase font-black block mb-2 tracking-widest">Reportes</span>
+                                <span className="text-xl font-bold text-[#E8EDDF]">{params.reportsCount || 0}</span>
+                            </div>
+                            <div className="p-4 bg-[#1F1F1F] rounded-2xl border border-[#2D2D2D] hover:border-[#F5CB5C]/30 transition-colors">
+                                <span className="text-[10px] text-[#CFDBD5]/60 uppercase font-black block mb-2 tracking-widest">Automations</span>
+                                <span className="text-xl font-bold text-[#E8EDDF]">{params.automationsCount || 0}</span>
                             </div>
                         </div>
                     </div>
