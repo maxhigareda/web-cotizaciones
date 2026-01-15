@@ -36,6 +36,10 @@ export async function POST(request: Request) {
             }
         }
 
+        if (updates.serviceType) {
+            dataToUpdate.serviceType = updates.serviceType
+        }
+
         // Check if there is anything to update
         if (Object.keys(dataToUpdate).length === 0) {
             return NextResponse.json({

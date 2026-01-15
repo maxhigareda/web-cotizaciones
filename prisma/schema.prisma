@@ -33,6 +33,7 @@ model Quote {
   userId               String   // Required to prevent orphan quotes
   user                 User?    @relation(fields: [userId], references: [id])
   status               String   @default("BORRADOR") // BORRADOR, ENVIADA, APROBADA, RECHAZADA
+  serviceType          String   @default("Proyecto") // Proyecto, Sustain, Staffing
 }
 
 model User {

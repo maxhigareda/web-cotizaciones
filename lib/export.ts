@@ -39,6 +39,7 @@ interface QuoteState {
     }
     durationMonths: number
     supportHours: 'business' | '24/7'
+    serviceType?: string
 }
 
 // -- CSV Export --
@@ -141,6 +142,39 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
         y += 7
     })
 
+    // 2.1 Special Sections based on Service Type
+    if (data.serviceType === 'Sustain') {
+        y += 10
+        doc.setFontSize(14)
+        doc.setFont("helvetica", "bold")
+        doc.setTextColor(COLOR_CHARCOAL)
+        doc.text("3. Niveles de Servicio (SLA)", margin, y)
+        y += 10
+
+        doc.setFontSize(10)
+        doc.setFont("helvetica", "normal")
+        doc.setTextColor(COLOR_TEXT)
+        doc.text("• Continuidad Operativa: Mantenimiento correctivo y evolutivo.", margin + 5, y)
+        y += 7
+        doc.text(`• Respuesta ante Incidentes: ${data.supportHours === '24/7' ? '< 1 hora (Crítico)' : '< 4 horas (Business Hours)'}`, margin + 5, y)
+        y += 7
+        doc.text("• Monitoreo Proactivo de Pipelines y Procesos", margin + 5, y)
+        y += 7
+    } else if (data.serviceType === 'Staffing') {
+        y += 10
+        doc.setFontSize(14)
+        doc.setFont("helvetica", "bold")
+        doc.setTextColor(COLOR_CHARCOAL)
+        doc.text("3. Perfiles y Seniority", margin, y)
+        y += 10
+
+        doc.setFontSize(10)
+        doc.setFont("helvetica", "normal")
+        doc.setTextColor(COLOR_TEXT)
+        doc.text("Los perfiles asignados cuentan con certificación y experiencia comprobada en el stack tecnológico seleccionado.", margin + 5, y, { maxWidth: pageWidth - (margin * 2), align: 'left' })
+        y += 10
+    }
+
     // Footer P1
     doc.setFontSize(8)
     doc.setTextColor(150)
@@ -158,8 +192,8 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
     doc.text("ARQUITECTURA Y PRESUPUESTO", margin, y)
     y += 15
 
-    // 3. Diagram (Centered Large)
-    if (data.diagramImage) {
+    // 3. Diagram (Centered Large) - Skip if Staffing
+    if (data.diagramImage && data.serviceType !== 'Staffing') {
         doc.setFontSize(14)
         doc.setFont("helvetica", "bold")
         doc.setTextColor(COLOR_CHARCOAL)

@@ -130,6 +130,7 @@ async function sendToMonday(quote: any, params: any, breakdown: any, userName: s
             userName: userName, // Added field
             clientName: quote.clientName,
             project: quote.projectType,
+            serviceType: quote.serviceType, // Sync serviceType
             description: params.description || '',
             totalCost: Number(quote.estimatedCost),
             date: new Date().toISOString(),
@@ -177,6 +178,7 @@ async function sendToMonday(quote: any, params: any, breakdown: any, userName: s
 export async function saveQuote(data: {
     clientName: string,
     projectType: string,
+    serviceType: string, // Added serviceType
     params: TechnicalParameters,
     breakdown: CostBreakdown
 }) {
@@ -204,6 +206,7 @@ export async function saveQuote(data: {
             data: {
                 clientName: data.clientName,
                 projectType: data.projectType,
+                serviceType: data.serviceType, // Save serviceType
                 technicalParameters: JSON.stringify(data.params),
                 estimatedCost: data.breakdown.totalMonthlyCost,
                 staffingRequirements: JSON.stringify(data.breakdown.roles),

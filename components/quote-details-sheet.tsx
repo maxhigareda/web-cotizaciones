@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowRight, Calendar, DollarSign, FileText, User, Edit, Save, X, Loader2, Network, Download, Sparkles } from "lucide-react"
+import { ArrowRight, Calendar, DollarSign, FileText, User, Edit, Save, X, Loader2, Network, Download, Sparkles, Briefcase } from "lucide-react"
 import { MermaidDiagram } from "./mermaid-diagram"
 import { updateQuoteDiagram, updateQuoteStatus } from "@/lib/actions"
 import { generateMermaidUpdate } from "@/lib/ai"
@@ -30,6 +30,7 @@ interface QuoteDetailsSheetProps {
         technicalParameters: string
         diagramDefinition?: string
         status?: string
+        serviceType?: string
     }
     onQuoteUpdated?: (updatedQuote: any) => void
 }
@@ -161,6 +162,16 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                                 <h3 className="text-xs font-bold text-[#CFDBD5] uppercase tracking-wider mb-1">Cliente</h3>
                                 <p className="text-xl font-bold text-[#E8EDDF]">{quote.clientName}</p>
                             </div>
+
+                            <div className="flex items-start gap-4">
+                                <div className="p-3 bg-[#171717] rounded-xl border border-[#2D2D2D]">
+                                    <Briefcase className="w-6 h-6 text-[#CFDBD5]" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xs font-bold text-[#CFDBD5] uppercase tracking-wider mb-1">Tipo de Servicio</h3>
+                                    <p className="text-xl font-bold text-[#E8EDDF]">{quote.serviceType || 'Proyecto'}</p>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="flex items-start gap-4">
@@ -186,148 +197,150 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                     </div>
 
                     {/* Architecture Diagram Editor */}
-                    <div className="p-6 bg-[#1F1F1F] rounded-[1.5rem] border border-[#2D2D2D] flex flex-col gap-6 group relative">
-                        <div className="flex flex-wrap items-center justify-between gap-4">
-                            <h3 className="text-lg font-bold text-[#E8EDDF] flex items-center gap-2">
-                                <Network className="w-5 h-5 text-[#F5CB5C]" />
-                                Arquitectura Propuesta
-                            </h3>
-                            {/* Header Actions - Save/Cancel Only (Visible during Edit) */}
-                            {quote.diagramDefinition && isEditingDiagram && (
-                                <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setIsEditingDiagram(false)}
-                                        className="text-red-400 hover:text-red-300 hover:bg-red-400/10 flex-1 sm:flex-none"
-                                        disabled={isSavingDiagram}
-                                    >
-                                        <X className="w-4 h-4 mr-1" /> Cancelar
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        onClick={handleSaveDiagram}
-                                        className="bg-[#F5CB5C] text-[#242423] hover:bg-[#E0B84C] font-bold flex-1 sm:flex-none min-w-[100px]"
-                                        disabled={isSavingDiagram}
-                                    >
-                                        {isSavingDiagram ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
-                                        Guardar
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* AI Assistant Input */}
-                        {quote.diagramDefinition || isEditingDiagram ? (
-                            isEditingDiagram ? (
-                                <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-300">
-                                    {/* AI Assistant - Visible ONLY in Edit Mode */}
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                                            <Sparkles className="h-4 w-4 text-[#F5CB5C]" />
-                                        </div>
-                                        <Input
-                                            placeholder="IA: Describe un cambio (ej: 'Agrega un nodo de Power BI conectado al Lake')"
-                                            className="pl-10 pr-12 bg-[#171717] border-[#2D2D2D] text-[#E8EDDF] placeholder:text-[#CFDBD5]/30 focus-visible:ring-[#F5CB5C] h-10 transition-all hover:border-[#F5CB5C]/50"
-                                            value={aiPrompt}
-                                            onChange={(e) => setAiPrompt(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && aiPrompt && !isGeneratingAI) {
-                                                    handleAIGenerate()
-                                                }
-                                            }}
-                                        />
+                    {(!quote.serviceType || quote.serviceType !== 'Staffing') && (
+                        <div className="p-6 bg-[#1F1F1F] rounded-[1.5rem] border border-[#2D2D2D] flex flex-col gap-6 group relative">
+                            <div className="flex flex-wrap items-center justify-between gap-4">
+                                <h3 className="text-lg font-bold text-[#E8EDDF] flex items-center gap-2">
+                                    <Network className="w-5 h-5 text-[#F5CB5C]" />
+                                    Arquitectura Propuesta
+                                </h3>
+                                {/* Header Actions - Save/Cancel Only (Visible during Edit) */}
+                                {quote.diagramDefinition && isEditingDiagram && (
+                                    <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                                         <Button
-                                            size="icon"
                                             variant="ghost"
-                                            className="absolute right-1 top-1 h-8 w-8 text-[#F5CB5C] hover:text-[#E8EDDF] hover:bg-[#F5CB5C]/20"
-                                            onClick={handleAIGenerate}
-                                            disabled={!aiPrompt || isGeneratingAI}
+                                            size="sm"
+                                            onClick={() => setIsEditingDiagram(false)}
+                                            className="text-red-400 hover:text-red-300 hover:bg-red-400/10 flex-1 sm:flex-none"
+                                            disabled={isSavingDiagram}
                                         >
-                                            {isGeneratingAI ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                                            <X className="w-4 h-4 mr-1" /> Cancelar
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            onClick={handleSaveDiagram}
+                                            className="bg-[#F5CB5C] text-[#242423] hover:bg-[#E0B84C] font-bold flex-1 sm:flex-none min-w-[100px]"
+                                            disabled={isSavingDiagram}
+                                        >
+                                            {isSavingDiagram ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                                            Guardar
                                         </Button>
                                     </div>
+                                )}
+                            </div>
 
-                                    {/* Code Editor - Full Width */}
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold text-[#CFDBD5] uppercase">Código Mermaid</label>
-                                        <Textarea
-                                            value={editedDiagramCode}
-                                            onChange={(e) => setEditedDiagramCode(e.target.value)}
-                                            className="font-mono text-xs bg-[#171717] border-[#2D2D2D] text-[#E8EDDF] resize-none h-[200px] focus-visible:ring-[#F5CB5C]"
-                                        />
-                                        <p className="text-[10px] text-[#CFDBD5]/50">
-                                            Edita los nodos y conexiones para actualizar el diagrama en tiempo real.
-                                        </p>
-                                    </div>
+                            {/* AI Assistant Input */}
+                            {quote.diagramDefinition || isEditingDiagram ? (
+                                isEditingDiagram ? (
+                                    <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-300">
+                                        {/* AI Assistant - Visible ONLY in Edit Mode */}
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                                <Sparkles className="h-4 w-4 text-[#F5CB5C]" />
+                                            </div>
+                                            <Input
+                                                placeholder="IA: Describe un cambio (ej: 'Agrega un nodo de Power BI conectado al Lake')"
+                                                className="pl-10 pr-12 bg-[#171717] border-[#2D2D2D] text-[#E8EDDF] placeholder:text-[#CFDBD5]/30 focus-visible:ring-[#F5CB5C] h-10 transition-all hover:border-[#F5CB5C]/50"
+                                                value={aiPrompt}
+                                                onChange={(e) => setAiPrompt(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && aiPrompt && !isGeneratingAI) {
+                                                        handleAIGenerate()
+                                                    }
+                                                }}
+                                            />
+                                            <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                className="absolute right-1 top-1 h-8 w-8 text-[#F5CB5C] hover:text-[#E8EDDF] hover:bg-[#F5CB5C]/20"
+                                                onClick={handleAIGenerate}
+                                                disabled={!aiPrompt || isGeneratingAI}
+                                            >
+                                                {isGeneratingAI ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+                                            </Button>
+                                        </div>
 
-                                    {/* Preview - Full Width */}
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold text-[#CFDBD5] uppercase">Vista Previa</label>
-                                        <div className="bg-white rounded-xl overflow-hidden min-h-[400px] flex items-center justify-center border border-[#2D2D2D]">
-                                            <div className="scale-90 origin-center w-full">
-                                                <MermaidDiagram chart={editedDiagramCode} />
+                                        {/* Code Editor - Full Width */}
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-[#CFDBD5] uppercase">Código Mermaid</label>
+                                            <Textarea
+                                                value={editedDiagramCode}
+                                                onChange={(e) => setEditedDiagramCode(e.target.value)}
+                                                className="font-mono text-xs bg-[#171717] border-[#2D2D2D] text-[#E8EDDF] resize-none h-[200px] focus-visible:ring-[#F5CB5C]"
+                                            />
+                                            <p className="text-[10px] text-[#CFDBD5]/50">
+                                                Edita los nodos y conexiones para actualizar el diagrama en tiempo real.
+                                            </p>
+                                        </div>
+
+                                        {/* Preview - Full Width */}
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-[#CFDBD5] uppercase">Vista Previa</label>
+                                            <div className="bg-white rounded-xl overflow-hidden min-h-[400px] flex items-center justify-center border border-[#2D2D2D]">
+                                                <div className="scale-90 origin-center w-full">
+                                                    <MermaidDiagram chart={editedDiagramCode} />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col gap-4">
-                                    <div id="diagram-container" className="bg-white rounded-xl p-4 overflow-hidden min-h-[200px] border border-[#2D2D2D] shadow-inner flex items-center justify-center">
-                                        <MermaidDiagram chart={quote.diagramDefinition || ''} />
-                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-4">
+                                        <div id="diagram-container" className="bg-white rounded-xl p-4 overflow-hidden min-h-[200px] border border-[#2D2D2D] shadow-inner flex items-center justify-center">
+                                            <MermaidDiagram chart={quote.diagramDefinition || ''} />
+                                        </div>
 
-                                    <div className="flex flex-col gap-3">
-                                        {/* Edit Button - Replaces Header Action */}
-                                        <Button
-                                            onClick={() => {
-                                                setEditedDiagramCode(quote.diagramDefinition || '')
-                                                setIsEditingDiagram(true)
-                                            }}
-                                            className="w-full bg-[#F5CB5C]/10 text-[#F5CB5C] border border-[#F5CB5C]/30 hover:bg-[#F5CB5C] hover:text-[#242423] font-bold transition-all"
-                                        >
-                                            <Edit className="w-4 h-4 mr-2" /> Editar Diagrama
-                                        </Button>
+                                        <div className="flex flex-col gap-3">
+                                            {/* Edit Button - Replaces Header Action */}
+                                            <Button
+                                                onClick={() => {
+                                                    setEditedDiagramCode(quote.diagramDefinition || '')
+                                                    setIsEditingDiagram(true)
+                                                }}
+                                                className="w-full bg-[#F5CB5C]/10 text-[#F5CB5C] border border-[#F5CB5C]/30 hover:bg-[#F5CB5C] hover:text-[#242423] font-bold transition-all"
+                                            >
+                                                <Edit className="w-4 h-4 mr-2" /> Editar Diagrama
+                                            </Button>
 
-                                        {/* Download Button */}
-                                        <Button
-                                            variant="outline"
-                                            onClick={async () => {
-                                                const element = document.getElementById('diagram-container');
-                                                if (element) {
-                                                    try {
-                                                        const html2canvas = (await import('html2canvas')).default
-                                                        const canvas = await html2canvas(element, {
-                                                            backgroundColor: "#ffffff",
-                                                            scale: 2 // High Resolution
-                                                        })
-                                                        const a = document.createElement("a")
-                                                        a.download = `arquitectura_${quote.clientName.replace(/\s+/g, '_')}.png`
-                                                        a.href = canvas.toDataURL("image/png")
-                                                        a.click()
-                                                    } catch (err) {
-                                                        console.error("Export failed", err)
-                                                        alert("No se pudo descargar el diagrama.")
+                                            {/* Download Button */}
+                                            <Button
+                                                variant="outline"
+                                                onClick={async () => {
+                                                    const element = document.getElementById('diagram-container');
+                                                    if (element) {
+                                                        try {
+                                                            const html2canvas = (await import('html2canvas')).default
+                                                            const canvas = await html2canvas(element, {
+                                                                backgroundColor: "#ffffff",
+                                                                scale: 2 // High Resolution
+                                                            })
+                                                            const a = document.createElement("a")
+                                                            a.download = `arquitectura_${quote.clientName.replace(/\s+/g, '_')}.png`
+                                                            a.href = canvas.toDataURL("image/png")
+                                                            a.click()
+                                                        } catch (err) {
+                                                            console.error("Export failed", err)
+                                                            alert("No se pudo descargar el diagrama.")
+                                                        }
                                                     }
-                                                }
-                                            }}
-                                            className="w-full border-dashed border-[#CFDBD5]/30 text-[#CFDBD5] hover:text-[#E8EDDF] hover:bg-[#2D2D2D] hover:border-[#F5CB5C] transition-all"
-                                        >
-                                            <Download className="w-4 h-4 mr-2" /> Descargar Diagrama PNG
-                                        </Button>
+                                                }}
+                                                className="w-full border-dashed border-[#CFDBD5]/30 text-[#CFDBD5] hover:text-[#E8EDDF] hover:bg-[#2D2D2D] hover:border-[#F5CB5C] transition-all"
+                                            >
+                                                <Download className="w-4 h-4 mr-2" /> Descargar Diagrama PNG
+                                            </Button>
+                                        </div>
                                     </div>
+                                )
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-[200px] bg-[#171717] border border-dashed border-[#2D2D2D] rounded-xl text-center">
+                                    <Network className="w-10 h-10 text-[#2D2D2D] mb-3" />
+                                    <p className="text-[#CFDBD5] font-bold">Diagrama no disponible</p>
+                                    <p className="text-xs text-[#CFDBD5]/50 mt-1 max-w-[250px]">
+                                        Esta cotización no tiene una arquitectura generada.
+                                    </p>
                                 </div>
-                            )
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-[200px] bg-[#171717] border border-dashed border-[#2D2D2D] rounded-xl text-center">
-                                <Network className="w-10 h-10 text-[#2D2D2D] mb-3" />
-                                <p className="text-[#CFDBD5] font-bold">Diagrama no disponible</p>
-                                <p className="text-xs text-[#CFDBD5]/50 mt-1 max-w-[250px]">
-                                    Esta cotización no tiene una arquitectura generada.
-                                </p>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Cost */}
                     <div className="p-6 bg-gradient-to-br from-[#1F1F1F] to-[#242423] rounded-[1.5rem] border border-[#F5CB5C]/20 relative overflow-hidden group">
