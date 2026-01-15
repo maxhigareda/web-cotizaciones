@@ -3,9 +3,13 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 
 export async function POST(request: Request) {
+    let quoteIdForError = 'unknown'
+
     try {
         const body = await request.json()
         const { id, updates } = body
+
+        if (id) quoteIdForError = id
 
         // Validate basic input structure
         if (!id || !updates || typeof updates !== 'object') {
@@ -63,9 +67,9 @@ export async function POST(request: Request) {
 
         // Check for Prisma "Record Not Found" error
         if (error.code === 'P2025') {
-            console.warn(`[Monday Sync] Quote not found: ${id}`)
+            console.warn(`[Monday Sync] Quote not found: ${quoteIdForError}`)
             return NextResponse.json(
-                { success: false, error: 'Quote ID not found in database', requestedId: id },
+                { success: false, error: 'Quote ID not found in database', requestedId: quoteIdForError },
                 { status: 404 }
             )
         }
