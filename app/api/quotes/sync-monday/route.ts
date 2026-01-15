@@ -21,9 +21,7 @@ export async function POST(request: Request) {
         const updatedQuote = await prisma.quote.update({
             where: { id: id },
             data: {
-                status: status,
-                // We might want to track when it was last updated from external source
-                updatedAt: new Date()
+                status: status
             },
         })
 
