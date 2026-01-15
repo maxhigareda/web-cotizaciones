@@ -148,6 +148,11 @@ async function sendToMonday(quote: any, params: any, breakdown: any, userName: s
             // 2. Parámetros Técnicos
             technical: {
                 complexity: params.complexity,
+                stack: params.techStack ? params.techStack.join(', ') : '',
+                // Staffing Specifics
+                staffing: params.staffingDetails ? params.staffingDetails : null,
+                // Sustain Specifics
+                sustain: params.sustainDetails ? params.sustainDetails : null,
                 frequency: params.updateFrequency,
                 dataVolume: params.dataVolume,
                 pipelines: Number(params.pipelinesCount),

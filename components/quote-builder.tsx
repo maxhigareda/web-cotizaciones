@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { MermaidDiagram } from "@/components/mermaid-diagram"
-import { Wand2, Download, FileText, Check, ShieldAlert, Network, Cpu, Calculator, Save, Loader2, ClipboardList, Database, Users, Briefcase, Layers, AlertTriangle, Activity, Zap, Edit, X, RefreshCw, ImageDown, Sparkles, Undo2 } from "lucide-react"
+import { Wand2, Download, FileText, Check, ShieldAlert, Network, Cpu, Calculator, Save, Loader2, ClipboardList, Database, Users, Briefcase, Layers, AlertTriangle, Activity, Zap, Edit, X, RefreshCw, ImageDown, Sparkles, Undo2, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { saveQuote } from "@/lib/actions"
 import { generateMermaidUpdate } from "@/lib/ai"
@@ -76,6 +76,24 @@ interface QuoteState {
     // Duration & Support
     durationMonths: number
     supportHours: 'business' | '24/7'
+
+    // Wizard Data
+    staffingDetails: {
+        profiles: Array<{
+            id: string
+            role: string
+            seniority: string
+            skills: string
+            count: number
+            startDate: string
+            endDate: string
+        }>
+    }
+    sustainDetails: {
+        technicalDescription: string
+        tools: string[]
+        operationHours: string
+    }
 }
 
 const INITIAL_STATE: QuoteState = {
@@ -117,7 +135,16 @@ const INITIAL_STATE: QuoteState = {
         countriesCount: 1
     },
     durationMonths: 6,
-    supportHours: 'business'
+    supportHours: 'business',
+
+    staffingDetails: {
+        profiles: []
+    },
+    sustainDetails: {
+        technicalDescription: '',
+        tools: [],
+        operationHours: 'business'
+    }
 }
 
 const TECH_OPTIONS = [
@@ -146,7 +173,16 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
     const [isSaving, setIsSaving] = useState(false)
     const [isExporting, setIsExporting] = useState(false)
     const [exportType, setExportType] = useState<'pdf' | 'word' | null>(null)
+    const [wizardStep, setWizardStep] = useState(0) // 0: Selection, 1: Form
     const router = useRouter()
+
+    const handleStepSelection = (type: 'Proyecto' | 'Staffing' | 'Sustain') => {
+        updateState('serviceType', type)
+        if (type === 'Sustain') {
+            updateCriticitness('enabled', true)
+        }
+        setWizardStep(1)
+    }
 
     const handleDownloadDiagram = async () => {
         try {
@@ -524,6 +560,42 @@ graph TD
         }
     }, [state, manualDiagramCode])
 
+    // --- RENDER WIZARD STEP 0 (SELECTION) ---
+    if (wizardStep === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-[#333533] p-6 animate-in fade-in zoom-in-95 duration-500">
+                <div className="text-center mb-16 space-y-4">
+                    <h1 className="text-6xl font-black text-[#E8EDDF] tracking-tighter">
+                        Nueva <span className="text-[#F5CB5C]">Estimación</span>
+                    </h1>
+                    <p className="text-[#CFDBD5] text-xl max-w-2xl mx-auto">
+                        Seleccione el tipo de servicio para configurar la cotización adecuada.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full">
+                    {[
+                        { id: 'Proyecto', icon: Network, title: 'Proyecto', desc: 'Estimación basada en entregables, arquitectura de datos y roadmap de implementación.' },
+                        { id: 'Staffing', icon: Briefcase, title: 'Staffing', desc: 'Solicitud de perfiles IT especializados. Defina seniority, skills y duración.' },
+                        { id: 'Sustain', icon: ShieldAlert, title: 'Sustain', desc: 'Servicios de soporte y mantenimiento. Configure niveles de servicio (SLA) y criticidad.' }
+                    ].map((item) => (
+                        <div
+                            key={item.id}
+                            onClick={() => handleStepSelection(item.id as any)}
+                            className="bg-[#242423] p-10 rounded-[2.5rem] border border-[#333533] hover:border-[#F5CB5C] cursor-pointer transition-all hover:-translate-y-2 hover:shadow-[0_0_40px_rgba(245,203,92,0.1)] group"
+                        >
+                            <div className="p-4 bg-[#333533] rounded-2xl w-fit mb-6 group-hover:bg-[#F5CB5C] transition-colors">
+                                <item.icon className="w-8 h-8 text-[#F5CB5C] group-hover:text-[#242423]" />
+                            </div>
+                            <h2 className="text-3xl font-bold text-[#E8EDDF] mb-4">{item.title}</h2>
+                            <p className="text-[#CFDBD5] leading-relaxed">{item.desc}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-[#333533] font-sans pt-32">
 
@@ -532,13 +604,18 @@ graph TD
                 <div className="space-y-12 max-w-4xl mx-auto pb-32">
 
                     {/* Header */}
-                    <div>
-                        <h1 className="text-5xl font-black text-[#E8EDDF] tracking-tighter mb-3">
-                            Cotizador <span className="text-[#F5CB5C]">Técnico</span>
-                        </h1>
-                        <p className="text-[#CFDBD5] text-lg">
-                            Configure la arquitectura y equipo para estimar costos en tiempo real.
-                        </p>
+                    <div className="flex items-center gap-4">
+                        <Button variant="ghost" className="text-[#CFDBD5] hover:text-[#E8EDDF]" onClick={() => setWizardStep(0)}>
+                            <ArrowRight className="w-6 h-6 rotate-180" />
+                        </Button>
+                        <div>
+                            <h1 className="text-4xl lg:text-5xl font-black text-[#E8EDDF] tracking-tighter mb-1">
+                                {state.serviceType === 'Staffing' ? 'Levantamiento de Perfiles' :
+                                    state.serviceType === 'Sustain' ? 'Levantamiento de Servicio' :
+                                        'Arquitectura de Proyecto'}
+                            </h1>
+                            <p className="text-[#F5CB5C] font-bold text-lg uppercase tracking-widest">{state.serviceType}</p>
+                        </div>
                     </div>
 
                     {/* 1. GENERAL */}
@@ -554,12 +631,18 @@ graph TD
                                 />
                             </div>
                             <div className="relative">
-                                <Label className="text-[#CFDBD5] text-sm font-bold uppercase tracking-wider mb-2 block">Contexto del Proyecto</Label>
+                                <Label className="text-[#CFDBD5] text-sm font-bold uppercase tracking-wider mb-2 block">
+                                    {state.serviceType === 'Staffing' ? 'Contexto de la Búsqueda' : 'Contexto del Proyecto'}
+                                </Label>
                                 <Textarea
-                                    placeholder="Detalle los objetivos de negocio, dolores actuales y requerimientos técnicos..."
+                                    placeholder={
+                                        state.serviceType === 'Staffing' ? "Descripción del equipo actual, cultura, y por qué se necesitan estos perfiles..." :
+                                            state.serviceType === 'Sustain' ? "Descripción del ecosistema a soportar, dolores actuales en la operación..." :
+                                                "Detalle los objetivos de negocio, dolores actuales y requerimientos técnicos..."
+                                    }
                                     value={state.description}
                                     onChange={e => updateState('description', e.target.value)}
-                                    className="min-h-[180px] resize-none text-base leading-relaxed bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
+                                    className="min-h-[120px] resize-none text-base leading-relaxed bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
                                 />
                                 <Button
                                     size="sm"
@@ -572,93 +655,208 @@ graph TD
                                     {polishLoading ? 'Optimizando...' : 'Pulir con IA'}
                                 </Button>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div>
-                                    <Label className="text-[#CFDBD5] mb-2 block">Tipo de Servicio</Label>
-                                    <Select value={state.serviceType} onValueChange={(v: any) => updateState('serviceType', v)}>
-                                        <SelectTrigger className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"><SelectValue /></SelectTrigger>
-                                        <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
-                                            <SelectItem value="Proyecto">Proyecto</SelectItem>
-                                            <SelectItem value="Sustain">Sustain (Soporte)</SelectItem>
-                                            <SelectItem value="Staffing">Staffing (Perfiles)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+
+                            {/* Type Specific Fields for Section 1 */}
+                            {state.serviceType === 'Sustain' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div>
+                                        <Label className="text-[#CFDBD5] mb-2 block">Horario de Operación</Label>
+                                        <Select value={state.sustainDetails.operationHours} onValueChange={(v: any) => updateState('sustainDetails', { ...state.sustainDetails, operationHours: v })}>
+                                            <SelectTrigger className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"><SelectValue /></SelectTrigger>
+                                            <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
+                                                <SelectItem value="business">Horario de Oficina (9-18)</SelectItem>
+                                                <SelectItem value="extended">Extendido (8-20)</SelectItem>
+                                                <SelectItem value="24/7">24/7 Crítico</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
-                                <div>
-                                    <Label className="text-[#CFDBD5] mb-2 block">Complejidad Técnica</Label>
-                                    <Select value={state.complexity} onValueChange={(v: any) => updateState('complexity', v)}>
-                                        <SelectTrigger className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"><SelectValue /></SelectTrigger>
-                                        <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
-                                            <SelectItem value="low">Baja (Estándar)</SelectItem>
-                                            <SelectItem value="medium">Media (Integraciones)</SelectItem>
-                                            <SelectItem value="high">Alta (Arquitectura Compleja)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                            )}
+
+                            {state.serviceType === 'Proyecto' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div>
+                                        <Label className="text-[#CFDBD5] mb-2 block">Tipo de Servicio</Label>
+                                        <Select value={state.serviceType} onValueChange={(v: any) => updateState('serviceType', v)}>
+                                            <SelectTrigger className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"><SelectValue /></SelectTrigger>
+                                            <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
+                                                <SelectItem value="Proyecto">Proyecto</SelectItem>
+                                                <SelectItem value="Sustain">Sustain (Soporte)</SelectItem>
+                                                <SelectItem value="Staffing">Staffing (Perfiles)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <Label className="text-[#CFDBD5] mb-2 block">Complejidad Técnica</Label>
+                                        <Select value={state.complexity} onValueChange={(v: any) => updateState('complexity', v)}>
+                                            <SelectTrigger className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"><SelectValue /></SelectTrigger>
+                                            <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
+                                                <SelectItem value="low">Baja (Estándar)</SelectItem>
+                                                <SelectItem value="medium">Media (Integraciones)</SelectItem>
+                                                <SelectItem value="high">Alta (Arquitectura Compleja)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <Label className="text-[#CFDBD5] mb-2 block">Frecuencia Actualización</Label>
+                                        <Select value={state.updateFrequency} onValueChange={(v: any) => updateState('updateFrequency', v)}>
+                                            <SelectTrigger className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"><SelectValue /></SelectTrigger>
+                                            <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
+                                                <SelectItem value="daily">Diaria (Batch)</SelectItem>
+                                                <SelectItem value="weekly">Semanal</SelectItem>
+                                                <SelectItem value="monthly">Mensual</SelectItem>
+                                                <SelectItem value="realtime">Tiempo Real / Streaming</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
-                                <div>
-                                    <Label className="text-[#CFDBD5] mb-2 block">Frecuencia Actualización</Label>
-                                    <Select value={state.updateFrequency} onValueChange={(v: any) => updateState('updateFrequency', v)}>
-                                        <SelectTrigger className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"><SelectValue /></SelectTrigger>
-                                        <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
-                                            <SelectItem value="daily">Diaria (Batch)</SelectItem>
-                                            <SelectItem value="weekly">Semanal</SelectItem>
-                                            <SelectItem value="monthly">Mensual</SelectItem>
-                                            <SelectItem value="realtime">Tiempo Real / Streaming</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
+                            )}
+
                         </div>
                     </SectionCard>
 
-                    {/* 2. VOLUMETRY */}
-                    <SectionCard number="02" title="Volumetría y Técnica" icon={Database}>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-10">
-                            <CountInput label="Pipelines" value={state.pipelinesCount} onChange={(v: number) => updateState('pipelinesCount', v)} />
-                            <CountInput label="Notebooks" value={state.notebooksCount} onChange={(v: number) => updateState('notebooksCount', v)} />
-                            <CountInput label="Ejecuciones/Mes" value={state.pipelineExecutions} onChange={(v: number) => updateState('pipelineExecutions', v)} />
-                            <CountInput label="% Manual" value={state.manualProcessPct} onChange={(v: number) => updateState('manualProcessPct', v)} max={100} />
-                            <CountInput label="Dashboards" value={state.dashboardsCount} onChange={(v: number) => updateState('dashboardsCount', v)} />
-                            <CountInput label="Modelos ML" value={state.dsModelsCount} onChange={(v: number) => updateState('dsModelsCount', v)} />
-                        </div>
-                    </SectionCard>
-
-                    {/* 3. CONSUMPTION */}
-                    <SectionCard number="03" title="Consumo y Negocio" icon={Users}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-end">
-                            <CountInput label="# Reportes Finales" value={state.reportsCount} onChange={(v: number) => updateState('reportsCount', v)} />
-                            <CountInput label="# Usuarios Finales" value={state.reportUsers} onChange={(v: number) => updateState('reportUsers', v)} />
-                            <div className="col-span-1 md:col-span-2 bg-[#333533] rounded-[1.5rem] p-8 flex items-center justify-between border border-[#4A4D4A]">
-                                <div>
-                                    <h4 className="font-bold text-[#E8EDDF] text-lg">Uso Crítico</h4>
-                                    <p className="text-sm text-[#CFDBD5]">¿Impacta Cierre Financiero o Ventas?</p>
+                    {/* 2. VOLUMETRY - Hidden for Staffing */}
+                    {state.serviceType !== 'Staffing' && (
+                        <>
+                            <SectionCard number="02" title="Volumetría y Técnica" icon={Database}>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-10">
+                                    <CountInput label="Pipelines" value={state.pipelinesCount} onChange={(v: number) => updateState('pipelinesCount', v)} />
+                                    <CountInput label="Notebooks" value={state.notebooksCount} onChange={(v: number) => updateState('notebooksCount', v)} />
+                                    <CountInput label="Ejecuciones/Mes" value={state.pipelineExecutions} onChange={(v: number) => updateState('pipelineExecutions', v)} />
+                                    <CountInput label="% Manual" value={state.manualProcessPct} onChange={(v: number) => updateState('manualProcessPct', v)} max={100} />
+                                    <CountInput label="Dashboards" value={state.dashboardsCount} onChange={(v: number) => updateState('dashboardsCount', v)} />
+                                    <CountInput label="Modelos ML" value={state.dsModelsCount} onChange={(v: number) => updateState('dsModelsCount', v)} />
                                 </div>
-                                <Switch checked={state.isFinancialOrSales} onCheckedChange={v => updateState('isFinancialOrSales', v)} className="data-[state=checked]:bg-[#F5CB5C]" />
-                            </div>
-                        </div>
-                    </SectionCard>
+                            </SectionCard>
+
+                            {/* 3. CONSUMPTION */}
+                            <SectionCard number="03" title="Consumo y Negocio" icon={Users}>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-end">
+                                    <CountInput label="# Reportes Finales" value={state.reportsCount} onChange={(v: number) => updateState('reportsCount', v)} />
+                                    <CountInput label="# Usuarios Finales" value={state.reportUsers} onChange={(v: number) => updateState('reportUsers', v)} />
+                                    <div className="col-span-1 md:col-span-2 bg-[#333533] rounded-[1.5rem] p-8 flex items-center justify-between border border-[#4A4D4A]">
+                                        <div>
+                                            <h4 className="font-bold text-[#E8EDDF] text-lg">Uso Crítico</h4>
+                                            <p className="text-sm text-[#CFDBD5]">¿Impacta Cierre Financiero o Ventas?</p>
+                                        </div>
+                                        <Switch checked={state.isFinancialOrSales} onCheckedChange={v => updateState('isFinancialOrSales', v)} className="data-[state=checked]:bg-[#F5CB5C]" />
+                                    </div>
+                                </div>
+                            </SectionCard>
+                        </>
+                    )}
 
                     {/* 4. TEAM */}
-                    <SectionCard number="04" title={state.serviceType === 'Staffing' ? "Perfiles y Talento" : "Equipo Requerido"} icon={Briefcase}>
-                        <div className="grid grid-cols-1 gap-6">
-                            {Object.entries(state.roles).map(([key, count]) => {
-                                const rate = dbRates ? dbRates[key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())] || FALLBACK_RATES[key as RoleKey] : FALLBACK_RATES[key as RoleKey]
-
-                                return (
-                                    <div key={key} className="flex items-center justify-between p-6 rounded-[1.5rem] border border-[#4A4D4A] bg-[#333533] hover:bg-[#404240] transition-colors group">
-                                        <div>
-                                            <div className="font-bold capitalize text-[#E8EDDF] text-lg group-hover:text-[#F5CB5C] transition-colors">{key.replace('_', ' ')}</div>
-                                            <div className="text-sm text-[#CFDBD5] font-mono">${rate}/mes</div>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <Button variant="outline" size="icon" className="h-10 w-10 border-[#4A4D4A] text-[#E8EDDF] hover:bg-[#F5CB5C] hover:text-[#242423] rounded-full" onClick={() => updateRole(key as RoleKey, -1)}>-</Button>
-                                            <span className="w-8 text-center text-xl font-bold text-[#E8EDDF]">{count}</span>
-                                            <Button variant="outline" size="icon" className="h-10 w-10 border-[#4A4D4A] text-[#E8EDDF] hover:bg-[#F5CB5C] hover:text-[#242423] rounded-full" onClick={() => updateRole(key as RoleKey, 1)}>+</Button>
+                    <SectionCard number={state.serviceType === 'Staffing' ? "02" : "04"} title={state.serviceType === 'Staffing' ? "Perfiles y Talento" : "Equipo Requerido"} icon={Briefcase}>
+                        {state.serviceType === 'Staffing' ? (
+                            <div className="space-y-6">
+                                {state.staffingDetails.profiles.map((profile, idx) => (
+                                    <div key={idx} className="bg-[#333533] p-6 rounded-2xl border border-[#4A4D4A] relative group">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                const newProfiles = [...state.staffingDetails.profiles]
+                                                newProfiles.splice(idx, 1)
+                                                updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
+                                            }}
+                                            className="absolute top-2 right-2 text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </Button>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            <div>
+                                                <Label className="text-[#CFDBD5] mb-2 block">Rol / Perfil</Label>
+                                                <Input
+                                                    placeholder="Ej. Java Developer"
+                                                    value={profile.role}
+                                                    onChange={(e) => {
+                                                        const newProfiles = [...state.staffingDetails.profiles]
+                                                        newProfiles[idx].role = e.target.value
+                                                        updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
+                                                    }}
+                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-[#CFDBD5] mb-2 block">Seniority</Label>
+                                                <Select value={profile.seniority} onValueChange={(v) => {
+                                                    const newProfiles = [...state.staffingDetails.profiles]
+                                                    newProfiles[idx].seniority = v
+                                                    updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
+                                                }}>
+                                                    <SelectTrigger className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]"><SelectValue /></SelectTrigger>
+                                                    <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
+                                                        <SelectItem value="Jr">Junior</SelectItem>
+                                                        <SelectItem value="Ssr">Semi-Senior</SelectItem>
+                                                        <SelectItem value="Sr">Senior</SelectItem>
+                                                        <SelectItem value="Lead">Tech Lead / Architect</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div>
+                                                <Label className="text-[#CFDBD5] mb-2 block">Cantidad</Label>
+                                                <Input
+                                                    type="number"
+                                                    min={1}
+                                                    value={profile.count}
+                                                    onChange={(e) => {
+                                                        const newProfiles = [...state.staffingDetails.profiles]
+                                                        newProfiles[idx].count = parseInt(e.target.value) || 1
+                                                        updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
+                                                    }}
+                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]"
+                                                />
+                                            </div>
+                                            <div className="md:col-span-2 lg:col-span-3">
+                                                <Label className="text-[#CFDBD5] mb-2 block">Skills / Tecnologías</Label>
+                                                <Input
+                                                    placeholder="Ej. React, Node.js, AWS, Kubernetes"
+                                                    value={profile.skills}
+                                                    onChange={(e) => {
+                                                        const newProfiles = [...state.staffingDetails.profiles]
+                                                        newProfiles[idx].skills = e.target.value
+                                                        updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
+                                                    }}
+                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
-                                )
-                            })}
-                        </div>
+                                ))}
+                                <Button
+                                    onClick={() => {
+                                        updateState('staffingDetails', {
+                                            ...state.staffingDetails,
+                                            profiles: [...state.staffingDetails.profiles, { id: Date.now().toString(), role: '', seniority: 'Ssr', skills: '', count: 1, startDate: '', endDate: '' }]
+                                        })
+                                    }}
+                                    className="w-full h-12 border-dashed border-2 border-[#4A4D4A] bg-transparent text-[#CFDBD5] hover:border-[#F5CB5C] hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/10"
+                                >
+                                    + Agregar Perfil Solicitado
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-6">
+                                {Object.entries(state.roles).map(([key, count]) => {
+                                    const rate = dbRates ? dbRates[key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())] || FALLBACK_RATES[key as RoleKey] : FALLBACK_RATES[key as RoleKey]
+
+                                    return (
+                                        <div key={key} className="flex items-center justify-between p-6 rounded-[1.5rem] border border-[#4A4D4A] bg-[#333533] hover:bg-[#404240] transition-colors group">
+                                            <div>
+                                                <div className="font-bold capitalize text-[#E8EDDF] text-lg group-hover:text-[#F5CB5C] transition-colors">{key.replace('_', ' ')}</div>
+                                                <div className="text-sm text-[#CFDBD5] font-mono">${rate}/mes</div>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <Button variant="outline" size="icon" className="h-10 w-10 border-[#4A4D4A] text-[#E8EDDF] hover:bg-[#F5CB5C] hover:text-[#242423] rounded-full" onClick={() => updateRole(key as RoleKey, -1)}>-</Button>
+                                                <span className="w-8 text-center text-xl font-bold text-[#E8EDDF]">{count}</span>
+                                                <Button variant="outline" size="icon" className="h-10 w-10 border-[#4A4D4A] text-[#E8EDDF] hover:bg-[#F5CB5C] hover:text-[#242423] rounded-full" onClick={() => updateRole(key as RoleKey, 1)}>+</Button>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
                     </SectionCard>
 
                     {/* 5. TECH */}

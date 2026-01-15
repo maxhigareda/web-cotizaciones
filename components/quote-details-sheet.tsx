@@ -196,6 +196,43 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                         </div>
                     </div>
 
+                    {/* Sustain Layout */}
+                    {quote.serviceType === 'Sustain' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="p-6 bg-[#1F1F1F] rounded-[1.5rem] border border-[#2D2D2D]">
+                                <h3 className="text-sm font-bold text-[#CFDBD5] uppercase tracking-wider mb-4">Detalle del Servicio</h3>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between border-b border-[#2D2D2D] pb-2">
+                                        <span className="text-[#E8EDDF] font-bold capitalize">{params.sustainDetails?.operationHours || params.supportHours || 'Business'}</span>
+                                    </div>
+                                    <div className="flex justify-between border-b border-[#2D2D2D] pb-2">
+                                        <span className="text-[#CFDBD5]">Nivel de Criticidad</span>
+                                        <span className="text-[#E8EDDF] font-bold capitalize">{params.criticitness?.level || 'Standard'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Staffing Layout */}
+                    {quote.serviceType === 'Staffing' && params.staffingDetails?.profiles?.length > 0 && (
+                        <div className="p-6 bg-[#1F1F1F] rounded-[1.5rem] border border-[#2D2D2D]">
+                            <h3 className="text-sm font-bold text-[#CFDBD5] uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <Briefcase className="w-4 h-4 text-[#F5CB5C]" /> Perfiles Solicitados
+                            </h3>
+                            <div className="space-y-4">
+                                {params.staffingDetails.profiles.map((p: any, idx: number) => (
+                                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-[#171717] rounded-xl border border-[#2D2D2D]">
+                                        <div>
+                                            <p className="font-bold text-[#E8EDDF] text-lg">{p.count}x {p.role} ({p.seniority})</p>
+                                            <p className="text-xs text-[#CFDBD5] opacity-70 mt-1">{p.skills}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Architecture Diagram Editor */}
                     {(!quote.serviceType || quote.serviceType !== 'Staffing') && (
                         <div className="p-6 bg-[#1F1F1F] rounded-[1.5rem] border border-[#2D2D2D] flex flex-col gap-6 group relative">
