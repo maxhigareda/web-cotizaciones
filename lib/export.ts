@@ -40,6 +40,7 @@ interface QuoteState {
     durationMonths: number
     supportHours: 'business' | '24/7'
     serviceType?: string
+    commercialDiscount?: number
 }
 
 // -- CSV Export --
@@ -67,7 +68,7 @@ export function downloadCSV(data: any[], filename: string) {
 }
 
 // -- PDF Export --
-export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number, l2SupportCost: number, riskCost: number, totalWithRisk: number, criticitnessLevel: any, diagramImage?: string }) {
+export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number, l2SupportCost: number, riskCost: number, totalWithRisk: number, discountAmount: number, finalTotal: number, criticitnessLevel: any, diagramImage?: string }) {
     const doc = new jsPDF()
     const pageWidth = doc.internal.pageSize.width
     const pageHeight = doc.internal.pageSize.height
@@ -260,6 +261,7 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
 
     if (data.l2SupportCost > 0) drawRow("Soporte L2", "-", "Auto", `$${data.l2SupportCost.toLocaleString()}`)
     if (data.riskCost > 0) drawRow("Riesgo Operativo", "-", `${(data.criticitnessLevel?.margin || 0) * 100}%`, `$${data.riskCost.toLocaleString()}`)
+    if (data.discountAmount > 0) drawRow("Descuento Comercial", "-", `${data.commercialDiscount}%`, `-$${data.discountAmount.toLocaleString()}`)
 
     y += 5
     // Totals Box
@@ -271,12 +273,12 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
     doc.setFont("helvetica", "bold")
     doc.setFontSize(11)
     doc.text("MENSUAL TOTAL:", margin + 5, y + 8)
-    doc.text(`$${data.totalWithRisk.toLocaleString()}`, margin + 140, y + 8)
+    doc.text(`$${data.finalTotal.toLocaleString()}`, margin + 140, y + 8)
 
     doc.setTextColor(COLOR_GOLD) // Gold Text
     doc.setFontSize(14)
     doc.text("INVERSIÓN TOTAL (6 MESES):", margin + 5, y + 18)
-    doc.text(`$${(data.totalWithRisk * data.durationMonths).toLocaleString()}`, margin + 140, y + 18)
+    doc.text(`$${(data.finalTotal * data.durationMonths).toLocaleString()}`, margin + 140, y + 18)
 
     // Footer P2
     doc.setFontSize(8)

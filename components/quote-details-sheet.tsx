@@ -388,6 +388,12 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                         <p className="text-4xl font-black text-[#E8EDDF] tracking-tight">
                             {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(quote.estimatedCost) || 0)}
                         </p>
+                        {params.commercialDiscount > 0 && (
+                            <div className="absolute bottom-4 right-4 bg-[#F5CB5C]/20 text-[#F5CB5C] px-3 py-1 rounded-full text-xs font-bold border border-[#F5CB5C]/30 flex items-center gap-2">
+                                <Sparkles className="w-3 h-3" />
+                                {params.commercialDiscount}% OFF
+                            </div>
+                        )}
                     </div>
 
                     {/* Technical Specs */}

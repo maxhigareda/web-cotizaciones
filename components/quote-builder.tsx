@@ -28,6 +28,25 @@ const FALLBACK_RATES = {
     power_automate: 4000
 }
 
+const SENIORITY_MODIFIERS = {
+    'Jr': 0.7,
+    'Ssr': 1.0,
+    'Sr': 1.3,
+    'Lead': 1.5
+}
+
+const HOURS_MODIFIERS = {
+    'business': 1.0,
+    '24/7': 1.5,
+    'combined': 1.2
+}
+
+const COMPLEXITY_MODIFIERS = {
+    'low': 1.0,
+    'medium': 1.2,
+    'high': 1.5
+}
+
 type RoleKey = keyof typeof FALLBACK_RATES;
 
 interface QuoteState {
@@ -94,6 +113,9 @@ interface QuoteState {
         tools: string[]
         operationHours: string
     }
+
+    // Commercial
+    commercialDiscount: number
 }
 
 const INITIAL_STATE: QuoteState = {
@@ -144,7 +166,8 @@ const INITIAL_STATE: QuoteState = {
         technicalDescription: '',
         tools: [],
         operationHours: 'business'
-    }
+    },
+    commercialDiscount: 0
 }
 
 const TECH_OPTIONS = [
@@ -235,48 +258,7 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
         setDiagramHistory(prev => prev.slice(0, -1))
     }
 
-    const handleExport = async (type: 'pdf' | 'word') => {
-        setIsExporting(true)
-        setExportType(type)
-        try {
-            // Give UI a moment to update
-            await new Promise(r => setTimeout(r, 100))
 
-            // Capture Diagram
-            let diagramImage = undefined
-            const element = document.getElementById('diagram-capture-target')
-            if (element) {
-                // Temporary style for valid capture (white background often helps readability in docs)
-                try {
-                    const canvas = await html2canvas(element, { backgroundColor: '#ffffff', scale: 2 })
-                    diagramImage = canvas.toDataURL('image/png')
-                } catch (e) { console.error("Export capture failed", e) }
-            }
-
-            const exportData = {
-                ...state,
-                totalMonthlyCost,
-                l2SupportCost,
-                riskCost,
-                totalWithRisk,
-                criticitnessLevel,
-                diagramImage
-            }
-
-            if (type === 'pdf') {
-                await exportToPDF(exportData)
-            } else {
-                await exportToWord(exportData)
-            }
-
-        } catch (e) {
-            console.error(e)
-            alert("Error al exportar documento")
-        } finally {
-            setIsExporting(false)
-            setExportType(null)
-        }
-    }
 
     // Merge DB rates with fallback
     const currentRates = useMemo(() => {
@@ -396,40 +378,85 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
         return 0 // No rate found
     }, [serviceRates, state.updateFrequency, state.complexity])
 
-    const { totalMonthlyCost, l2SupportCost, riskCost, totalWithRisk, servicesCost, rolesCost } = useMemo(() => {
-        // 1. Calculate Roles Cost
+    const { totalMonthlyCost, l2SupportCost, riskCost, totalWithRisk, servicesCost, rolesCost, discountAmount, finalTotal } = useMemo(() => {
+        // --- 1. Calculate Roles Cost ---
         let baseRoles = 0
-        let analystCost = 0
-        const getRate = (roleKey: RoleKey) => {
-            // ... existing fallback logic for roles ...
-            return FALLBACK_RATES[roleKey]
+
+        // Helper to get rate by fuzzy name or default
+        const getBaseRate = (roleName: string) => {
+            // Simple fuzzy match against FALLBACK_RATES keys
+            const key = Object.keys(FALLBACK_RATES).find(k => roleName.toLowerCase().includes(k.replace('_', ' '))) as RoleKey | undefined
+            return key ? FALLBACK_RATES[key] : 4500 // Default average rate
         }
 
-        Object.entries(state.roles).forEach(([role, count]) => {
-            const rate = getRate(role as RoleKey)
-            const cost = count * rate
-            baseRoles += cost
-            if (role === 'data_analyst') analystCost = cost
-        })
+        if (state.serviceType === 'Staffing') {
+            // Staffing: Sum(Rate * Seniority * Count)
+            state.staffingDetails.profiles.forEach(p => {
+                const base = getBaseRate(p.role)
+                const seniorityMod = SENIORITY_MODIFIERS[p.seniority as keyof typeof SENIORITY_MODIFIERS] || 1.0
+                baseRoles += base * seniorityMod * p.count
+            })
+        } else {
+            // Project & Sustain (Use Standard Role Selectors)
+            Object.entries(state.roles).forEach(([role, count]) => {
+                const rate = FALLBACK_RATES[role as RoleKey] || 4500
+                const seniorityMod = 1.0 // Standard roles assumed Ssr/Sr mix unless specified
+                baseRoles += rate * seniorityMod * count
+            })
+        }
 
-        // 2. Calculate Services Cost (Based on new Admin Table)
+        // Apply Service Type Specific Role Multipliers
+        // Sustain: Operation Hours
+        if (state.serviceType === 'Sustain') {
+            const hoursMod = HOURS_MODIFIERS[state.sustainDetails.operationHours as keyof typeof HOURS_MODIFIERS] || 1.0
+            baseRoles *= hoursMod
+        }
+        // Project: Complexity (Only applies to roles in this logic as per request)
+        if (state.serviceType === 'Proyecto') {
+            const complexityMod = COMPLEXITY_MODIFIERS[state.complexity] || 1.0
+            baseRoles *= complexityMod
+        }
+
+
+        // --- 2. Calculate Services Cost ---
         let baseServices = 0
+        // Only relevant if not Staffing? Or stick to hiding UI?
+        // Logic: If UI is hidden, values should be ignored or 0.
+        if (state.serviceType !== 'Staffing') {
+            if (state.pipelinesCount > 0) baseServices += state.pipelinesCount * findRate('Pipe')
+            if (state.notebooksCount > 0) baseServices += state.notebooksCount * findRate('Dataset')
+            if (state.dashboardsCount > 0) baseServices += state.dashboardsCount * findRate('Dashboard')
+            if (state.dsModelsCount > 0) baseServices += state.dsModelsCount * findRate('Algoritmo')
+        }
 
-        if (state.pipelinesCount > 0) baseServices += state.pipelinesCount * findRate('Pipe')
-        if (state.notebooksCount > 0) baseServices += state.notebooksCount * findRate('Dataset') // Assuming Notebooks ~ Datasets
-        if (state.dashboardsCount > 0) baseServices += state.dashboardsCount * findRate('Dashboard')
-        if (state.dsModelsCount > 0) baseServices += state.dsModelsCount * findRate('Algoritmo')
+        // --- 3. Totals & Overhead ---
+        const l2SupportCost = (baseRoles + baseServices) * 0.10
+        const subTotal = baseRoles + baseServices + l2SupportCost
 
-        // 3. Totals
-        const l2SupportCost = (baseRoles + baseServices) * 0.10 // Support covers everything?
-        const total = baseRoles + baseServices + l2SupportCost
-        const riskCost = state.criticitness.enabled ? total * criticitnessLevel.margin : 0
-        const totalWithRisk = total + riskCost
+        // Risk (Criticality)
+        const riskVal = state.criticitness.enabled ? subTotal * criticitnessLevel.margin : 0
 
-        return { totalMonthlyCost: total, l2SupportCost, riskCost, totalWithRisk, servicesCost: baseServices, rolesCost: baseRoles }
-    }, [state, criticitnessLevel, findRate])
+        const preDiscountTotal = subTotal + riskVal
 
-    const totalProjectCost = totalWithRisk * state.durationMonths
+        // --- 4. Commercial Discount ---
+        // Discount applied to the Pre-Tax/Pre-Risk or Post-Risk? Usually Post-Risk (Final Price adjustment).
+        const discountVal = preDiscountTotal * (state.commercialDiscount / 100)
+        const final = preDiscountTotal - discountVal
+
+        return {
+            rolesCost: baseRoles,
+            servicesCost: baseServices,
+            l2SupportCost,
+            riskCost: riskVal,
+            totalWithRisk: preDiscountTotal,
+            discountAmount: discountVal,
+            finalTotal: final,
+            totalMonthlyCost: final // Backend compatibility alias
+        }
+    }, [state, serviceRates, criticitnessLevel, findRate])
+
+    const totalProjectCost = totalWithRisk * state.durationMonths // Keeping "Total Project" based on pre-discount for reference? Or final? Let's use Final.
+    const finalTotalProjectCost = finalTotal * state.durationMonths
 
     // --- Save Quote ---
     const handleSaveQuote = async () => {
@@ -480,6 +507,50 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
             alert("Error al guardar cotización.")
         } finally {
             setIsSaving(false)
+        }
+    }
+
+    const handleExport = async (type: 'pdf' | 'word') => {
+        setIsExporting(true)
+        setExportType(type)
+        try {
+            let diagramDataUrl = undefined
+            // Capture diagram if relevant
+            if (state.serviceType !== 'Staffing') {
+                const element = document.getElementById('diagram-capture-target')
+                if (element) {
+                    const canvas = await html2canvas(element, { backgroundColor: '#ffffff', scale: 2, useCORS: true })
+                    diagramDataUrl = canvas.toDataURL('image/png')
+                }
+            }
+
+            if (type === 'pdf') {
+                await exportToPDF({
+                    ...state,
+                    totalMonthlyCost,
+                    l2SupportCost,
+                    riskCost,
+                    totalWithRisk,
+                    criticitnessLevel,
+                    diagramImage: diagramDataUrl,
+                    serviceType: state.serviceType,
+                    commercialDiscount: state.commercialDiscount,
+                    discountAmount,
+                    finalTotal
+                })
+            } else {
+                await exportToWord({
+                    ...state,
+                    totalWithRisk: finalTotal, // Use final total for Word too
+                    durationMonths: state.durationMonths,
+                    diagramImage: diagramDataUrl
+                })
+            }
+        } catch (e) {
+            console.error(e)
+            alert("Error al exportar cotización.")
+        } finally {
+            setIsExporting(false)
         }
     }
 
@@ -1025,7 +1096,7 @@ graph TD
                             <Calculator className="w-4 h-4" /> Inversión Estimada
                         </h4>
                         <div className="text-6xl font-mono font-bold tracking-tighter text-[#E8EDDF] drop-shadow-[0_0_15px_rgba(245,203,92,0.1)]">
-                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(totalProjectCost)}
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(finalTotalProjectCost)}
                         </div>
                         <p className="text-[#CFDBD5] mt-2 font-medium flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-[#F5CB5C] animate-pulse" />
@@ -1055,9 +1126,37 @@ graph TD
                             </div>
                         )}
                         <Separator className="bg-[#4A4D4A]" />
+
+                        {/* Commercial Discount Input */}
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex flex-col">
+                                <span className="text-[#CFDBD5] font-bold">Descuento</span>
+                                <span className="text-[10px] text-[#CFDBD5]/50 uppercase tracking-wider">Comercial (%)</span>
+                            </div>
+                            <div className="flex items-center gap-2 w-[120px]">
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={state.commercialDiscount}
+                                    onChange={(e) => updateState('commercialDiscount', parseFloat(e.target.value) || 0)}
+                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] text-right font-mono"
+                                />
+                                <span className="text-[#CFDBD5] font-bold">%</span>
+                            </div>
+                        </div>
+
+                        {state.commercialDiscount > 0 && (
+                            <div className="flex justify-between items-center text-green-400">
+                                <span>Ahorro Aplicado</span>
+                                <span className="font-mono">- {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(discountAmount)}</span>
+                            </div>
+                        )}
+
+                        <Separator className="bg-[#4A4D4A]" />
                         <div className="flex justify-between items-center text-[#E8EDDF] font-black text-2xl">
                             <span>Mensual</span>
-                            <span className="text-[#F5CB5C]">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(totalWithRisk)}</span>
+                            <span className="text-[#F5CB5C]">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(finalTotal)}</span>
                         </div>
                     </div>
 

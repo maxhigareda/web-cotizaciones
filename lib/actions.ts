@@ -156,7 +156,8 @@ async function sendToMonday(quote: any, params: any, breakdown: any, userName: s
                 frequency: params.updateFrequency,
                 dataVolume: params.dataVolume,
                 pipelines: Number(params.pipelinesCount),
-                users: Number(params.usersCount)
+                users: Number(params.usersCount),
+                commercialDiscount: params.commercialDiscount
             },
 
             // 3. Arquitectura
