@@ -127,17 +127,22 @@ async function sendToMonday(quote: any, params: any, breakdown: any, userName: s
         const payload = {
             action: "create",
             id: Number(quote.id) || quote.id,
-            userName: userName, // Added field
-            clientName: quote.clientName,
-            project: quote.projectType,
-            serviceType: quote.serviceType, // Sync serviceType
             description: params.description || '',
-            totalCost: Number(quote.estimatedCost),
+            totalCost: Number(quote.estimatedCost), // Already includes commercial discount
             date: new Date().toISOString(),
             status: quote.status,
             ownerId: quote.userId,
 
-            // 1. Desglose de Horas & Roles (Array completo)
+            // Full Technical Parameters Object as requested
+            technicalParameters: {
+                ...params, // Include all raw params (complexity, users, etc.)
+                // Ensure specific nested objects are present
+                staffingDetails: params.staffingDetails || null,
+                sustainDetails: params.sustainDetails || null,
+                commercialDiscount: params.commercialDiscount
+            },
+
+            // Legacy breakdown for backward compatibility if needed, or just extra detail
             roles: breakdown.roles.map((r: any) => ({
                 role: r.role,
                 count: Number(r.count),
@@ -145,22 +150,6 @@ async function sendToMonday(quote: any, params: any, breakdown: any, userName: s
                 cost: Number(r.cost)
             })),
 
-            // 2. Parámetros Técnicos
-            technical: {
-                complexity: params.complexity,
-                stack: params.techStack ? params.techStack.join(', ') : '',
-                // Staffing Specifics
-                staffing: params.staffingDetails ? params.staffingDetails : null,
-                // Sustain Specifics
-                sustain: params.sustainDetails ? params.sustainDetails : null,
-                frequency: params.updateFrequency,
-                dataVolume: params.dataVolume,
-                pipelines: Number(params.pipelinesCount),
-                users: Number(params.usersCount),
-                commercialDiscount: params.commercialDiscount
-            },
-
-            // 3. Arquitectura
             architecture: {
                 diagramCode: breakdown.diagramCode
             }
@@ -385,9 +374,10 @@ async function sendStatusUpdateToMonday(quote: any, userId: string, userName: st
         const payload = {
             action: "update",
             id: Number(quote.id) || quote.id,
-            userName: userName, // Added field
+            userName: userName,
             status: quote.status,
             clientName: quote.clientName,
+            serviceType: quote.serviceType, // Added for consistency
             totalCost: Number(quote.estimatedCost),
             ownerId: userId,
             date: new Date().toISOString()
