@@ -183,7 +183,17 @@ const TECH_OPTIONS = [
 
 // --- 2. COMPONENT ---
 
-export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, number> }) {
+// Match Prisma Model roughly
+type ServiceRate = {
+    id: string
+    service: string
+    frequency: string
+    complexity: string
+    basePrice: number
+    multiplier: number
+}
+
+export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[] }) {
     const [state, setState] = useState<QuoteState>(INITIAL_STATE)
     const [chartCode, setChartCode] = useState('')
     const [manualDiagramCode, setManualDiagramCode] = useState<string | null>(null)
@@ -212,12 +222,12 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
             const element = document.getElementById('diagram-capture-target')
             if (!element) return
 
-            // Use html2canvas to capture the visual representation directly, avoiding Tainted Canvas from foreignObject
+            // Use html2canvas to capture the visual representation directly
             const canvas = await html2canvas(element, {
-                backgroundColor: '#ffffff', // User likely wants a clean white background for the PNG
-                scale: 3, // High resolution
+                backgroundColor: '#ffffff',
+                scale: 3,
                 logging: false,
-                useCORS: true // Handle potential external images if any
+                useCORS: true
             })
 
             const link = document.createElement('a')
@@ -258,13 +268,6 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
         setDiagramHistory(prev => prev.slice(0, -1))
     }
 
-
-
-    // Merge DB rates with fallback
-    const currentRates = useMemo(() => {
-        if (!dbRates) return FALLBACK_RATES
-        return FALLBACK_RATES
-    }, [dbRates])
 
     // --- Helpers ---
     const updateState = <K extends keyof QuoteState>(key: K, val: QuoteState[K]) => {
@@ -338,70 +341,72 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
         setPolishLoading(false)
     }
 
-    // --- Fetch Service Rates (Demo Mode) ---
-    const [serviceRates, setServiceRates] = useState<any[]>([])
+    // --- Dynamic Pricing Core ---
+    const findDynamicRate = useCallback((serviceName: string, subParam: string = 'Standard') => {
+        if (!dbRates || dbRates.length === 0) return null
 
-    useEffect(() => {
-        const raw = typeof window !== 'undefined' ? localStorage.getItem('admin_service_rates_v1') : null
-        if (raw) {
-            try {
-                setServiceRates(JSON.parse(raw))
-            } catch { }
-        }
-    }, [])
-
-    // --- Helper: Find Rate (Moved to Component Scope for Shared Access) ---
-    const findRate = useCallback((serviceName: string) => {
-        // Map State -> DB Strings
-        const freqMap: any = { 'daily': 'Diaria', 'weekly': 'Semanal', 'monthly': 'Mensual', 'realtime': 'Bajo Demanda' }
-        const compMap: any = { 'low': 'Baja', 'medium': 'Media', 'high': 'Alta' }
-
-        const targetFreq = freqMap[state.updateFrequency] || 'Diaria'
-        const targetComp = compMap[state.complexity] || 'Media'
-
-        // Try Exact Match
-        let match = serviceRates.find(r =>
-            r.service.toLowerCase().includes(serviceName.toLowerCase()) &&
-            r.frequency === targetFreq &&
-            r.complexity === targetComp
+        // Try exact match (Service + Specific Complexity/Seniority)
+        let match = dbRates.find(r =>
+            r.service.toLowerCase() === serviceName.toLowerCase() &&
+            r.complexity.toLowerCase() === subParam.toLowerCase()
         )
 
-        // Fallback: Try matching service only (take first/avg?) -> actually let's try matching just complexity if freq varies
+        // Fallback: Try match service with "Standard" or "Media" complexity if specific not found
         if (!match) {
-            match = serviceRates.find(r => r.service.toLowerCase().includes(serviceName.toLowerCase()) && r.complexity === targetComp)
-        }
-        if (!match) {
-            match = serviceRates.find(r => r.service.toLowerCase().includes(serviceName.toLowerCase()))
+            match = dbRates.find(r =>
+                r.service.toLowerCase() === serviceName.toLowerCase() &&
+                ['standard', 'media', 'ssr'].includes(r.complexity.toLowerCase())
+            )
         }
 
+        // Return calculated rate
         if (match) return match.basePrice * match.multiplier
-        return 0 // No rate found
-    }, [serviceRates, state.updateFrequency, state.complexity])
+
+        // Fallback checks for simple partial matches
+        match = dbRates.find(r => r.service.toLowerCase().includes(serviceName.toLowerCase()))
+        if (match) return match.basePrice * match.multiplier
+
+        return null
+    }, [dbRates])
+
 
     const { totalMonthlyCost, l2SupportCost, riskCost, totalWithRisk, servicesCost, rolesCost, discountAmount, finalTotal } = useMemo(() => {
         // --- 1. Calculate Roles Cost ---
         let baseRoles = 0
 
-        // Helper to get rate by fuzzy name or default
-        const getBaseRate = (roleName: string) => {
-            // Simple fuzzy match against FALLBACK_RATES keys
-            const key = Object.keys(FALLBACK_RATES).find(k => roleName.toLowerCase().includes(k.replace('_', ' '))) as RoleKey | undefined
-            return key ? FALLBACK_RATES[key] : 4500 // Default average rate
+        // Helper: Get best available rate
+        const getRate = (role: string, level: string = 'Ssr') => {
+            // 1. Try Dynamic
+            const dyn = findDynamicRate(role, level)
+            if (dyn !== null) return dyn
+
+            // 2. Try Fallback Hardcoded
+            // Clean role name for fallback lookup
+            const key = Object.keys(FALLBACK_RATES).find(k => role.toLowerCase().includes(k.replace('_', ' '))) as RoleKey | undefined
+            const base = key ? FALLBACK_RATES[key] : 4500
+
+            // Apply Manual Logic Multipliers if using Fallback
+            let mod = 1.0
+            if (level === 'Jr') mod = 0.7
+            if (level === 'Sr') mod = 1.3
+            if (level === 'Lead') mod = 1.5
+
+            return base * mod
         }
 
         if (state.serviceType === 'Staffing') {
-            // Staffing: Sum(Rate * Seniority * Count)
+            // Staffing: Explicit Profile List
             state.staffingDetails.profiles.forEach(p => {
-                const base = getBaseRate(p.role)
-                const seniorityMod = SENIORITY_MODIFIERS[p.seniority as keyof typeof SENIORITY_MODIFIERS] || 1.0
-                baseRoles += base * seniorityMod * p.count
+                const cost = getRate(p.role, p.seniority)
+                baseRoles += cost * p.count
             })
         } else {
-            // Project & Sustain (Use Standard Role Selectors)
-            Object.entries(state.roles).forEach(([role, count]) => {
-                const rate = FALLBACK_RATES[role as RoleKey] || 4500
-                const seniorityMod = 1.0 // Standard roles assumed Ssr/Sr mix unless specified
-                baseRoles += rate * seniorityMod * count
+            // Project & Sustain (Role Counters)
+            Object.entries(state.roles).forEach(([roleKey, count]) => {
+                const roleName = roleKey.replace('_', ' ') // data_engineer -> data engineer
+                // Assume Ssr/Standard for bulk counters unless we add granularity there
+                const cost = getRate(roleName, 'Ssr')
+                baseRoles += cost * count
             })
         }
 
@@ -411,7 +416,7 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
             const hoursMod = HOURS_MODIFIERS[state.sustainDetails.operationHours as keyof typeof HOURS_MODIFIERS] || 1.0
             baseRoles *= hoursMod
         }
-        // Project: Complexity (Only applies to roles in this logic as per request)
+        // Project: Complexity
         if (state.serviceType === 'Proyecto') {
             const complexityMod = COMPLEXITY_MODIFIERS[state.complexity] || 1.0
             baseRoles *= complexityMod
@@ -420,13 +425,19 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
 
         // --- 2. Calculate Services Cost ---
         let baseServices = 0
-        // Only relevant if not Staffing? Or stick to hiding UI?
-        // Logic: If UI is hidden, values should be ignored or 0.
         if (state.serviceType !== 'Staffing') {
-            if (state.pipelinesCount > 0) baseServices += state.pipelinesCount * findRate('Pipe')
-            if (state.notebooksCount > 0) baseServices += state.notebooksCount * findRate('Dataset')
-            if (state.dashboardsCount > 0) baseServices += state.dashboardsCount * findRate('Dashboard')
-            if (state.dsModelsCount > 0) baseServices += state.dsModelsCount * findRate('Algoritmo')
+            // Use findDynamicRate for these abstract units too
+            // Mappings: Pipe -> 'Pipe' or 'Ingesta', Dataset -> 'Dataset', etc.
+            // Ideally Admin Panel uses consistent names.
+            const pipeRate = findDynamicRate('Pipe') || findDynamicRate('Ingesta') || 2500 * 1.5
+            const nbRate = findDynamicRate('Dataset') || findDynamicRate('Notebook') || 2000 * 1.5
+            const dbRate = findDynamicRate('Dashboard') || 5000 * 2
+            const dsRate = findDynamicRate('Algoritmo') || findDynamicRate('DS') || 8000 * 3
+
+            if (state.pipelinesCount > 0) baseServices += state.pipelinesCount * pipeRate
+            if (state.notebooksCount > 0) baseServices += state.notebooksCount * nbRate
+            if (state.dashboardsCount > 0) baseServices += state.dashboardsCount * dbRate
+            if (state.dsModelsCount > 0) baseServices += state.dsModelsCount * dsRate
         }
 
         // --- 3. Totals & Overhead ---
@@ -439,7 +450,6 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
         const preDiscountTotal = subTotal + riskVal
 
         // --- 4. Commercial Discount ---
-        // Discount applied to the Pre-Tax/Pre-Risk or Post-Risk? Usually Post-Risk (Final Price adjustment).
         const discountVal = preDiscountTotal * (state.commercialDiscount / 100)
         const final = preDiscountTotal - discountVal
 
@@ -451,11 +461,11 @@ export default function QuoteBuilder({ dbRates }: { dbRates?: Record<string, num
             totalWithRisk: preDiscountTotal,
             discountAmount: discountVal,
             finalTotal: final,
-            totalMonthlyCost: final // Backend compatibility alias
+            totalMonthlyCost: final
         }
-    }, [state, serviceRates, criticitnessLevel, findRate])
+    }, [state, dbRates, criticitnessLevel, findDynamicRate])
 
-    const totalProjectCost = totalWithRisk * state.durationMonths // Keeping "Total Project" based on pre-discount for reference? Or final? Let's use Final.
+    const totalProjectCost = totalWithRisk * state.durationMonths
     const finalTotalProjectCost = finalTotal * state.durationMonths
 
     // --- Save Quote ---
@@ -910,7 +920,10 @@ graph TD
                         ) : (
                             <div className="grid grid-cols-1 gap-6">
                                 {Object.entries(state.roles).map(([key, count]) => {
-                                    const rate = dbRates ? dbRates[key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())] || FALLBACK_RATES[key as RoleKey] : FALLBACK_RATES[key as RoleKey]
+                                    const roleName = key.replace(/_/g, ' ')
+                                    // Use dynamic lookup or fallback
+                                    const dynamicRate = findDynamicRate(roleName)
+                                    const rate = dynamicRate || FALLBACK_RATES[key as RoleKey] || 4500
 
                                     return (
                                         <div key={key} className="flex items-center justify-between p-6 rounded-[1.5rem] border border-[#4A4D4A] bg-[#333533] hover:bg-[#404240] transition-colors group">

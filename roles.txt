@@ -11,3 +11,9 @@ Roles
 
     - maxhigareda@thestoreintelligence.com
     - max2026
+
+    - viridiana@thestoreintelligence.com
+    - viridiana2026
+
+    - darold@thestoreintelligence.com
+    - darold2026

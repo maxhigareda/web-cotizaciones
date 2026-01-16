@@ -250,16 +250,71 @@ export async function getUserQuotes() {
     }
 }
 
-export async function getRoleRates() {
+// --- SERVICE RATES MANAGEMENT ---
+
+export async function getServiceRates() {
     try {
-        return await prisma.serviceRate.findMany()
+        const rates = await prisma.serviceRate.findMany({
+            orderBy: { service: 'asc' }
+        })
+        return rates
     } catch (e) {
-        console.error("Failed to get rates", e)
+        console.error("Failed to fetch rates", e)
         return []
     }
 }
 
+export async function saveServiceRate(rate: {
+    id?: string,
+    service: string,
+    frequency: string,
+    complexity: string,
+    basePrice: number,
+    multiplier: number
+}) {
+    // Check if user is admin? (Assumed shielded by UI/Middleware for now)
+    try {
+        if (rate.id) {
+            return await prisma.serviceRate.update({
+                where: { id: rate.id },
+                data: {
+                    service: rate.service,
+                    frequency: rate.frequency,
+                    complexity: rate.complexity,
+                    basePrice: rate.basePrice,
+                    multiplier: rate.multiplier
+                }
+            })
+        } else {
+            return await prisma.serviceRate.create({
+                data: {
+                    service: rate.service,
+                    frequency: rate.frequency,
+                    complexity: rate.complexity,
+                    basePrice: rate.basePrice,
+                    multiplier: rate.multiplier
+                }
+            })
+        }
+    } catch (e) {
+        console.error("Failed to save rate", e)
+        throw new Error("Failed to save rate")
+    }
+}
+
+export async function deleteServiceRate(id: string) {
+    try {
+        await prisma.serviceRate.delete({ where: { id } })
+        return { success: true }
+    } catch (e) {
+        console.error("Failed to delete rate", e)
+        return { success: false }
+    }
+}
+
 export async function updateRoleRate(role: string, newMonthlyRate: number) {
+    // Legacy support or alias to new system?
+    // Implementation not needed if we switch to full CRUD above
     return { success: true }
 }
 

@@ -5,66 +5,59 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Pencil, Trash2, Tag, Loader2, Save } from 'lucide-react'
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Plus, Pencil, Trash2, Tag, Loader2, User, Clock } from 'lucide-react'
+import { getServiceRates, saveServiceRate, deleteServiceRate } from '@/lib/actions'
+import { toast } from 'sonner'
 
 // --- TYPES ---
 type ServiceRate = {
     id: string
     service: string
-    frequency: string
-    complexity: 'Baja' | 'Media' | 'Alta'
+    frequency: string // Used for "Mode" (Monthly/Hourly) or specific Sustain frequency
+    complexity: string // Used for "Seniority" (Jr, Sr) or "Type"
     basePrice: number
-    multiplier: number
+    multiplier: number // Multiplier for Seniority/Hours
 }
-
-const DEFAULT_RATES: ServiceRate[] = [
-    { id: '1', service: 'Dataset', frequency: 'Diaria', complexity: 'Baja', basePrice: 1500, multiplier: 1 },
-    { id: '2', service: 'Dataset', frequency: 'Diaria', complexity: 'Media', basePrice: 2000, multiplier: 1.5 },
-    { id: '3', service: 'Dataset', frequency: 'Diaria', complexity: 'Alta', basePrice: 3000, multiplier: 2.5 },
-    { id: '4', service: 'Pipe', frequency: 'Semanal', complexity: 'Media', basePrice: 2500, multiplier: 1.5 },
-    { id: '5', service: 'Dashboard', frequency: 'Bajo Demanda', complexity: 'Alta', basePrice: 5000, multiplier: 2 },
-    { id: '6', service: 'Algoritmo DS', frequency: 'Mensual', complexity: 'Alta', basePrice: 8000, multiplier: 3 },
-]
 
 export function AdminRatesEditor() {
     const [rates, setRates] = useState<ServiceRate[]>([])
     const [loading, setLoading] = useState(true)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingRate, setEditingRate] = useState<ServiceRate | null>(null)
+    const [activeTab, setActiveTab] = useState("staffing")
 
     // Form State
     const [formData, setFormData] = useState<Partial<ServiceRate>>({})
+    const [isSaving, setIsSaving] = useState(false)
 
-    useEffect(() => {
-        // Load from LocalStorage or Default
-        const storageKey = 'admin_service_rates_v1'
-        const raw = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
-
-        if (raw) {
-            try {
-                setRates(JSON.parse(raw))
-            } catch {
-                setRates(DEFAULT_RATES)
-            }
-        } else {
-            setRates(DEFAULT_RATES)
+    const loadRates = async () => {
+        setLoading(true)
+        try {
+            const data = await getServiceRates()
+            // Map Prisma output to internal type if needed, but they match mostly
+            setRates(data as any)
+        } catch (e) {
+            console.error(e)
+            toast.error("Error cargando tarifas")
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
-    }, [])
-
-    const saveToStorage = (newRates: ServiceRate[]) => {
-        setRates(newRates)
-        localStorage.setItem('admin_service_rates_v1', JSON.stringify(newRates))
     }
 
-    const handleDelete = (id: string) => {
+    useEffect(() => {
+        loadRates()
+    }, [])
+
+    const handleDelete = async (id: string) => {
         if (confirm('¿Está seguro de eliminar esta tarifa?')) {
-            const newRates = rates.filter(r => r.id !== id)
-            saveToStorage(newRates)
+            await deleteServiceRate(id)
+            toast.success("Tarifa eliminada")
+            loadRates()
         }
     }
 
@@ -78,49 +71,53 @@ export function AdminRatesEditor() {
         setEditingRate(null)
         setFormData({
             service: '',
-            frequency: 'Diaria',
-            complexity: 'Baja',
+            frequency: activeTab === 'staffing' ? 'Mensual' : 'Hora',
+            complexity: activeTab === 'staffing' ? 'Ssr' : 'Standard',
             basePrice: 0,
-            multiplier: 1
+            multiplier: 1.0
         })
         setIsDialogOpen(true)
     }
 
-    const handleSaveForm = () => {
+    const handleSaveForm = async () => {
         if (!formData.service || !formData.basePrice) {
-            alert('Complete los campos obligatorios')
+            toast.warning('Complete los campos obligatorios')
             return
         }
-
-        const newRate: ServiceRate = {
-            id: editingRate ? editingRate.id : Math.random().toString(36).substr(2, 9),
-            service: formData.service || 'Servicio',
-            frequency: formData.frequency || 'N/A',
-            complexity: (formData.complexity as any) || 'Baja',
-            basePrice: Number(formData.basePrice),
-            multiplier: Number(formData.multiplier) || 1
-        }
-
-        let newRates = []
-        if (editingRate) {
-            newRates = rates.map(r => r.id === editingRate.id ? newRate : r)
-        } else {
-            newRates = [...rates, newRate]
-        }
-
-        saveToStorage(newRates)
-        setIsDialogOpen(false)
-    }
-
-    const getComplexityColor = (c: string) => {
-        switch (c) {
-            case 'Alta': return 'bg-red-500/10 text-red-500 border-red-500/20'
-            case 'Media': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
-            default: return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+        setIsSaving(true)
+        try {
+            await saveServiceRate({
+                id: editingRate?.id,
+                service: formData.service!,
+                frequency: formData.frequency || 'Mensual',
+                complexity: formData.complexity || 'Standard',
+                basePrice: Number(formData.basePrice),
+                multiplier: Number(formData.multiplier) || 1
+            })
+            toast.success("Tarifa guardada")
+            setIsDialogOpen(false)
+            loadRates()
+        } catch (e) {
+            toast.error("Error al guardar")
+        } finally {
+            setIsSaving(false)
         }
     }
 
-    if (loading) return <div className="p-12 text-center text-[#CFDBD5] animate-pulse">Cargando precios...</div>
+    // Filter rates by active tab logic
+    const displayedRates = rates.filter(r => {
+        // Staffing: Assume frequency="Mensual" usually, or Complexity is a Seniority level
+        const isStaffing = ['Jr', 'Ssr', 'Sr', 'Lead'].includes(r.complexity) || r.frequency === 'Mensual'
+        if (activeTab === 'staffing') return isStaffing
+        if (activeTab === 'sustain') return !isStaffing // Sustain/Proyectos logic
+        return true
+    })
+
+    const getComplexityBadge = (c: string) => {
+        if (['Sr', 'Lead', 'Alta'].includes(c)) return 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+        if (['Ssr', 'Media'].includes(c)) return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+        return 'bg-green-500/10 text-green-500 border-green-500/20'
+    }
 
     return (
         <Card className="rounded-[2rem] border border-[#333533] bg-[#242423] shadow-xl overflow-hidden mt-8">
@@ -130,77 +127,87 @@ export function AdminRatesEditor() {
                         <Tag className="w-6 h-6 text-[#F5CB5C]" />
                     </div>
                     <div>
-                        <CardTitle className="text-2xl font-bold text-[#E8EDDF]">Precios de Servicios</CardTitle>
+                        <CardTitle className="text-2xl font-bold text-[#E8EDDF]">Gestión de Tarifas</CardTitle>
                         <CardDescription className="text-[#CFDBD5]">
-                            Combinaciones de frecuencia y componentes
+                            Administra precios base y multiplicadores
                         </CardDescription>
                     </div>
                 </div>
-                <Button onClick={handleNew} className="bg-[#2EB886] hover:bg-[#2EB886]/90 text-white font-bold rounded-xl h-10 px-6 shadow-lg shadow-[#2EB886]/20 transition-all">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nuevo Precio
-                </Button>
             </CardHeader>
-            <CardContent className="p-0">
-                <Table>
-                    <TableHeader className="bg-[#333533]">
-                        <TableRow className="border-[#333533] hover:bg-transparent">
-                            <TableHead className="text-[#CFDBD5] font-bold uppercase tracking-wider pl-8 h-12">Servicio</TableHead>
-                            <TableHead className="text-[#CFDBD5] font-bold uppercase tracking-wider h-12">Frecuencia</TableHead>
-                            <TableHead className="text-[#CFDBD5] font-bold uppercase tracking-wider h-12">Complejidad</TableHead>
-                            <TableHead className="text-[#CFDBD5] font-bold uppercase tracking-wider h-12 text-right">Precio Base</TableHead>
-                            <TableHead className="text-[#CFDBD5] font-bold uppercase tracking-wider h-12 text-center">Multiplicador</TableHead>
-                            <TableHead className="text-[#CFDBD5] font-bold uppercase tracking-wider h-12 text-right">Precio Final</TableHead>
-                            <TableHead className="text-[#CFDBD5] font-bold uppercase tracking-wider h-12 text-center pr-8">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {rates.map((rate) => (
-                            <TableRow key={rate.id} className="border-[#333533] hover:bg-[#333533]/50 transition-colors group">
-                                <TableCell className="font-bold text-[#E8EDDF] pl-8 py-5 flex items-center gap-3">
-                                    <div className="w-2 h-2 rounded-full bg-[#3B82F6]" />
-                                    {rate.service}
-                                </TableCell>
-                                <TableCell className="text-[#CFDBD5]">{rate.frequency}</TableCell>
-                                <TableCell>
-                                    <Badge variant="outline" className={`border ${getComplexityColor(rate.complexity)}`}>
-                                        {rate.complexity}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-right font-mono text-[#CFDBD5]">
-                                    ${rate.basePrice}
-                                </TableCell>
-                                <TableCell className="text-center font-mono text-[#CFDBD5] opacity-70">
-                                    {rate.multiplier}x
-                                </TableCell>
-                                <TableCell className="text-right font-bold font-mono text-[#E8EDDF] text-lg">
-                                    ${rate.basePrice * rate.multiplier}
-                                </TableCell>
-                                <TableCell className="pr-8">
-                                    <div className="flex justify-center gap-2">
-                                        <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            onClick={() => handleEdit(rate)}
-                                            className="h-8 w-8 text-[#CFDBD5] hover:text-[#E8EDDF] hover:bg-[#333533]"
-                                        >
-                                            <Pencil className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            onClick={() => handleDelete(rate.id)}
-                                            className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
+
+            <Tabs defaultValue="staffing" onValueChange={setActiveTab} className="w-full">
+                <div className="px-8 pt-4 flex justify-between items-center">
+                    <TabsList className="bg-[#333533] text-[#CFDBD5]">
+                        <TabsTrigger value="staffing" className="data-[state=active]:bg-[#F5CB5C] data-[state=active]:text-[#242423]">
+                            <User className="w-4 h-4 mr-2" /> Perfiles Staffing
+                        </TabsTrigger>
+                        <TabsTrigger value="sustain" className="data-[state=active]:bg-[#F5CB5C] data-[state=active]:text-[#242423]">
+                            <Clock className="w-4 h-4 mr-2" /> Servicios / Sustain
+                        </TabsTrigger>
+                    </TabsList>
+                    <Button onClick={handleNew} className="bg-[#2EB886] hover:bg-[#2EB886]/90 text-white font-bold rounded-xl h-10 px-6">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nuevo
+                    </Button>
+                </div>
+
+                <CardContent className="p-0 mt-4">
+                    {loading ? (
+                        <div className="p-12 text-center text-[#CFDBD5] animate-pulse">Cargando base de datos...</div>
+                    ) : (
+                        <Table>
+                            <TableHeader className="bg-[#333533]">
+                                <TableRow className="border-[#333533]">
+                                    <TableHead className="text-[#CFDBD5] pl-8">Concepto / Rol</TableHead>
+                                    <TableHead className="text-[#CFDBD5]">Tipo / Frecuencia</TableHead>
+                                    <TableHead className="text-[#CFDBD5]">Nivel / Complejidad</TableHead>
+                                    <TableHead className="text-[#CFDBD5] text-right">Base</TableHead>
+                                    <TableHead className="text-[#CFDBD5] text-center">Multiplicador</TableHead>
+                                    <TableHead className="text-[#CFDBD5] text-right font-bold text-[#E8EDDF]">Total</TableHead>
+                                    <TableHead className="text-[#CFDBD5] text-center pr-8">Acciones</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {displayedRates.map((rate) => (
+                                    <TableRow key={rate.id} className="border-[#333533] hover:bg-[#333533]/50 transition-colors">
+                                        <TableCell className="font-bold text-[#E8EDDF] pl-8 py-5">
+                                            {rate.service}
+                                        </TableCell>
+                                        <TableCell className="text-[#CFDBD5]">{rate.frequency}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className={`border ${getComplexityBadge(rate.complexity)}`}>
+                                                {rate.complexity}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono text-[#CFDBD5]">${rate.basePrice}</TableCell>
+                                        <TableCell className="text-center font-mono text-[#CFDBD5] opacity-70">x{rate.multiplier}</TableCell>
+                                        <TableCell className="text-right font-bold font-mono text-[#E8EDDF] text-lg">
+                                            ${(rate.basePrice * rate.multiplier).toFixed(0)}
+                                        </TableCell>
+                                        <TableCell className="pr-8 text-center">
+                                            <div className="flex justify-center gap-2">
+                                                <Button size="icon" variant="ghost" onClick={() => handleEdit(rate)} className="h-8 w-8 text-[#CFDBD5] hover:text-white">
+                                                    <Pencil className="w-4 h-4" />
+                                                </Button>
+                                                <Button size="icon" variant="ghost" onClick={() => handleDelete(rate.id)} className="h-8 w-8 text-red-400 hover:text-red-300">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {displayedRates.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-12 text-[#CFDBD5] opacity-50">
+                                            No hay tarifas registradas en esta categoría.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    )}
+                </CardContent>
+            </Tabs>
 
             {/* Dialog for Edit/Create */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -210,47 +217,51 @@ export function AdminRatesEditor() {
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right text-[#CFDBD5]">Servicio</Label>
+                            <Label className="text-right text-[#CFDBD5]">Rol / Servicio</Label>
                             <Input
                                 value={formData.service}
                                 onChange={e => setFormData({ ...formData, service: e.target.value })}
                                 className="col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
-                                placeholder="Ej. Dataset"
+                                placeholder="Ej. Data Engineer"
                             />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right text-[#CFDBD5]">Frecuencia</Label>
-                            <Select
-                                value={formData.frequency}
-                                onValueChange={v => setFormData({ ...formData, frequency: v })}
-                            >
-                                <SelectTrigger className="col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
-                                    <SelectItem value="Diaria">Diaria</SelectItem>
-                                    <SelectItem value="Semanal">Semanal</SelectItem>
-                                    <SelectItem value="Mensual">Mensual</SelectItem>
-                                    <SelectItem value="Bajo Demanda">Bajo Demanda</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <Label className="text-right text-[#CFDBD5]">
+                                {activeTab === 'staffing' ? 'Seniority' : 'Complejidad'}
+                            </Label>
+                            {activeTab === 'staffing' ? (
+                                <Select
+                                    value={formData.complexity}
+                                    onValueChange={v => setFormData({ ...formData, complexity: v })}
+                                >
+                                    <SelectTrigger className="col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
+                                        <SelectItem value="Jr">Junior (Jr)</SelectItem>
+                                        <SelectItem value="Ssr">Semi-Senior (Ssr)</SelectItem>
+                                        <SelectItem value="Sr">Senior (Sr)</SelectItem>
+                                        <SelectItem value="Lead">Lead / Architect</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            ) : (
+                                <Select
+                                    value={formData.complexity}
+                                    onValueChange={v => setFormData({ ...formData, complexity: v })}
+                                >
+                                    <SelectTrigger className="col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
+                                        <SelectItem value="Baja">Baja</SelectItem>
+                                        <SelectItem value="Media">Media</SelectItem>
+                                        <SelectItem value="Alta">Alta</SelectItem>
+                                        <SelectItem value="Standard">Standard</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            )}
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right text-[#CFDBD5]">Complejidad</Label>
-                            <Select
-                                value={formData.complexity}
-                                onValueChange={v => setFormData({ ...formData, complexity: v as any })}
-                            >
-                                <SelectTrigger className="col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
-                                    <SelectItem value="Baja">Baja</SelectItem>
-                                    <SelectItem value="Media">Media</SelectItem>
-                                    <SelectItem value="Alta">Alta</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right text-[#CFDBD5]">Precio Base</Label>
                             <Input
@@ -260,6 +271,7 @@ export function AdminRatesEditor() {
                                 className="col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
                             />
                         </div>
+
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right text-[#CFDBD5]">Multiplicador</Label>
                             <Input
@@ -274,9 +286,11 @@ export function AdminRatesEditor() {
                     <DialogFooter>
                         <Button
                             onClick={handleSaveForm}
+                            disabled={isSaving}
                             className="bg-[#F5CB5C] hover:bg-[#E0B84C] text-[#242423] font-bold"
                         >
-                            Guardar Cambios
+                            {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            Guardar
                         </Button>
                     </DialogFooter>
                 </DialogContent>
