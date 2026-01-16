@@ -90,6 +90,44 @@ export async function loginAction(formData: FormData) {
                 user = { ...fallbackMax, createdAt: new Date() }
             }
         }
+        else if (email === 'viridiana@thestoreintelligence.com' && password === 'viridiana2026') {
+            const fallbackViridiana = {
+                id: 'demo-viridiana',
+                name: 'Viridiana',
+                email,
+                password: await bcrypt.hash('viridiana2026', 10),
+                role: 'USER',
+            }
+            try {
+                user = await prisma.user.upsert({
+                    where: { email },
+                    update: {},
+                    create: fallbackViridiana
+                })
+            } catch (e) {
+                console.error("Failed to upsert demo viridiana", e)
+                user = { ...fallbackViridiana, createdAt: new Date() }
+            }
+        }
+        else if (email === 'darold@thestoreintelligence.com' && password === 'darold2026') {
+            const fallbackDarold = {
+                id: 'demo-darold',
+                name: 'Darold',
+                email,
+                password: await bcrypt.hash('darold2026', 10),
+                role: 'USER',
+            }
+            try {
+                user = await prisma.user.upsert({
+                    where: { email },
+                    update: {},
+                    create: fallbackDarold
+                })
+            } catch (e) {
+                console.error("Failed to upsert demo darold", e)
+                user = { ...fallbackDarold, createdAt: new Date() }
+            }
+        }
     }
 
     if (!user || !(await bcrypt.compare(password, user.password))) {

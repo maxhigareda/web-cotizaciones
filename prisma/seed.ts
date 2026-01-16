@@ -63,6 +63,32 @@ async function main() {
         }
     })
 
+    // Create Viridiana User
+    const hashedPasswordViridiana = await bcrypt.hash('viridiana2026', 10)
+    const viridiana = await prisma.user.upsert({
+        where: { email: 'viridiana@thestoreintelligence.com' },
+        update: { password: hashedPasswordViridiana, role: 'USER' },
+        create: {
+            name: 'Viridiana',
+            email: 'viridiana@thestoreintelligence.com',
+            password: hashedPasswordViridiana,
+            role: 'USER'
+        }
+    })
+
+    // Create Darold User
+    const hashedPasswordDarold = await bcrypt.hash('darold2026', 10)
+    const darold = await prisma.user.upsert({
+        where: { email: 'darold@thestoreintelligence.com' },
+        update: { password: hashedPasswordDarold, role: 'USER' },
+        create: {
+            name: 'Darold',
+            email: 'darold@thestoreintelligence.com',
+            password: hashedPasswordDarold,
+            role: 'USER'
+        }
+    })
+
     console.log('Users seeded successfully:', { admin: admin.email, user: user.email, max: max.email })
 }
 
