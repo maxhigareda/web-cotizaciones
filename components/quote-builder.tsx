@@ -644,17 +644,17 @@ graph TD
     // --- RENDER WIZARD STEP 0 (SELECTION) ---
     if (wizardStep === 0) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-[#333533] p-6 animate-in fade-in zoom-in-95 duration-500">
-                <div className="text-center mb-16 space-y-4">
-                    <h1 className="text-6xl font-black text-[#E8EDDF] tracking-tighter">
+            <div className="flex flex-col items-center justify-center min-h-screen bg-[#333533] p-4 md:p-6 animate-in fade-in zoom-in-95 duration-500">
+                <div className="text-center mb-8 md:mb-16 space-y-4">
+                    <h1 className="text-4xl md:text-6xl font-black text-[#E8EDDF] tracking-tighter">
                         Nueva <span className="text-[#F5CB5C]">Estimación</span>
                     </h1>
-                    <p className="text-[#CFDBD5] text-xl max-w-2xl mx-auto">
+                    <p className="text-[#CFDBD5] text-lg md:text-xl max-w-2xl mx-auto">
                         Seleccione el tipo de servicio para configurar la cotización adecuada.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-6xl w-full">
                     {[
                         { id: 'Proyecto', icon: Network, title: 'Proyecto', desc: 'Estimación basada en entregables, arquitectura de datos y roadmap de implementación.' },
                         { id: 'Staffing', icon: Briefcase, title: 'Staffing', desc: 'Solicitud de perfiles IT especializados. Defina seniority, skills y duración.' },
@@ -678,10 +678,10 @@ graph TD
     }
 
     return (
-        <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-[#333533] font-sans pt-32">
+        <div className="flex flex-col lg:flex-row h-screen overflow-hidden bg-[#333533] font-sans pt-24 md:pt-32">
 
             {/* ================= LEFT COLUMN: FORM SCROLL ================= */}
-            <div className="w-full lg:w-2/3 h-full overflow-y-auto scrollbar-custom p-6 md:p-8 lg:p-12">
+            <div className="w-full lg:w-2/3 h-full overflow-y-auto scrollbar-custom p-4 md:p-8 lg:p-12">
                 <div className="space-y-12 max-w-4xl mx-auto pb-32">
 
                     {/* Header */}
@@ -690,7 +690,7 @@ graph TD
                             <ArrowRight className="w-6 h-6 rotate-180" />
                         </Button>
                         <div>
-                            <h1 className="text-4xl lg:text-5xl font-black text-[#E8EDDF] tracking-tighter mb-1">
+                            <h1 className="text-3xl lg:text-5xl font-black text-[#E8EDDF] tracking-tighter mb-1">
                                 {state.serviceType === 'Staffing' ? 'Levantamiento de Perfiles' :
                                     state.serviceType === 'Sustain' ? 'Levantamiento de Servicio' :
                                         'Arquitectura de Proyecto'}

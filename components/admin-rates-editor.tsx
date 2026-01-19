@@ -121,13 +121,13 @@ export function AdminRatesEditor() {
 
     return (
         <Card className="rounded-[2rem] border border-[#333533] bg-[#242423] shadow-xl overflow-hidden mt-8">
-            <CardHeader className="p-8 border-b border-[#333533] bg-[#242423] flex flex-row items-center justify-between">
+            <CardHeader className="p-4 md:p-8 border-b border-[#333533] bg-[#242423] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-[#333533] rounded-xl border border-[#4A4D4A]">
                         <Tag className="w-6 h-6 text-[#F5CB5C]" />
                     </div>
                     <div>
-                        <CardTitle className="text-2xl font-bold text-[#E8EDDF]">Gestión de Tarifas</CardTitle>
+                        <CardTitle className="text-xl md:text-2xl font-bold text-[#E8EDDF]">Gestión de Tarifas</CardTitle>
                         <CardDescription className="text-[#CFDBD5]">
                             Administra precios base y multiplicadores
                         </CardDescription>
@@ -136,8 +136,8 @@ export function AdminRatesEditor() {
             </CardHeader>
 
             <Tabs defaultValue="staffing" onValueChange={setActiveTab} className="w-full">
-                <div className="px-8 pt-4 flex justify-between items-center">
-                    <TabsList className="bg-[#333533] text-[#CFDBD5]">
+                <div className="px-4 md:px-8 pt-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <TabsList className="bg-[#333533] text-[#CFDBD5] w-full md:w-auto grid grid-cols-2 md:inline-flex">
                         <TabsTrigger value="staffing" className="data-[state=active]:bg-[#F5CB5C] data-[state=active]:text-[#242423]">
                             <User className="w-4 h-4 mr-2" /> Perfiles Staffing
                         </TabsTrigger>
@@ -145,7 +145,7 @@ export function AdminRatesEditor() {
                             <Clock className="w-4 h-4 mr-2" /> Servicios / Sustain
                         </TabsTrigger>
                     </TabsList>
-                    <Button onClick={handleNew} className="bg-[#2EB886] hover:bg-[#2EB886]/90 text-white font-bold rounded-xl h-10 px-6">
+                    <Button onClick={handleNew} className="bg-[#2EB886] hover:bg-[#2EB886]/90 text-white font-bold rounded-xl h-10 px-6 w-full md:w-auto">
                         <Plus className="w-4 h-4 mr-2" />
                         Nuevo
                     </Button>
@@ -155,56 +155,58 @@ export function AdminRatesEditor() {
                     {loading ? (
                         <div className="p-12 text-center text-[#CFDBD5] animate-pulse">Cargando base de datos...</div>
                     ) : (
-                        <Table>
-                            <TableHeader className="bg-[#333533]">
-                                <TableRow className="border-[#333533]">
-                                    <TableHead className="text-[#CFDBD5] pl-8">Concepto / Rol</TableHead>
-                                    <TableHead className="text-[#CFDBD5]">Tipo / Frecuencia</TableHead>
-                                    <TableHead className="text-[#CFDBD5]">Nivel / Complejidad</TableHead>
-                                    <TableHead className="text-[#CFDBD5] text-right">Base</TableHead>
-                                    <TableHead className="text-[#CFDBD5] text-center">Multiplicador</TableHead>
-                                    <TableHead className="text-[#CFDBD5] text-right font-bold text-[#E8EDDF]">Total</TableHead>
-                                    <TableHead className="text-[#CFDBD5] text-center pr-8">Acciones</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {displayedRates.map((rate) => (
-                                    <TableRow key={rate.id} className="border-[#333533] hover:bg-[#333533]/50 transition-colors">
-                                        <TableCell className="font-bold text-[#E8EDDF] pl-8 py-5">
-                                            {rate.service}
-                                        </TableCell>
-                                        <TableCell className="text-[#CFDBD5]">{rate.frequency}</TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline" className={`border ${getComplexityBadge(rate.complexity)}`}>
-                                                {rate.complexity}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono text-[#CFDBD5]">${rate.basePrice}</TableCell>
-                                        <TableCell className="text-center font-mono text-[#CFDBD5] opacity-70">x{rate.multiplier}</TableCell>
-                                        <TableCell className="text-right font-bold font-mono text-[#E8EDDF] text-lg">
-                                            ${(rate.basePrice * rate.multiplier).toFixed(0)}
-                                        </TableCell>
-                                        <TableCell className="pr-8 text-center">
-                                            <div className="flex justify-center gap-2">
-                                                <Button size="icon" variant="ghost" onClick={() => handleEdit(rate)} className="h-8 w-8 text-[#CFDBD5] hover:text-white">
-                                                    <Pencil className="w-4 h-4" />
-                                                </Button>
-                                                <Button size="icon" variant="ghost" onClick={() => handleDelete(rate.id)} className="h-8 w-8 text-red-400 hover:text-red-300">
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
+                        <div className="overflow-x-auto">
+                            <Table className="min-w-[800px]">
+                                <TableHeader className="bg-[#333533]">
+                                    <TableRow className="border-[#333533]">
+                                        <TableHead className="text-[#CFDBD5] pl-8">Concepto / Rol</TableHead>
+                                        <TableHead className="text-[#CFDBD5]">Tipo / Frecuencia</TableHead>
+                                        <TableHead className="text-[#CFDBD5]">Nivel / Complejidad</TableHead>
+                                        <TableHead className="text-[#CFDBD5] text-right">Base</TableHead>
+                                        <TableHead className="text-[#CFDBD5] text-center">Multiplicador</TableHead>
+                                        <TableHead className="text-[#CFDBD5] text-right font-bold text-[#E8EDDF]">Total</TableHead>
+                                        <TableHead className="text-[#CFDBD5] text-center pr-8">Acciones</TableHead>
                                     </TableRow>
-                                ))}
-                                {displayedRates.length === 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="text-center py-12 text-[#CFDBD5] opacity-50">
-                                            No hay tarifas registradas en esta categoría.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {displayedRates.map((rate) => (
+                                        <TableRow key={rate.id} className="border-[#333533] hover:bg-[#333533]/50 transition-colors">
+                                            <TableCell className="font-bold text-[#E8EDDF] pl-8 py-5">
+                                                {rate.service}
+                                            </TableCell>
+                                            <TableCell className="text-[#CFDBD5]">{rate.frequency}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className={`border ${getComplexityBadge(rate.complexity)}`}>
+                                                    {rate.complexity}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right font-mono text-[#CFDBD5]">${rate.basePrice}</TableCell>
+                                            <TableCell className="text-center font-mono text-[#CFDBD5] opacity-70">x{rate.multiplier}</TableCell>
+                                            <TableCell className="text-right font-bold font-mono text-[#E8EDDF] text-lg">
+                                                ${(rate.basePrice * rate.multiplier).toFixed(0)}
+                                            </TableCell>
+                                            <TableCell className="pr-8 text-center">
+                                                <div className="flex justify-center gap-2">
+                                                    <Button size="icon" variant="ghost" onClick={() => handleEdit(rate)} className="h-8 w-8 text-[#CFDBD5] hover:text-white">
+                                                        <Pencil className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button size="icon" variant="ghost" onClick={() => handleDelete(rate.id)} className="h-8 w-8 text-red-400 hover:text-red-300">
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {displayedRates.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={7} className="text-center py-12 text-[#CFDBD5] opacity-50">
+                                                No hay tarifas registradas en esta categoría.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
                     )}
                 </CardContent>
             </Tabs>
@@ -216,17 +218,17 @@ export function AdminRatesEditor() {
                         <DialogTitle>{editingRate ? 'Editar Precio' : 'Nuevo Precio'}</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right text-[#CFDBD5]">Rol / Servicio</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 md:gap-4">
+                            <Label className="text-left md:text-right text-[#CFDBD5]">Rol / Servicio</Label>
                             <Input
                                 value={formData.service}
                                 onChange={e => setFormData({ ...formData, service: e.target.value })}
-                                className="col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
+                                className="col-span-1 md:col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
                                 placeholder="Ej. Data Engineer"
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right text-[#CFDBD5]">
+                        <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 md:gap-4">
+                            <Label className="text-left md:text-right text-[#CFDBD5]">
                                 {activeTab === 'staffing' ? 'Seniority' : 'Complejidad'}
                             </Label>
                             {activeTab === 'staffing' ? (
@@ -234,7 +236,7 @@ export function AdminRatesEditor() {
                                     value={formData.complexity}
                                     onValueChange={v => setFormData({ ...formData, complexity: v })}
                                 >
-                                    <SelectTrigger className="col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]">
+                                    <SelectTrigger className="col-span-1 md:col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
@@ -249,7 +251,7 @@ export function AdminRatesEditor() {
                                     value={formData.complexity}
                                     onValueChange={v => setFormData({ ...formData, complexity: v })}
                                 >
-                                    <SelectTrigger className="col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]">
+                                    <SelectTrigger className="col-span-1 md:col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
@@ -262,24 +264,24 @@ export function AdminRatesEditor() {
                             )}
                         </div>
 
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right text-[#CFDBD5]">Precio Base</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 md:gap-4">
+                            <Label className="text-left md:text-right text-[#CFDBD5]">Precio Base</Label>
                             <Input
                                 type="number"
                                 value={formData.basePrice}
                                 onChange={e => setFormData({ ...formData, basePrice: Number(e.target.value) })}
-                                className="col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
+                                className="col-span-1 md:col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
                             />
                         </div>
 
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right text-[#CFDBD5]">Multiplicador</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 md:gap-4">
+                            <Label className="text-left md:text-right text-[#CFDBD5]">Multiplicador</Label>
                             <Input
                                 type="number"
                                 step="0.1"
                                 value={formData.multiplier}
                                 onChange={e => setFormData({ ...formData, multiplier: Number(e.target.value) })}
-                                className="col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
+                                className="col-span-1 md:col-span-3 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
                             />
                         </div>
                     </div>
@@ -287,7 +289,7 @@ export function AdminRatesEditor() {
                         <Button
                             onClick={handleSaveForm}
                             disabled={isSaving}
-                            className="bg-[#F5CB5C] hover:bg-[#E0B84C] text-[#242423] font-bold"
+                            className="w-full md:w-auto bg-[#F5CB5C] hover:bg-[#E0B84C] text-[#242423] font-bold"
                         >
                             {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                             Guardar

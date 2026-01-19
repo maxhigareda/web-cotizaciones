@@ -22,7 +22,7 @@ export default async function DashboardPage() {
     }
 
     return (
-        <main className="min-h-screen bg-[#171717] pt-32 pb-12 px-6">
+        <main className="min-h-screen bg-[#171717] pt-24 md:pt-32 pb-12 px-4 md:px-6">
             <div className="container mx-auto max-w-7xl space-y-12">
 
                 {/* Header */}

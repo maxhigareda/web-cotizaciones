@@ -93,19 +93,19 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
     return (
         <div className="space-y-8">
             {/* Tabs & Metrics */}
-            <div className="flex flex-col md:flex-row justify-between items-end gap-6">
-                <Tabs defaultValue="All" className="w-full md:w-auto" onValueChange={setActiveTab}>
-                    <TabsList className="bg-[#1F1F1F] border border-[#2D2D2D] p-1 h-auto rounded-xl">
-                        <TabsTrigger value="All" className="data-[state=active]:bg-[#F5CB5C] data-[state=active]:text-[#171717] rounded-lg px-6 py-2">Todos</TabsTrigger>
-                        <TabsTrigger value="Proyecto" className="data-[state=active]:bg-[#F5CB5C] data-[state=active]:text-[#171717] rounded-lg px-6 py-2">Proyectos</TabsTrigger>
-                        <TabsTrigger value="Staffing" className="data-[state=active]:bg-[#F5CB5C] data-[state=active]:text-[#171717] rounded-lg px-6 py-2">Staffing</TabsTrigger>
-                        <TabsTrigger value="Sustain" className="data-[state=active]:bg-[#F5CB5C] data-[state=active]:text-[#171717] rounded-lg px-6 py-2">Sustain</TabsTrigger>
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+                <Tabs defaultValue="All" className="w-full lg:w-auto" onValueChange={setActiveTab}>
+                    <TabsList className="bg-[#1F1F1F] border border-[#2D2D2D] p-1 h-auto rounded-xl flex flex-wrap gap-1 md:gap-0">
+                        <TabsTrigger value="All" className="data-[state=active]:bg-[#F5CB5C] data-[state=active]:text-[#171717] rounded-lg px-4 md:px-6 py-2 flex-grow md:flex-grow-0">Todos</TabsTrigger>
+                        <TabsTrigger value="Proyecto" className="data-[state=active]:bg-[#F5CB5C] data-[state=active]:text-[#171717] rounded-lg px-4 md:px-6 py-2 flex-grow md:flex-grow-0">Proyectos</TabsTrigger>
+                        <TabsTrigger value="Staffing" className="data-[state=active]:bg-[#F5CB5C] data-[state=active]:text-[#171717] rounded-lg px-4 md:px-6 py-2 flex-grow md:flex-grow-0">Staffing</TabsTrigger>
+                        <TabsTrigger value="Sustain" className="data-[state=active]:bg-[#F5CB5C] data-[state=active]:text-[#171717] rounded-lg px-4 md:px-6 py-2 flex-grow md:flex-grow-0">Sustain</TabsTrigger>
                     </TabsList>
                 </Tabs>
 
                 {/* Summary Widget */}
-                <Card className="bg-[#1F1F1F] border-[#2D2D2D] px-6 py-3 flex items-center gap-6 rounded-2xl">
-                    <div className="flex items-center gap-3 border-r border-[#2D2D2D] pr-6">
+                <Card className="bg-[#1F1F1F] border-[#2D2D2D] px-4 md:px-6 py-3 flex flex-col md:flex-row items-center gap-4 md:gap-6 rounded-2xl w-full lg:w-auto">
+                    <div className="flex items-center gap-3 border-b md:border-b-0 md:border-r border-[#2D2D2D] pb-3 md:pb-0 pr-0 md:pr-6 w-full md:w-auto">
                         <div className="p-2 bg-[#2D2D2D] rounded-lg">
                             <LayoutGrid className="w-5 h-5 text-[#CFDBD5]" />
                         </div>
@@ -114,7 +114,7 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
                             <p className="text-xl font-bold text-[#E8EDDF]">{metrics.count}</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 w-full md:w-auto">
                         <div className="p-2 bg-[#F5CB5C]/10 rounded-lg">
                             <DollarSign className="w-5 h-5 text-[#F5CB5C]" />
                         </div>
@@ -130,8 +130,8 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
 
             {/* Dynamic Grid */}
             <div className="space-y-4">
-                {/* Header */}
-                <div className={`grid gap-4 px-6 text-xs font-bold text-[#CFDBD5] uppercase tracking-widest opacity-60 mb-2 items-center ${activeTab === 'All' ? 'grid-cols-12' : 'grid-cols-12'}`}>
+                {/* Header - Hidden on Mobile */}
+                <div className={`hidden md:grid gap-4 px-6 text-xs font-bold text-[#CFDBD5] uppercase tracking-widest opacity-60 mb-2 items-center ${activeTab === 'All' ? 'grid-cols-12' : 'grid-cols-12'}`}>
                     <div className="col-span-3">Cliente / Proyecto</div>
                     <div className="col-span-2">Tipo</div>
                     <div className="col-span-3">
@@ -150,38 +150,51 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
 
                     return (
                         <Card key={quote.id || Math.random()} className="bg-[#1F1F1F] border-[#2D2D2D] rounded-[1.5rem] p-4 hover:border-[#F5CB5C]/50 hover:shadow-[0_0_20px_rgba(245,203,92,0.1)] transition-all duration-300 group cursor-default">
-                            <div className="grid grid-cols-12 gap-4 items-center">
+                            {/* Mobile Layout (Flex Column) / Desktop Layout (Grid 12) */}
+                            <div className="flex flex-col md:grid md:grid-cols-12 gap-4 items-start md:items-center">
+
                                 {/* 1. Client & Name */}
-                                <div className="col-span-3">
-                                    <div className="flex items-center gap-3">
-                                        <h4 className="text-[#E8EDDF] font-bold text-base truncate max-w-[180px]" title={quote.clientName}>{quote.clientName || 'Sin Nombre'}</h4>
+                                <div className="w-full md:col-span-3 flex justify-between md:block items-start">
+                                    <div>
+                                        <div className="flex items-center gap-3">
+                                            <h4 className="text-[#E8EDDF] font-bold text-lg md:text-base truncate max-w-[200px] md:max-w-[180px]" title={quote.clientName}>{quote.clientName || 'Sin Nombre'}</h4>
+                                        </div>
+                                        <div className="text-[#CFDBD5] text-sm md:text-xs opacity-70 mt-1 truncate max-w-[200px] md:max-w-[180px]" title={quote.projectType}>
+                                            {quote.projectType}
+                                        </div>
                                     </div>
-                                    <div className="text-[#CFDBD5] text-xs opacity-70 mt-1 truncate max-w-[180px]" title={quote.projectType}>
-                                        {quote.projectType}
+                                    {/* Mobile Only Status Badge (Top Right) */}
+                                    <div className="md:hidden">
+                                        <Badge variant="outline" className={`${getStatusStyles(quote.status)} text-[10px] px-2 h-5`}>
+                                            {(quote.status || 'BORRADOR')}
+                                        </Badge>
                                     </div>
                                 </div>
 
-                                {/* 2. Type & Status */}
-                                <div className="col-span-2 flex flex-col items-start gap-2">
-                                    <Badge variant="outline" className={`${getTypeBadgeStyles(quote.serviceType)}`}>
-                                        {quote.serviceType || 'Proyecto'}
-                                    </Badge>
-                                    <Badge variant="outline" className={`${getStatusStyles(quote.status)} text-[10px] px-2 h-5`}>
-                                        {(quote.status || 'BORRADOR')}
-                                    </Badge>
+                                {/* 2. Type & Status (Desktop) */}
+                                <div className="w-full md:col-span-2 flex flex-row md:flex-col items-center md:items-start gap-2 justify-between md:justify-start">
+                                    <div className="flex gap-2">
+                                        <Badge variant="outline" className={`${getTypeBadgeStyles(quote.serviceType)}`}>
+                                            {quote.serviceType || 'Proyecto'}
+                                        </Badge>
+                                        {/* Status Badge (Desktop) */}
+                                        <Badge variant="outline" className={`hidden md:inline-flex ${getStatusStyles(quote.status)} text-[10px] px-2 h-5`}>
+                                            {(quote.status || 'BORRADOR')}
+                                        </Badge>
+                                    </div>
                                 </div>
 
                                 {/* 3. Dynamic Column */}
-                                <div className="col-span-3 text-[#CFDBD5] text-sm">
+                                <div className="w-full md:col-span-3 text-[#CFDBD5] text-sm pl-1 md:pl-0 border-l-2 border-[#333533] md:border-l-0 md:border-none">
                                     {(() => {
                                         if (quote.serviceType === 'Staffing' || activeTab === 'Staffing') {
                                             const profiles = params.staffingDetails?.profiles || []
-                                            if (profiles.length === 0) return <span className="opacity-50">-</span>
-                                            return maxProfiles(profiles)
+                                            if (profiles.length === 0) return <span className="opacity-50 text-xs">-</span>
+                                            return <div className="pl-2 md:pl-0">{maxProfiles(profiles)}</div>
                                         }
                                         if (quote.serviceType === 'Sustain' || activeTab === 'Sustain') {
                                             return (
-                                                <div className="flex flex-col">
+                                                <div className="flex flex-col pl-2 md:pl-0">
                                                     <span className="font-bold text-[#E8EDDF]">{params.criticitness?.level || 'Standard'}</span>
                                                     <span className="text-xs opacity-60">{params.sustainDetails?.operationHours || 'Business'}</span>
                                                 </div>
@@ -189,7 +202,7 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
                                         }
                                         // Default / Project
                                         return (
-                                            <div className="flex flex-col">
+                                            <div className="flex flex-col pl-2 md:pl-0">
                                                 <span className="font-bold text-[#E8EDDF] capitalize">{params.complexity?.toLowerCase() || 'N/A'}</span>
                                                 {params.techStack?.length > 0 && <span className="text-xs opacity-60">{params.techStack.length} Tecnologías</span>}
                                             </div>
@@ -198,35 +211,41 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
                                 </div>
 
                                 {/* 4. Date */}
-                                <div className="col-span-2 text-[#CFDBD5] text-sm font-mono">
+                                <div className="hidden md:block col-span-2 text-[#CFDBD5] text-sm font-mono">
                                     {quote.createdAt ? new Date(quote.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '-'}
                                 </div>
 
                                 {/* 5. Cost & Actions */}
-                                <div className="col-span-2 flex items-center justify-end gap-3">
-                                    <span className="text-[#F5CB5C] font-mono font-bold text-base">
-                                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(quote.estimatedCost) || 0)}
-                                    </span>
+                                <div className="w-full md:col-span-2 flex items-center justify-between md:justify-end gap-3 mt-2 md:mt-0 pt-2 md:pt-0 border-t border-[#333533] md:border-t-0">
+                                    <div className="md:hidden text-[#CFDBD5] text-xs font-mono">
+                                        {quote.createdAt ? new Date(quote.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '-'}
+                                    </div>
 
-                                    <div className="flex gap-1">
-                                        {quote && (
-                                            <QuoteDetailsSheet
-                                                quote={{
-                                                    ...quote,
-                                                    estimatedCost: Number(quote.estimatedCost) || 0,
-                                                    status: quote.status || 'BORRADOR'
-                                                }}
-                                                onQuoteUpdated={(updated) => {
-                                                    const newQuotes = mergedQuotes.map(q => q.id === updated.id ? { ...q, status: updated.status } : q)
-                                                    setMergedQuotes(newQuotes)
-                                                }}
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-[#F5CB5C] font-mono font-bold text-lg md:text-base">
+                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(quote.estimatedCost) || 0)}
+                                        </span>
+
+                                        <div className="flex gap-1">
+                                            {quote && (
+                                                <QuoteDetailsSheet
+                                                    quote={{
+                                                        ...quote,
+                                                        estimatedCost: Number(quote.estimatedCost) || 0,
+                                                        status: quote.status || 'BORRADOR'
+                                                    }}
+                                                    onQuoteUpdated={(updated) => {
+                                                        const newQuotes = mergedQuotes.map(q => q.id === updated.id ? { ...q, status: updated.status } : q)
+                                                        setMergedQuotes(newQuotes)
+                                                    }}
+                                                />
+                                            )}
+                                            <DeleteQuoteButton
+                                                quoteId={quote.id}
+                                                quoteName={quote.clientName}
+                                                onSuccess={() => handleDelete(quote.id)}
                                             />
-                                        )}
-                                        <DeleteQuoteButton
-                                            quoteId={quote.id}
-                                            quoteName={quote.clientName}
-                                            onSuccess={() => handleDelete(quote.id)}
-                                        />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
