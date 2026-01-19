@@ -345,25 +345,31 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
     const findDynamicRate = useCallback((serviceName: string, subParam: string = 'Standard') => {
         if (!dbRates || dbRates.length === 0) return null
 
-        // Try exact match (Service + Specific Complexity/Seniority)
+        const normalizedService = serviceName.trim().toLowerCase()
+        const normalizedParam = subParam.trim().toLowerCase()
+
+        // Try exact match
         let match = dbRates.find(r =>
-            r.service.toLowerCase() === serviceName.toLowerCase() &&
-            r.complexity.toLowerCase() === subParam.toLowerCase()
+            r.service.toLowerCase() === normalizedService &&
+            r.complexity.toLowerCase() === normalizedParam
         )
 
-        // Fallback: Try match service with "Standard" or "Media" complexity if specific not found
+        // Fallback: Try match service with "Standard" or "Ssr" or "Media"
         if (!match) {
             match = dbRates.find(r =>
-                r.service.toLowerCase() === serviceName.toLowerCase() &&
-                ['standard', 'media', 'ssr'].includes(r.complexity.toLowerCase())
+                r.service.toLowerCase() === normalizedService &&
+                ['standard', 'media', 'ssr', 'baja'].includes(r.complexity.toLowerCase())
             )
         }
 
         // Return calculated rate
         if (match) return match.basePrice * match.multiplier
 
-        // Fallback checks for simple partial matches
-        match = dbRates.find(r => r.service.toLowerCase().includes(serviceName.toLowerCase()))
+        // Fuzzy match for legacy keys (e.g. 'data_engineer' -> 'Data Engineer')
+        if (!match) {
+            match = dbRates.find(r => r.service.toLowerCase().replace(/ /g, '_').includes(normalizedService.replace(/ /g, '_')))
+        }
+
         if (match) return match.basePrice * match.multiplier
 
         return null
@@ -376,14 +382,30 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
 
         // Helper: Get best available rate
         const getRate = (role: string, level: string = 'Ssr') => {
+            // Mapping internal keys to DB Service Names
+            const roleMap: Record<string, string> = {
+                'data_engineer': 'Data Engineer',
+                'data_analyst': 'Data Analyst',
+                'data_science': 'Data Science',
+                'bi_developer': 'BI Developer',
+                'project_manager': 'Project Manager',
+                'qa_automation': 'QA Automation',
+                'arquitecto': 'Arquitecto de Datos',
+                'power_apps': 'Power Apps', // Assuming exists or fallback
+                'react_dev': 'Frontend Developer', // Assuming exists or fallback
+                'power_automate': 'Power Automate'
+            }
+
+            const dbRoleName = roleMap[role.toLowerCase()] || role
+
             // 1. Try Dynamic
-            const dyn = findDynamicRate(role, level)
+            const dyn = findDynamicRate(dbRoleName, level)
             if (dyn !== null) return dyn
 
             // 2. Try Fallback Hardcoded
             // Clean role name for fallback lookup
             const key = Object.keys(FALLBACK_RATES).find(k => role.toLowerCase().includes(k.replace('_', ' '))) as RoleKey | undefined
-            const base = key ? FALLBACK_RATES[key] : 4500
+            const base = key ? FALLBACK_RATES[key] : 4000
 
             // Apply Manual Logic Multipliers if using Fallback
             let mod = 1.0
@@ -403,10 +425,11 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
         } else {
             // Project & Sustain (Role Counters)
             Object.entries(state.roles).forEach(([roleKey, count]) => {
-                const roleName = roleKey.replace('_', ' ') // data_engineer -> data engineer
-                // Assume Ssr/Standard for bulk counters unless we add granularity there
-                const cost = getRate(roleName, 'Ssr')
-                baseRoles += cost * count
+                if (count > 0) {
+                    // Assume Ssr/Standard for bulk counters unless we add granularity there
+                    const cost = getRate(roleKey, 'Ssr')
+                    baseRoles += cost * count
+                }
             })
         }
 
@@ -427,12 +450,10 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
         let baseServices = 0
         if (state.serviceType !== 'Staffing') {
             // Use findDynamicRate for these abstract units too
-            // Mappings: Pipe -> 'Pipe' or 'Ingesta', Dataset -> 'Dataset', etc.
-            // Ideally Admin Panel uses consistent names.
-            const pipeRate = findDynamicRate('Pipe') || findDynamicRate('Ingesta') || 2500 * 1.5
-            const nbRate = findDynamicRate('Dataset') || findDynamicRate('Notebook') || 2000 * 1.5
-            const dbRate = findDynamicRate('Dashboard') || 5000 * 2
-            const dsRate = findDynamicRate('Algoritmo') || findDynamicRate('DS') || 8000 * 3
+            const pipeRate = findDynamicRate('Pipe') || findDynamicRate('Ingesta') || 2500
+            const nbRate = findDynamicRate('Dataset') || findDynamicRate('Notebook') || 2000
+            const dbRate = findDynamicRate('Dashboard') || 5000
+            const dsRate = findDynamicRate('Algoritmo') || findDynamicRate('DS') || 8000
 
             if (state.pipelinesCount > 0) baseServices += state.pipelinesCount * pipeRate
             if (state.notebooksCount > 0) baseServices += state.notebooksCount * nbRate
