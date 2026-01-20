@@ -66,6 +66,7 @@ interface QuoteState {
         name: string
         role: string
         email: string
+        areaLeader?: string // Made optional here to avoid breakage if undefined
     }
 }
 
@@ -359,7 +360,10 @@ export async function exportToWord(data: QuoteState & { diagramImage?: string, t
                             new Paragraph({ children: [new TextRun({ text: "METADATOS", bold: true, size: 14, color: HEX_GOLD })], alignment: "right" }),
                             new Paragraph({ text: `Cliente: ${data.clientName}`, alignment: "right" }),
                             new Paragraph({ text: `Fecha: ${new Date().toLocaleDateString()}`, alignment: "right" }),
-                            ...(data.clientContact?.name ? [new Paragraph({ text: `Solicitante: ${data.clientContact.name}`, alignment: "right" })] : [])
+                            ...(data.clientContact?.name ? [new Paragraph({ text: `Solicitante: ${data.clientContact.name}`, alignment: "right" })] : []),
+                            ...(data.clientContact?.role ? [new Paragraph({ text: `Cargo: ${data.clientContact.role}`, alignment: "right" })] : []),
+                            ...(data.clientContact?.email ? [new Paragraph({ text: `Email: ${data.clientContact.email}`, alignment: "right" })] : []),
+                            ...(data.clientContact?.areaLeader ? [new Paragraph({ text: `Líder de Área: ${data.clientContact.areaLeader}`, alignment: "right" })] : [])
                         ],
                         width: { size: 40, type: WidthType.PERCENTAGE },
                         borders: { bottom: { style: BorderStyle.SINGLE, size: 4, color: HEX_GOLD } }

@@ -126,6 +126,7 @@ interface QuoteState {
         name: string
         role: string
         email: string
+        areaLeader: string
     }
 }
 
@@ -180,7 +181,7 @@ const INITIAL_STATE: QuoteState = {
     },
     commercialDiscount: 0,
     retention: { enabled: false, percentage: 0 },
-    clientContact: { name: '', role: '', email: '' }
+    clientContact: { name: '', role: '', email: '', areaLeader: '' }
 }
 
 const TECH_OPTIONS = [
@@ -1190,13 +1191,14 @@ graph TD
                     {/* 7. COMMERCIAL DATA & RETENTION */}
                     <SectionCard number="07" title="Datos Comercial & Retenciones" icon={Users}>
                         <div className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            {/* ROW 1: Contact Info (4 Columns) */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Solicitante</Label>
                                     <Input
                                         value={state.clientContact.name}
                                         onChange={e => updateState('clientContact', { ...state.clientContact, name: e.target.value })}
-                                        placeholder="Ej. Juan Pérez"
+                                        placeholder="Nombre"
                                         className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
                                     />
                                 </div>
@@ -1205,7 +1207,7 @@ graph TD
                                     <Input
                                         value={state.clientContact.role}
                                         onChange={e => updateState('clientContact', { ...state.clientContact, role: e.target.value })}
-                                        placeholder="Ej. CTO"
+                                        placeholder="Cargo"
                                         className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
                                     />
                                 </div>
@@ -1214,25 +1216,42 @@ graph TD
                                     <Input
                                         value={state.clientContact.email}
                                         onChange={e => updateState('clientContact', { ...state.clientContact, email: e.target.value })}
-                                        placeholder="juan@empresa.com"
+                                        placeholder="Email"
+                                        className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Líder de Área</Label>
+                                    <Input
+                                        value={state.clientContact.areaLeader || ''}
+                                        onChange={e => updateState('clientContact', { ...state.clientContact, areaLeader: e.target.value })}
+                                        placeholder="Líder"
                                         className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
                                     />
                                 </div>
                             </div>
 
-                            {/* Retention Module */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-[#CFDBD5]/10 mt-6">
-                                <div className="flex items-center justify-between bg-[#242423] border border-[#4A4D4A] h-[50px] rounded-[1rem] px-4 hover:border-[#F5CB5C]/50 transition-colors group">
-                                    <span className="text-[#E8EDDF] text-sm font-medium group-hover:text-[#F5CB5C] transition-colors">¿Aplica Retención Fiscal?</span>
-                                    <Switch
-                                        checked={state.retention.enabled}
-                                        onCheckedChange={(v) => updateState('retention', { ...state.retention, enabled: v })}
-                                        className="data-[state=checked]:bg-[#F5CB5C]"
-                                    />
+                            {/* ROW 2: Retention Logic (Grid) */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                                {/* Switch */}
+                                <div className="space-y-2">
+                                    <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">¿Aplica Retención?</Label>
+                                    <div className="flex items-center justify-between bg-[#242423] border border-[#4A4D4A] h-[50px] rounded-[1rem] px-4 hover:border-[#F5CB5C]/50 transition-colors group">
+                                        <span className="text-[#E8EDDF] text-sm font-medium group-hover:text-[#F5CB5C] transition-colors">
+                                            {state.retention.enabled ? 'Sí, aplica' : 'No aplica'}
+                                        </span>
+                                        <Switch
+                                            checked={state.retention.enabled}
+                                            onCheckedChange={(v) => updateState('retention', { ...state.retention, enabled: v })}
+                                            className="data-[state=checked]:bg-[#F5CB5C]"
+                                        />
+                                    </div>
                                 </div>
 
-                                {state.retention.enabled && (
-                                    <div className="animate-in fade-in slide-in-from-left-4 duration-300">
+                                {/* Input % (Conditional) */}
+                                {state.retention.enabled ? (
+                                    <div className="space-y-2 animate-in fade-in zoom-in-95 duration-200">
+                                        <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">% Retención</Label>
                                         <div className="relative">
                                             <Input
                                                 type="number"
@@ -1243,12 +1262,26 @@ graph TD
                                                 className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] pl-4 pr-12 focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50 text-right font-bold text-lg"
                                             />
                                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none flex items-center gap-2">
-                                                <span className="text-[#CFDBD5]/50 text-[10px] font-bold uppercase tracking-wider text-right leading-tight">Retención</span>
                                                 <span className="text-[#F5CB5C] font-bold text-lg">%</span>
                                             </div>
                                         </div>
                                     </div>
+                                ) : (
+                                    <div className="hidden md:block"></div> /* Spacer to keep grid alignment if needed, or allow badge to expand */
                                 )}
+
+                                {/* Net Total Badge */}
+                                <div className={`${state.retention.enabled ? 'md:col-span-2' : 'md:col-span-3'} space-y-2 transition-all duration-300`}>
+                                    <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Neto a Cobrar (Estimado)</Label>
+                                    <div className="bg-[#1a1a1a] border border-[#F5CB5C]/30 h-[50px] rounded-[1rem] px-6 flex items-center justify-between shadow-[0_0_15px_rgba(245,203,92,0.05)]">
+                                        <span className="text-[#CFDBD5] text-sm uppercase tracking-widest font-bold">Total Neto</span>
+                                        <span className="text-[#F5CB5C] font-mono font-bold text-xl tracking-tight">
+                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(
+                                                finalTotal * (1 - (state.retention.enabled ? state.retention.percentage : 0) / 100)
+                                            )}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </SectionCard>
