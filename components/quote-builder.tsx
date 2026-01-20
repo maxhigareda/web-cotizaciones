@@ -118,6 +118,15 @@ interface QuoteState {
 
     // Commercial
     commercialDiscount: number
+    retention: {
+        enabled: boolean
+        percentage: number
+    }
+    clientContact: {
+        name: string
+        role: string
+        email: string
+    }
 }
 
 const INITIAL_STATE: QuoteState = {
@@ -169,7 +178,9 @@ const INITIAL_STATE: QuoteState = {
         tools: [],
         operationHours: 'business'
     },
-    commercialDiscount: 0
+    commercialDiscount: 0,
+    retention: { enabled: false, percentage: 0 },
+    clientContact: { name: '', role: '', email: '' }
 }
 
 const TECH_OPTIONS = [
@@ -775,6 +786,41 @@ graph TD
                                 </Button>
                             </div>
 
+                            <div className="bg-[#242423] p-4 rounded-xl border border-[#4A4D4A]">
+                                <h4 className="text-[#F5CB5C] font-bold text-sm uppercase tracking-wide mb-4 flex items-center gap-2">
+                                    <Users className="w-4 h-4" /> Datos del Solicitante (CRM)
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div>
+                                        <Label className="text-[#CFDBD5] mb-2 block">Nombre Completo</Label>
+                                        <Input
+                                            value={state.clientContact.name}
+                                            onChange={e => updateState('clientContact', { ...state.clientContact, name: e.target.value })}
+                                            placeholder="Juan Pérez"
+                                            className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-[#CFDBD5] mb-2 block">Rol / Cargo</Label>
+                                        <Input
+                                            value={state.clientContact.role}
+                                            onChange={e => updateState('clientContact', { ...state.clientContact, role: e.target.value })}
+                                            placeholder="CTO / Gerente IT"
+                                            className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-[#CFDBD5] mb-2 block">Email Corporativo</Label>
+                                        <Input
+                                            value={state.clientContact.email}
+                                            onChange={e => updateState('clientContact', { ...state.clientContact, email: e.target.value })}
+                                            placeholder="juan@empresa.com"
+                                            className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Type Specific Fields for Section 1 */}
                             {state.serviceType === 'Sustain' && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -1221,6 +1267,34 @@ graph TD
                                 />
                                 <span className="text-[#CFDBD5] font-bold">%</span>
                             </div>
+                        </div>
+
+                        {/* Retention Input */}
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex flex-col">
+                                <span className="text-[#CFDBD5] font-bold">Retenciones</span>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <Switch
+                                        checked={state.retention.enabled}
+                                        onCheckedChange={(v) => updateState('retention', { ...state.retention, enabled: v })}
+                                        className="h-4 w-7 data-[state=checked]:bg-[#F5CB5C]"
+                                    />
+                                    <span className="text-[10px] text-[#CFDBD5]/50 uppercase tracking-wider">{state.retention.enabled ? 'Activado' : 'No'}</span>
+                                </div>
+                            </div>
+                            {state.retention.enabled && (
+                                <div className="flex items-center gap-2 w-[120px]">
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={state.retention.percentage}
+                                        onChange={(e) => updateState('retention', { ...state.retention, percentage: parseFloat(e.target.value) || 0 })}
+                                        className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] text-right font-mono"
+                                    />
+                                    <span className="text-[#CFDBD5] font-bold">%</span>
+                                </div>
+                            )}
                         </div>
 
                         {state.commercialDiscount > 0 && (

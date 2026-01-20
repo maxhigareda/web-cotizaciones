@@ -34,6 +34,9 @@ model Quote {
   user                 User?    @relation(fields: [userId], references: [id])
   status               String   @default("BORRADOR") // BORRADOR, ENVIADA, APROBADA, RECHAZADA
   serviceType          String   @default("Proyecto") // Proyecto, Sustain, Staffing
+  
+  clientId             String?
+  client               Client?  @relation(fields: [clientId], references: [id])
 }
 
 model User {
@@ -45,3 +48,19 @@ model User {
   createdAt DateTime @default(now())
   quotes    Quote[]
 }
+
+model Client {
+  id          String   @id @default(uuid())
+  companyName String   @unique
+  contactName String?
+  contactRole String?
+  email       String?
+  status      String   @default("PROSPECTO") // PROSPECTO, CLIENTE
+  driveFolder String?
+  createdAt   DateTime @default(now())
+  quotes      Quote[]
+}
+
+// Update Quote to link to Client
+// We keep clientName for history/fallback, but add clientId
+

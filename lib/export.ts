@@ -58,6 +58,15 @@ interface QuoteState {
         tools: string[]
         operationHours: string
     }
+    retention?: {
+        enabled: boolean
+        percentage: number
+    }
+    clientContact?: {
+        name: string
+        role: string
+        email: string
+    }
 }
 
 // -- CSV Export --
@@ -107,16 +116,19 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
     // Metadata Box P1
     doc.setDrawColor(212, 175, 55) // Gold
     doc.setLineWidth(0.5)
-    doc.rect(pageWidth - margin - 70, 20, 70, 25)
+    doc.rect(pageWidth - margin - 80, 20, 80, 30)
     doc.setFontSize(8)
     doc.setFont("helvetica", "bold")
     doc.setTextColor(COLOR_GOLD)
-    doc.text("INFORMACIÓN DEL PROYECTO", pageWidth - margin - 65, 26)
+    doc.text("INFORMACIÓN DEL PROYECTO", pageWidth - margin - 75, 26)
     doc.setFont("helvetica", "normal")
     doc.setTextColor(COLOR_TEXT)
-    doc.text(`ID: ${new Date().getTime().toString().substr(-6)}`, pageWidth - margin - 65, 32)
-    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, pageWidth - margin - 65, 37)
-    doc.text(`Cliente: ${data.clientName || 'N/A'}`, pageWidth - margin - 65, 42)
+    doc.text(`ID: ${new Date().getTime().toString().substr(-6)}`, pageWidth - margin - 75, 32)
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, pageWidth - margin - 75, 37)
+    doc.text(`Cliente: ${data.clientName || 'N/A'}`, pageWidth - margin - 75, 42)
+    if (data.clientContact?.name) {
+        doc.text(`Solicitante: ${data.clientContact.name}`, pageWidth - margin - 75, 47)
+    }
 
     let y = 60
 
@@ -288,7 +300,10 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
 
     if (data.l2SupportCost > 0) drawRow("Soporte L2", "10% Costo Operativo", "-", `$${data.l2SupportCost.toLocaleString()}`)
     if (data.riskCost > 0) drawRow("Riesgo Operativo", `${(data.criticitnessLevel?.margin || 0) * 100}% Markup`, "-", `$${data.riskCost.toLocaleString()}`)
-    if (data.discountAmount > 0) drawRow("Descuento Comercial", `${data.commercialDiscount}% Off`, "-", `-$${data.discountAmount.toLocaleString()}`)
+    if (data.discountAmount > 0) drawRow("Descuento Comercial", "-", `${data.commercialDiscount}%`, `-$${data.discountAmount.toLocaleString()}`)
+    if (data.retention?.enabled && data.retention.percentage > 0) {
+        drawRow("Retención IIBB/Ganancias", `${data.retention.percentage}%`, "-", `(No resta del total)`)
+    }
 
     y += 5
     // Totals Box
@@ -343,7 +358,8 @@ export async function exportToWord(data: QuoteState & { diagramImage?: string, t
                         children: [
                             new Paragraph({ children: [new TextRun({ text: "METADATOS", bold: true, size: 14, color: HEX_GOLD })], alignment: "right" }),
                             new Paragraph({ text: `Cliente: ${data.clientName}`, alignment: "right" }),
-                            new Paragraph({ text: `Fecha: ${new Date().toLocaleDateString()}`, alignment: "right" })
+                            new Paragraph({ text: `Fecha: ${new Date().toLocaleDateString()}`, alignment: "right" }),
+                            ...(data.clientContact?.name ? [new Paragraph({ text: `Solicitante: ${data.clientContact.name}`, alignment: "right" })] : [])
                         ],
                         width: { size: 40, type: WidthType.PERCENTAGE },
                         borders: { bottom: { style: BorderStyle.SINGLE, size: 4, color: HEX_GOLD } }
@@ -355,11 +371,11 @@ export async function exportToWord(data: QuoteState & { diagramImage?: string, t
 
     const children: any[] = [
         headerTable,
-        new Paragraph({ text: "", spacing: { after: 200 } }),
+        new Paragraph({ text: "", spacing: { after: 120 } }), // Reduced spacing from 200
 
         // P1 Content
         new Paragraph({ text: "1. Resumen Estratégico", heading: HeadingLevel.HEADING_2 }),
-        new Paragraph({ text: data.description || "N/A", alignment: "both", spacing: { after: 300 } }),
+        new Paragraph({ text: data.description || "N/A", alignment: "both", spacing: { after: 200 } }), // Reduced spacing
 
         new Paragraph({ text: "2. Alcance y Volumetría", heading: HeadingLevel.HEADING_2 }),
     ]
@@ -375,7 +391,7 @@ export async function exportToWord(data: QuoteState & { diagramImage?: string, t
         bullets.push(`Perfiles: ${data.staffingDetails.profiles.length}`)
     }
 
-    bullets.forEach(b => children.push(new Paragraph({ text: `• ${b}`, bullet: { level: 0 } })))
+    bullets.forEach(b => children.push(new Paragraph({ text: `• ${b}`, bullet: { level: 0 }, spacing: { after: 50 } }))) // Tighten bullets
 
 
     // Page Break for Info Separation
@@ -385,7 +401,7 @@ export async function exportToWord(data: QuoteState & { diagramImage?: string, t
     children.push(new Paragraph({ text: "3. Arquitectura Propuesta", heading: HeadingLevel.HEADING_2 }))
 
     // Diagram Image
-    if (data.diagramImage) {
+    if (data.diagramImage && data.serviceType !== 'Staffing') {
         children.push(new Paragraph({
             children: [
                 new ImageRun({
@@ -397,6 +413,8 @@ export async function exportToWord(data: QuoteState & { diagramImage?: string, t
             alignment: "center",
             spacing: { after: 300 }
         }))
+    } else if (data.serviceType === 'Staffing') {
+        children.push(new Paragraph({ text: "N/A - Servicio de Staffing", spacing: { after: 200 } }))
     }
 
     // Budget
@@ -431,6 +449,17 @@ export async function exportToWord(data: QuoteState & { diagramImage?: string, t
                 }))
             }
         })
+    }
+
+    // Retention Row (Informational)
+    if (data.retention?.enabled && data.retention.percentage > 0) {
+        costRows.push(new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph("Retención IIBB/Ganancias")], columnSpan: 2 }),
+                new TableCell({ children: [new Paragraph(`${data.retention.percentage}%`)] }),
+                new TableCell({ children: [new Paragraph("(Info Only)")] })
+            ]
+        }))
     }
 
     // Totals Row
