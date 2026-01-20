@@ -336,23 +336,253 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
     // Save PDF Locally
     const filename = `cotizacion_${(data.clientName || 'proyecto').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
     doc.save(filename)
+}
 
-    // Save to Google Drive (Non-blocking)
-    try {
-        const blob = doc.output('blob')
-        const formData = new FormData()
-        formData.append('file', blob)
-        formData.append('filename', filename)
+export async function generatePDFBlob(data: QuoteState & { totalMonthlyCost: number, l2SupportCost: number, riskCost: number, totalWithRisk: number, discountAmount: number, finalTotal: number, criticitnessLevel: any, diagramImage?: string }) {
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.width
+    const pageHeight = doc.internal.pageSize.height
+    const margin = 20
 
-        // Fire and forget - handled by server action
-        import('./google-drive').then(({ uploadToDrive }) => {
-            uploadToDrive(formData).then(res => {
-                if (!res.success) console.warn("Background Drive Upload Warning:", res.error)
-            })
-        })
-    } catch (e) {
-        console.warn("Failed to initiate Drive upload:", e)
+    // Colors
+    const COLOR_GOLD = '#D4AF37'
+    const COLOR_CHARCOAL = '#333533'
+    const COLOR_TEXT = '#454545'
+
+    // --- PAGE 1: INFO & VOLUMETRY ---
+
+    // Header P1
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(22)
+    doc.setTextColor(COLOR_CHARCOAL)
+    doc.text("COTIZACIÓN TÉCNICA", margin, 30)
+
+    // Metadata Box P1
+    doc.setDrawColor(212, 175, 55) // Gold
+    doc.setLineWidth(0.5)
+    doc.rect(pageWidth - margin - 80, 20, 80, 30)
+    doc.setFontSize(8)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(COLOR_GOLD)
+    doc.text("INFORMACIÓN DEL PROYECTO", pageWidth - margin - 75, 26)
+    doc.setFont("helvetica", "normal")
+    doc.setTextColor(COLOR_TEXT)
+    doc.text(`ID: ${new Date().getTime().toString().substr(-6)}`, pageWidth - margin - 75, 32)
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, pageWidth - margin - 75, 37)
+    doc.text(`Cliente: ${data.clientName || 'N/A'}`, pageWidth - margin - 75, 42)
+    if (data.clientContact?.name) {
+        doc.text(`Solicitante: ${data.clientContact.name}`, pageWidth - margin - 75, 47)
     }
+
+    let y = 60
+
+    // 1. Client & Objective
+    doc.setFontSize(14)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(COLOR_CHARCOAL)
+    doc.text("1. Resumen Estratégico", margin, y)
+    y += 10
+
+    doc.setFontSize(10)
+    doc.setFont("helvetica", "normal")
+    doc.setTextColor(COLOR_TEXT)
+    const descLines = doc.splitTextToSize(data.description || 'Sin descripción detallada.', pageWidth - (margin * 2))
+    doc.text(descLines, margin, y, { align: 'left', maxWidth: pageWidth - (margin * 2), lineHeightFactor: 1.5 })
+    y += (descLines.length * 7) + 15 // Increased spacing multiplier for line height
+
+    // 2. Executive Summary Bullets
+    doc.setFontSize(14)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(COLOR_CHARCOAL)
+    doc.text("2. Alcance y Volumetría", margin, y)
+    y += 10
+
+    const bullets: string[] = []
+
+    if (data.serviceType === 'Proyecto') {
+        bullets.push(`Complejidad: ${data.complexity.toUpperCase()}`)
+        bullets.push(`Frecuencia: ${data.updateFrequency.toUpperCase()}`)
+        bullets.push(`Volumetría: ${data.pipelinesCount} Pipelines, ${data.notebooksCount} Notebooks`)
+        bullets.push(`Modelos IA/ML: ${data.dsModelsCount}`)
+        bullets.push(`Consumo: ${data.reportUsers} Usuarios Finales (${data.dashboardsCount + data.reportsCount} reportes)`)
+    } else if (data.serviceType === 'Sustain') {
+        bullets.push(`Tipo de Servicio: Sustain (Mantenimiento)`)
+        bullets.push(`Horario de Soporte: ${data.supportHours === '24/7' ? '24/7 CRITICAL' : 'Business Hours (9-18h)'}`)
+        bullets.push(`SLA / Riesgo: ${data.criticitness.enabled ? 'ALTO' : 'ESTÁNDAR'}`)
+    } else {
+        bullets.push(`Tipo de Servicio: Staffing`)
+        bullets.push(`Total Recursos: ${data.staffingDetails.profiles.reduce((acc, p) => acc + p.count, 0)}`)
+    }
+
+    doc.setFontSize(10)
+    doc.setFont("helvetica", "normal")
+    doc.setTextColor(COLOR_TEXT)
+
+    bullets.forEach(b => {
+        doc.text(`• ${b}`, margin + 5, y)
+        y += 7
+    })
+
+    // 2.1 Special Sections based on Service Type
+    if (data.serviceType === 'Sustain') {
+        y += 10
+        doc.setFontSize(14)
+        doc.setFont("helvetica", "bold")
+        doc.setTextColor(COLOR_CHARCOAL)
+        doc.text("3. Niveles de Servicio (SLA)", margin, y)
+        y += 10
+
+        doc.setFontSize(10)
+        doc.setFont("helvetica", "normal")
+        doc.setTextColor(COLOR_TEXT)
+        doc.text("• Continuidad Operativa: Mantenimiento correctivo y evolutivo.", margin + 5, y)
+        y += 7
+        doc.text(`• Respuesta ante Incidentes: ${data.supportHours === '24/7' ? '< 1 hora (Crítico)' : '< 4 horas (Business Hours)'}`, margin + 5, y)
+        y += 7
+        doc.text("• Monitoreo Proactivo de Pipelines y Procesos", margin + 5, y)
+        y += 7
+    }
+
+    // Footer P1
+    doc.setFontSize(8)
+    doc.setTextColor(150)
+    doc.text("Confidencial - The Store Intelligence | Página 1 de 2", margin, pageHeight - 10)
+
+
+    // --- PAGE 2: DIAGRAM & BUDGET ---
+    doc.addPage()
+    y = 20
+
+    // Header P2 (Simplified)
+    doc.setFontSize(12)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(COLOR_GOLD)
+    doc.text("ARQUITECTURA Y PRESUPUESTO", margin, y)
+    y += 15
+
+    // 3. Diagram (Centered Large) - Enabled for all types (Staffing uses differnt title)
+    if (data.diagramImage) {
+        doc.setFontSize(14)
+        doc.setFont("helvetica", "bold")
+        doc.setTextColor(COLOR_CHARCOAL)
+
+        const diagramTitle = data.serviceType === 'Staffing'
+            ? "3. Proceso de Implementación y Seguimiento"
+            : "3. Arquitectura Propuesta"
+
+        doc.text(diagramTitle, margin, y)
+        y += 10
+
+        const imgProps = doc.getImageProperties(data.diagramImage)
+        const pdfWidth = pageWidth - (margin * 2)
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
+        const maxH = 120 // Limit height
+        const finalH = pdfHeight > maxH ? maxH : pdfHeight
+
+        // Frame
+        doc.setDrawColor(200)
+        doc.rect(margin, y, pdfWidth, finalH + 4)
+        try {
+            doc.addImage(data.diagramImage, 'PNG', margin + 2, y + 2, pdfWidth - 4, finalH)
+        } catch (e) {
+            console.error(e)
+            doc.text("[Error al renderizar imagen]", margin + 10, y + 10)
+        }
+
+        y += finalH + 20
+    }
+
+    // 4. Budget Table
+    doc.setFontSize(14)
+    doc.setFont("helvetica", "bold")
+    doc.setTextColor(COLOR_CHARCOAL)
+    doc.text("4. Inversión Requerida", margin, y)
+    y += 10
+
+    // Table Header
+    doc.setFillColor(51, 53, 51) // Charcoal
+    doc.rect(margin, y, pageWidth - (margin * 2), 8, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(9)
+    doc.text("ROL / CONCEPTO", margin + 5, y + 5)
+    doc.text("DETALLE", margin + 80, y + 5)
+    doc.text("CANT.", margin + 110, y + 5)
+    doc.text("SUBTOTAL", margin + 140, y + 5)
+    y += 8
+
+    // Rows
+    doc.setTextColor(COLOR_TEXT)
+    doc.setFont("helvetica", "normal")
+    let isGray = true
+
+    // Row Helper
+    const drawRow = (label: string, detail: string, count: string, total: string) => {
+        if (isGray) {
+            doc.setFillColor(245, 245, 245)
+            doc.rect(margin, y, pageWidth - (margin * 2), 8, 'F')
+        }
+        isGray = !isGray
+        doc.text(label, margin + 5, y + 5)
+        doc.text(detail, margin + 80, y + 5)
+        doc.text(count, margin + 110, y + 5)
+        doc.text(total, margin + 140, y + 5)
+        y += 8
+    }
+
+    // RENDER RATES (Copy Logic to Avoid Rate Import mismatch if extracted)
+    // Actually we can reuse `data.staffingDetails` and `data.roles`
+    // but we need the RATES object or use passed cost...
+    // The previous exportToPDF function had access to RATES constant in file scope.
+    // generatePDFBlob is in the same file so it has access.
+
+    // RENDER ROLES
+    if (data.serviceType === 'Staffing' || data.serviceType === 'Sustain') {
+        data.staffingDetails.profiles.forEach(p => {
+            // Basic Cost Estimation per profile (approx)
+            const rate = RATES[Object.keys(RATES).find(k => p.role.toLowerCase().includes(k.replace('_', ' '))) || 'react_dev'] || 4000
+            const alloc = (p.allocationPercentage || 100) / 100
+            const sub = rate * alloc * p.count
+            drawRow(p.role, `${p.seniority} - ${p.allocationPercentage || 100}%`, p.count.toString(), `$${sub.toLocaleString()}`)
+        })
+    } else {
+        Object.entries(data.roles).forEach(([role, count]) => {
+            if (count > 0) {
+                const rate = RATES[role] || 0
+                drawRow(role.replace(/_/g, ' ').toUpperCase(), `Ssr Standard`, count.toString(), `$${(rate * count).toLocaleString()}`)
+            }
+        })
+    }
+
+    if (data.l2SupportCost > 0) drawRow("Soporte L2", "10% Costo Operativo", "-", `$${data.l2SupportCost.toLocaleString()}`)
+    if (data.riskCost > 0) drawRow("Riesgo Operativo", `${(data.criticitnessLevel?.margin || 0) * 100}% Markup`, "-", `$${data.riskCost.toLocaleString()}`)
+    if (data.discountAmount > 0) drawRow("Descuento Comercial", "-", `${data.commercialDiscount}%`, `-$${data.discountAmount.toLocaleString()}`)
+    if (data.retention?.enabled && data.retention.percentage > 0) {
+        drawRow("Retención IIBB/Ganancias", `${data.retention.percentage}%`, "-", `(No resta del total)`)
+    }
+
+    y += 5
+    // Totals Box
+    doc.setDrawColor(212, 175, 55)
+    doc.setLineWidth(0.5)
+    doc.rect(margin, y, pageWidth - (margin * 2), 25) // Golden Border
+
+    doc.setTextColor(COLOR_CHARCOAL)
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(11)
+    doc.text("MENSUAL TOTAL:", margin + 5, y + 8)
+    doc.text(`$${data.finalTotal.toLocaleString()}`, margin + 140, y + 8)
+
+    doc.setTextColor(COLOR_GOLD) // Gold Text
+    doc.setFontSize(14)
+    doc.text("INVERSIÓN TOTAL (6 MESES):", margin + 5, y + 18)
+    doc.text(`$${(data.finalTotal * data.durationMonths).toLocaleString()}`, margin + 140, y + 18)
+
+    // Footer P2
+    doc.setFontSize(8)
+    doc.setTextColor(150)
+    doc.text("Confidencial - The Store Intelligence | Página 2 de 2", margin, pageHeight - 10)
+
+    return doc.output('blob')
 }
 
 // -- Word Export --

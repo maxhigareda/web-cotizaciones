@@ -14,7 +14,7 @@ import { Wand2, Download, FileText, Check, ShieldAlert, Network, Cpu, Calculator
 import { cn } from "@/lib/utils"
 import { saveQuote } from "@/lib/actions"
 import { generateMermaidUpdate } from "@/lib/ai"
-import { exportToPDF, exportToWord } from "@/lib/export"
+import { exportToPDF, exportToWord, generatePDFBlob } from "@/lib/export"
 import html2canvas from 'html2canvas'
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -524,6 +524,7 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
     const finalTotalProjectCost = finalTotal * state.durationMonths
 
     // --- Save Quote ---
+    // --- Save Quote ---
     const handleSaveQuote = async () => {
         if (!state.clientName) {
             alert("Por favor ingrese un nombre de cliente.")
@@ -531,6 +532,7 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
         }
         setIsSaving(true)
         try {
+            // 1. Save to DB (Priority)
             const breakdown = {
                 roles: Object.entries(state.roles).map(([r, c]) => ({ role: r, count: c, cost: 0, hours: 0 })), // simplified
                 totalMonthlyCost: netTotal, // Use Net Total for persistence
@@ -561,9 +563,50 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
                 return;
             }
 
-            const savedQuote = result.quote
+            // 2. Upload to Drive (Background / Fire and Forget)
+            const uploadToDrivePromise = (async () => {
+                try {
+                    console.log("Generating PDF for Drive Backup...")
+                    let diagramDataUrl = undefined
+                    // Capture diagram if relevant
+                    const element = document.getElementById('diagram-capture-target')
+                    if (element && state.serviceType !== 'Staffing') {
+                        const canvas = await html2canvas(element, { backgroundColor: '#ffffff', scale: 2, useCORS: true })
+                        diagramDataUrl = canvas.toDataURL('image/png')
+                    }
 
-            // Client-Side Persistence Removed - Strictly rely on Server DB
+                    const blob = await generatePDFBlob({
+                        ...state,
+                        totalMonthlyCost,
+                        l2SupportCost,
+                        riskCost,
+                        totalWithRisk,
+                        criticitnessLevel,
+                        diagramImage: diagramDataUrl,
+                        serviceType: state.serviceType,
+                        commercialDiscount: state.commercialDiscount,
+                        discountAmount,
+                        finalTotal
+                    })
+
+                    const filename = `${state.clientName}_${state.serviceType}_${new Date().toISOString().split('T')[0]}.pdf`.replace(/\s+/g, '_')
+                    const formData = new FormData()
+                    formData.append('file', blob)
+                    formData.append('filename', filename)
+
+                    // Dynamic Import to avoid server action issues if any
+                    const { uploadToDrive } = await import('@/lib/google-drive')
+                    const driveResult = await uploadToDrive(formData)
+
+                    if (driveResult.success) {
+                        console.log("Drive Backup Success", driveResult.fileId)
+                    } else {
+                        console.warn("Drive Backup Warning", driveResult.error)
+                    }
+                } catch (driveErr) {
+                    console.error("Drive Backup Failed", driveErr)
+                }
+            })()
 
             alert("Cotización guardada exitosamente.")
             router.push('/dashboard')
