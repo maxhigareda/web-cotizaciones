@@ -218,6 +218,7 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
     const [tempDiagramCode, setTempDiagramCode] = useState('')
     const [aiPrompt, setAiPrompt] = useState('')
     const [isAiLoading, setIsAiLoading] = useState(false)
+    const [isNetTotalFlashing, setIsNetTotalFlashing] = useState(false)
     const [diagramHistory, setDiagramHistory] = useState<string[]>([]) // For Undo
     const [polishLoading, setPolishLoading] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
@@ -504,6 +505,19 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
         }
     }, [state, dbRates, criticitnessLevel, findDynamicRate])
 
+    // --- Retention & Net Logic (Reactive) ---
+    const retentionAmount = state.retention.enabled ? finalTotal * (state.retention.percentage / 100) : 0
+    const netTotal = finalTotal - retentionAmount
+
+    // Flash effect when Net Total changes
+    useEffect(() => {
+        if (state.retention.enabled) {
+            setIsNetTotalFlashing(true)
+            const t = setTimeout(() => setIsNetTotalFlashing(false), 500)
+            return () => clearTimeout(t)
+        }
+    }, [netTotal, state.retention.enabled])
+
     const totalProjectCost = totalWithRisk * state.durationMonths
     const finalTotalProjectCost = finalTotal * state.durationMonths
 
@@ -517,7 +531,7 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
         try {
             const breakdown = {
                 roles: Object.entries(state.roles).map(([r, c]) => ({ role: r, count: c, cost: 0, hours: 0 })), // simplified
-                totalMonthlyCost: totalMonthlyCost,
+                totalMonthlyCost: netTotal, // Use Net Total for persistence
                 diagramCode: chartCode
             }
 
@@ -1287,12 +1301,13 @@ graph TD
                                                 className="md:col-span-2 space-y-2"
                                             >
                                                 <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Neto a Cobrar (Estimado)</Label>
-                                                <div className="bg-[#1a1a1a] border border-[#F5CB5C]/30 h-[50px] rounded-[1rem] px-6 flex items-center justify-between shadow-[0_0_15px_rgba(245,203,92,0.05)]">
+                                                <div className={cn(
+                                                    "bg-[#1a1a1a] border h-[50px] rounded-[1rem] px-6 flex items-center justify-between transition-all duration-500",
+                                                    isNetTotalFlashing ? "border-[#F5CB5C] shadow-[0_0_20px_rgba(245,203,92,0.4)] scale-[1.02]" : "border-[#F5CB5C]/30 shadow-[0_0_15px_rgba(245,203,92,0.05)]"
+                                                )}>
                                                     <span className="text-[#CFDBD5] text-sm uppercase tracking-widest font-bold">Total Neto</span>
-                                                    <span className="text-[#F5CB5C] font-mono font-bold text-xl tracking-tight">
-                                                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(
-                                                            finalTotal * (1 - (state.retention.enabled ? state.retention.percentage : 0) / 100)
-                                                        )}
+                                                    <span className={cn("font-mono font-bold text-xl tracking-tight transition-colors duration-300", isNetTotalFlashing ? "text-[#F5CB5C]" : "text-[#F5CB5C]")}>
+                                                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(netTotal)}
                                                     </span>
                                                 </div>
                                             </motion.div>
@@ -1387,7 +1402,8 @@ graph TD
                             {state.retention.enabled && (
                                 <div className="flex justify-between items-center text-[#F5CB5C] font-black text-2xl">
                                     <span>Neto a Cobrar</span>
-                                    <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(finalTotal - (finalTotal * (state.retention.percentage / 100)))}</span>
+                                    <span>Neto a Cobrar</span>
+                                    <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(netTotal)}</span>
                                 </div>
                             )}
                             {!state.retention.enabled && (
