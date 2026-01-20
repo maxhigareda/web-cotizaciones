@@ -436,7 +436,8 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
             // Staffing: Explicit Profile List
             state.staffingDetails.profiles.forEach(p => {
                 const cost = getRate(p.role, p.seniority)
-                baseRoles += cost * p.count
+                const allocation = (p.allocationPercentage ?? 100) / 100
+                baseRoles += cost * p.count * allocation
             })
         } else {
             // Project & Sustain (Role Counters)
@@ -944,7 +945,7 @@ graph TD
                                                         newProfiles[idx].role = e.target.value
                                                         updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
                                                     }}
-                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] text-sm font-medium focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
+                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-12 rounded-xl text-sm font-medium focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
                                                 />
                                             </div>
 
@@ -956,7 +957,7 @@ graph TD
                                                     newProfiles[idx].seniority = v
                                                     updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
                                                 }}>
-                                                    <SelectTrigger className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] text-sm hover:border-[#F5CB5C]/50 transition-all focus:ring-0 focus:border-[#F5CB5C]"><SelectValue /></SelectTrigger>
+                                                    <SelectTrigger className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-12 rounded-xl text-sm hover:border-[#F5CB5C]/50 transition-all focus:ring-0 focus:border-[#F5CB5C]"><SelectValue /></SelectTrigger>
                                                     <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
                                                         <SelectItem value="Jr">Junior</SelectItem>
                                                         <SelectItem value="Ssr">Semi-Senior</SelectItem>
@@ -966,15 +967,15 @@ graph TD
                                                 </Select>
                                             </div>
 
-                                            {/* 3. Dedicación (Seamless Control) */}
+                                            {/* 3. Dedicación (Strict 48px & Logic) */}
                                             <div className="space-y-2">
-                                                <div className="flex items-center gap-2 pl-1">
+                                                <div className="flex justify-between items-baseline px-1">
                                                     <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider">Dedicación</Label>
-                                                    <span className="text-[10px] text-[#F5CB5C]/80 font-mono font-bold">
-                                                        {(160 * ((profile.allocationPercentage ?? 100) / 100)).toFixed(0)}h/mes
+                                                    <span className="text-[10px] text-[#CFDBD5]/60 font-mono">
+                                                        {(160 * ((profile.allocationPercentage ?? 100) / 100)).toFixed(0)} h/mes
                                                     </span>
                                                 </div>
-                                                <div className="flex h-[50px] bg-[#242423] border border-[#4A4D4A] rounded-[1rem] overflow-hidden hover:border-[#F5CB5C]/50 transition-colors group/dedication">
+                                                <div className="flex h-12 bg-[#242423] border border-[#4A4D4A] rounded-xl overflow-hidden hover:border-[#F5CB5C]/50 transition-colors group/dedication">
                                                     <Button
                                                         variant="ghost"
                                                         onClick={() => {
@@ -984,7 +985,7 @@ graph TD
                                                             newProfiles[idx].allocationPercentage = val;
                                                             updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles });
                                                         }}
-                                                        className="h-full w-12 rounded-none text-[#CFDBD5]/40 hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/5 transition-colors px-0 border-r border-transparent"
+                                                        className="h-full w-8 rounded-none text-[#CFDBD5]/40 hover:text-[#F5CB5C] hover:bg-transparent transition-colors px-0"
                                                     >
                                                         -
                                                     </Button>
@@ -1004,9 +1005,9 @@ graph TD
                                                                 newProfiles[idx].allocationPercentage = val
                                                                 updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
                                                             }}
-                                                            className="no-spinner bg-transparent border-none text-[#E8EDDF] text-center text-lg font-bold h-full w-full focus:ring-0 focus:border-none shadow-none px-0"
+                                                            className="no-spinner bg-transparent border-none text-[#E8EDDF] text-center text-base font-bold h-full w-full focus:ring-0 focus:border-none shadow-none px-0"
                                                         />
-                                                        <span className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-[#CFDBD5]/20 text-xs font-bold">%</span>
+                                                        <span className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-[#CFDBD5]/20 text-xs font-bold w-6">%</span>
                                                     </div>
 
                                                     <Button
@@ -1018,7 +1019,7 @@ graph TD
                                                             newProfiles[idx].allocationPercentage = val;
                                                             updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles });
                                                         }}
-                                                        className="h-full w-12 rounded-none text-[#CFDBD5]/40 hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/5 transition-colors px-0 border-l border-transparent"
+                                                        className="h-full w-8 rounded-none text-[#CFDBD5]/40 hover:text-[#F5CB5C] hover:bg-transparent transition-colors px-0"
                                                     >
                                                         +
                                                     </Button>
@@ -1037,7 +1038,7 @@ graph TD
                                                         newProfiles[idx].count = parseInt(e.target.value) || 1
                                                         updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
                                                     }}
-                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] text-center font-bold text-lg focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
+                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-12 rounded-xl text-center font-bold text-lg focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
                                                 />
                                             </div>
 
@@ -1053,7 +1054,7 @@ graph TD
                                                     newProfiles[idx].skills = e.target.value
                                                     updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
                                                 }}
-                                                className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[40px] rounded-[0.8rem] text-xs hover:border-[#F5CB5C]/50 transition-all focus:border-[#F5CB5C]"
+                                                className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-10 rounded-lg text-xs hover:border-[#F5CB5C]/50 transition-all focus:border-[#F5CB5C]"
                                             />
                                         </div>
 
@@ -1066,7 +1067,7 @@ graph TD
                                             profiles: [...state.staffingDetails.profiles, { id: Date.now().toString(), role: '', seniority: 'Ssr', skills: '', count: 1, startDate: '', endDate: '', allocationPercentage: 100 }]
                                         })
                                     }}
-                                    className="w-full h-14 border-dashed border border-[#4A4D4A] bg-transparent text-[#CFDBD5] hover:border-[#F5CB5C] hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/5 rounded-[1.5rem] text-sm font-bold uppercase tracking-widest transition-all"
+                                    className="w-full h-12 border-dashed border border-[#4A4D4A] bg-transparent text-[#CFDBD5] hover:border-[#F5CB5C] hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/5 rounded-xl text-sm font-bold uppercase tracking-widest transition-all"
                                 >
                                     + Agregar Perfil
                                 </Button>

@@ -435,10 +435,10 @@ export async function exportToWord(data: QuoteState & { diagramImage?: string, t
         data.staffingDetails.profiles.forEach(p => {
             if (p.count > 0) {
                 const rate = RATES[Object.keys(RATES).find(k => p.role.toLowerCase().includes(k.replace('_', ' '))) || 'react_dev'] || 4000
-                const alloc = (p.allocationPercentage || 100) / 100
+                const alloc = (p.allocationPercentage ?? 100) / 100
                 const sub = rate * alloc * p.count
                 costRows.push(new TableRow({
-                    children: [p.role, `${p.seniority} (${p.allocationPercentage || 100}%)`, p.count.toString(), `$${sub.toLocaleString()}`].map(t => new TableCell({ children: [new Paragraph(t)] }))
+                    children: [p.role, `${p.seniority} (${p.allocationPercentage ?? 100}%)`, p.count.toString(), `$${sub.toLocaleString()}`].map(t => new TableCell({ children: [new Paragraph(t)] }))
                 }))
             }
         })
