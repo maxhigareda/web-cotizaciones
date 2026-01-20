@@ -1231,57 +1231,74 @@ graph TD
                                 </div>
                             </div>
 
-                            {/* ROW 2: Retention Logic (Grid) */}
+                            {/* ROW 2: Retention Logic (Dynamic) */}
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                                {/* Switch */}
+                                {/* Selector (Col 1) */}
                                 <div className="space-y-2">
-                                    <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">¿Aplica Retención?</Label>
-                                    <div className="flex items-center justify-between bg-[#242423] border border-[#4A4D4A] h-[50px] rounded-[1rem] px-4 hover:border-[#F5CB5C]/50 transition-colors group">
-                                        <span className="text-[#E8EDDF] text-sm font-medium group-hover:text-[#F5CB5C] transition-colors">
-                                            {state.retention.enabled ? 'Sí, aplica' : 'No aplica'}
-                                        </span>
-                                        <Switch
-                                            checked={state.retention.enabled}
-                                            onCheckedChange={(v) => updateState('retention', { ...state.retention, enabled: v })}
-                                            className="data-[state=checked]:bg-[#F5CB5C]"
-                                        />
-                                    </div>
+                                    <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Retención Fiscal</Label>
+                                    <Select
+                                        value={state.retention.enabled ? "yes" : "no"}
+                                        onValueChange={(v) => updateState('retention', { ...state.retention, enabled: v === 'yes' })}
+                                    >
+                                        <SelectTrigger className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] focus:ring-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
+                                            <SelectItem value="no">No aplica</SelectItem>
+                                            <SelectItem value="yes">Sí, aplica retención</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
 
-                                {/* Input % (Conditional) */}
-                                {state.retention.enabled ? (
-                                    <div className="space-y-2 animate-in fade-in zoom-in-95 duration-200">
-                                        <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">% Retención</Label>
-                                        <div className="relative">
-                                            <Input
-                                                type="number"
-                                                min={0}
-                                                max={100}
-                                                value={state.retention.percentage}
-                                                onChange={(e) => updateState('retention', { ...state.retention, percentage: parseFloat(e.target.value) || 0 })}
-                                                className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] pl-4 pr-12 focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50 text-right font-bold text-lg"
-                                            />
-                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none flex items-center gap-2">
-                                                <span className="text-[#F5CB5C] font-bold text-lg">%</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="hidden md:block"></div> /* Spacer to keep grid alignment if needed, or allow badge to expand */
-                                )}
+                                {/* Dynamic Fields (Col 2-4) */}
+                                <AnimatePresence mode="wait">
+                                    {state.retention.enabled && (
+                                        <>
+                                            {/* Input % (Col 2) */}
+                                            <motion.div
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: -10 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="space-y-2"
+                                            >
+                                                <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">% Porcentaje</Label>
+                                                <div className="relative">
+                                                    <Input
+                                                        type="number"
+                                                        min={0}
+                                                        max={100}
+                                                        value={state.retention.percentage}
+                                                        onChange={(e) => updateState('retention', { ...state.retention, percentage: parseFloat(e.target.value) || 0 })}
+                                                        className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] pl-4 pr-12 focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50 text-right font-bold text-lg"
+                                                    />
+                                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none flex items-center gap-2">
+                                                        <span className="text-[#F5CB5C] font-bold text-lg">%</span>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
 
-                                {/* Net Total Badge */}
-                                <div className={`${state.retention.enabled ? 'md:col-span-2' : 'md:col-span-3'} space-y-2 transition-all duration-300`}>
-                                    <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Neto a Cobrar (Estimado)</Label>
-                                    <div className="bg-[#1a1a1a] border border-[#F5CB5C]/30 h-[50px] rounded-[1rem] px-6 flex items-center justify-between shadow-[0_0_15px_rgba(245,203,92,0.05)]">
-                                        <span className="text-[#CFDBD5] text-sm uppercase tracking-widest font-bold">Total Neto</span>
-                                        <span className="text-[#F5CB5C] font-mono font-bold text-xl tracking-tight">
-                                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(
-                                                finalTotal * (1 - (state.retention.enabled ? state.retention.percentage : 0) / 100)
-                                            )}
-                                        </span>
-                                    </div>
-                                </div>
+                                            {/* Net Total Badge (Col 3-4) */}
+                                            <motion.div
+                                                initial={{ opacity: 0, scale: 0.95 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                transition={{ duration: 0.2, delay: 0.1 }}
+                                                className="md:col-span-2 space-y-2"
+                                            >
+                                                <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Neto a Cobrar (Estimado)</Label>
+                                                <div className="bg-[#1a1a1a] border border-[#F5CB5C]/30 h-[50px] rounded-[1rem] px-6 flex items-center justify-between shadow-[0_0_15px_rgba(245,203,92,0.05)]">
+                                                    <span className="text-[#CFDBD5] text-sm uppercase tracking-widest font-bold">Total Neto</span>
+                                                    <span className="text-[#F5CB5C] font-mono font-bold text-xl tracking-tight">
+                                                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(
+                                                            finalTotal * (1 - (state.retention.enabled ? state.retention.percentage : 0) / 100)
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            </motion.div>
+                                        </>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         </div>
                     </SectionCard>
