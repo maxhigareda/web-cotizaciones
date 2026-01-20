@@ -371,7 +371,7 @@ export async function exportToWord(data: QuoteState & { diagramImage?: string, t
 
     const children: any[] = [
         headerTable,
-        new Paragraph({ text: "", spacing: { after: 120 } }), // Reduced spacing from 200
+        new Paragraph({ text: "", spacing: { after: 40 } }), // Reduced spacing from 120
 
         // P1 Content
         new Paragraph({ text: "1. Resumen Estratégico", heading: HeadingLevel.HEADING_2 }),
@@ -433,12 +433,14 @@ export async function exportToWord(data: QuoteState & { diagramImage?: string, t
     // Populate Rows
     if (data.serviceType === 'Staffing' || data.serviceType === 'Sustain') {
         data.staffingDetails.profiles.forEach(p => {
-            const rate = RATES[Object.keys(RATES).find(k => p.role.toLowerCase().includes(k.replace('_', ' '))) || 'react_dev'] || 4000
-            const alloc = (p.allocationPercentage || 100) / 100
-            const sub = rate * alloc * p.count
-            costRows.push(new TableRow({
-                children: [p.role, `${p.seniority} (${p.allocationPercentage || 100}%)`, p.count.toString(), `$${sub.toLocaleString()}`].map(t => new TableCell({ children: [new Paragraph(t)] }))
-            }))
+            if (p.count > 0) {
+                const rate = RATES[Object.keys(RATES).find(k => p.role.toLowerCase().includes(k.replace('_', ' '))) || 'react_dev'] || 4000
+                const alloc = (p.allocationPercentage || 100) / 100
+                const sub = rate * alloc * p.count
+                costRows.push(new TableRow({
+                    children: [p.role, `${p.seniority} (${p.allocationPercentage || 100}%)`, p.count.toString(), `$${sub.toLocaleString()}`].map(t => new TableCell({ children: [new Paragraph(t)] }))
+                }))
+            }
         })
     } else {
         Object.entries(data.roles).forEach(([role, count]) => {
