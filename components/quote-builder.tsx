@@ -962,25 +962,50 @@ graph TD
                                             <div className="lg:col-span-4">
                                                 <Label className="text-[#CFDBD5] mb-3 block text-xs font-bold uppercase tracking-wider text-center">Dedicación Mensual</Label>
                                                 <div className="flex items-center gap-4">
-                                                    <div className="relative flex-1">
+                                                    <div className="relative flex-1 group/input">
                                                         <Input
                                                             type="number"
-                                                            min={1}
+                                                            min={0}
                                                             max={100}
+                                                            step={5}
                                                             value={profile.allocationPercentage ?? 100}
                                                             onChange={(e) => {
+                                                                let val = parseInt(e.target.value) || 0;
+                                                                if (val > 100) val = 100;
+                                                                if (val < 0) val = 0;
+
                                                                 const newProfiles = [...state.staffingDetails.profiles]
-                                                                newProfiles[idx].allocationPercentage = parseInt(e.target.value) || 0
+                                                                newProfiles[idx].allocationPercentage = val
                                                                 updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
                                                             }}
-                                                            className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-14 rounded-2xl text-center text-xl font-bold appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:border-[#F5CB5C] focus:ring-[2px] focus:ring-[#F5CB5C]/50 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
+                                                            className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-14 rounded-2xl text-center text-xl font-bold focus:border-[#F5CB5C] focus:ring-[2px] focus:ring-[#F5CB5C]/50 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] pr-8"
                                                         />
-                                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#CFDBD5]/30 font-bold pointer-events-none">%</span>
+                                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#CFDBD5]/30 font-bold pointer-events-none group-focus-within/input:text-[#F5CB5C] transition-colors">%</span>
+
+                                                        {/* Custom Spin Buttons (Visual Only hints as native are used) */}
+                                                        <div className="absolute right-1 top-1 bottom-1 flex flex-col justify-center opacity-0 group-hover/input:opacity-100 transition-opacity">
+                                                            <div className="h-full px-2 flex items-center justify-center text-[#CFDBD5]/50 hover:text-[#F5CB5C] cursor-pointer" onClick={() => {
+                                                                let val = (profile.allocationPercentage ?? 100) + 5;
+                                                                if (val > 100) val = 100;
+                                                                const newProfiles = [...state.staffingDetails.profiles];
+                                                                newProfiles[idx].allocationPercentage = val;
+                                                                updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles });
+                                                            }}>▲</div>
+                                                            <div className="h-full px-2 flex items-center justify-center text-[#CFDBD5]/50 hover:text-[#F5CB5C] cursor-pointer" onClick={() => {
+                                                                let val = (profile.allocationPercentage ?? 100) - 5;
+                                                                if (val < 0) val = 0;
+                                                                const newProfiles = [...state.staffingDetails.profiles];
+                                                                newProfiles[idx].allocationPercentage = val;
+                                                                updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles });
+                                                            }}>▼</div>
+                                                        </div>
                                                     </div>
-                                                    <div className="h-14 bg-[#F5CB5C]/5 rounded-2xl border border-[#F5CB5C]/10 min-w-[100px] flex flex-col items-center justify-center backdrop-blur-sm">
+
+                                                    <div className="h-14 bg-[#F5CB5C]/5 rounded-2xl border border-[#F5CB5C]/10 min-w-[110px] flex flex-col items-center justify-center backdrop-blur-sm select-none">
                                                         <span className="text-[10px] text-[#F5CB5C]/70 uppercase font-black tracking-widest">Horas</span>
-                                                        <span className="text-[#F5CB5C] font-mono font-bold text-lg">
+                                                        <span className="text-[#E8EDDF] font-mono font-bold text-lg flex items-baseline gap-1">
                                                             {(160 * ((profile.allocationPercentage ?? 100) / 100)).toFixed(0)}
+                                                            <span className="text-xs text-[#F5CB5C]/50">h</span>
                                                         </span>
                                                     </div>
                                                 </div>
@@ -1219,7 +1244,7 @@ graph TD
                                         <CountInput label="Países Involucrados" value={state.criticitness.countriesCount} onChange={(v: number) => updateCriticitness('countriesCount', v)} min={1} />
                                     </div>
                                 </div>
-                        )}
+                                )}
                             </SectionCard>
 
                 </div>
