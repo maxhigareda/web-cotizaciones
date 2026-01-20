@@ -956,7 +956,7 @@ graph TD
                                                     newProfiles[idx].seniority = v
                                                     updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
                                                 }}>
-                                                    <SelectTrigger className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] hover:border-[#F5CB5C]/50 transition-all focus:ring-0 focus:border-[#F5CB5C]"><SelectValue /></SelectTrigger>
+                                                    <SelectTrigger className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] text-sm hover:border-[#F5CB5C]/50 transition-all focus:ring-0 focus:border-[#F5CB5C]"><SelectValue /></SelectTrigger>
                                                     <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
                                                         <SelectItem value="Jr">Junior</SelectItem>
                                                         <SelectItem value="Ssr">Semi-Senior</SelectItem>
@@ -966,11 +966,11 @@ graph TD
                                                 </Select>
                                             </div>
 
-                                            {/* 3. Dedicación (Integrated Control) */}
+                                            {/* 3. Dedicación (Seamless Control) */}
                                             <div className="space-y-2">
-                                                <div className="flex justify-between items-center px-1">
+                                                <div className="flex items-center gap-2 pl-1">
                                                     <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider">Dedicación</Label>
-                                                    <span className="text-[10px] bg-[#F5CB5C]/10 text-[#F5CB5C] px-1.5 py-0.5 rounded font-mono font-bold">
+                                                    <span className="text-[10px] text-[#F5CB5C]/80 font-mono font-bold">
                                                         {(160 * ((profile.allocationPercentage ?? 100) / 100)).toFixed(0)}h/mes
                                                     </span>
                                                 </div>
@@ -984,12 +984,12 @@ graph TD
                                                             newProfiles[idx].allocationPercentage = val;
                                                             updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles });
                                                         }}
-                                                        className="h-full w-10 rounded-none border-r border-[#4A4D4A]/50 text-[#CFDBD5]/50 hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/10 transition-colors px-0"
+                                                        className="h-full w-12 rounded-none text-[#CFDBD5]/40 hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/5 transition-colors px-0 border-r border-transparent"
                                                     >
                                                         -
                                                     </Button>
 
-                                                    <div className="flex-1 flex items-center justify-center relative bg-transparent">
+                                                    <div className="flex-1 flex items-center justify-center relative bg-[#242423]">
                                                         <Input
                                                             type="number"
                                                             min={0}
@@ -1006,7 +1006,7 @@ graph TD
                                                             }}
                                                             className="no-spinner bg-transparent border-none text-[#E8EDDF] text-center text-lg font-bold h-full w-full focus:ring-0 focus:border-none shadow-none px-0"
                                                         />
-                                                        <span className="absolute right-3 pointer-events-none text-[#CFDBD5]/30 text-xs font-bold">%</span>
+                                                        <span className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-[#CFDBD5]/20 text-xs font-bold">%</span>
                                                     </div>
 
                                                     <Button
@@ -1018,7 +1018,7 @@ graph TD
                                                             newProfiles[idx].allocationPercentage = val;
                                                             updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles });
                                                         }}
-                                                        className="h-full w-10 rounded-none border-l border-[#4A4D4A]/50 text-[#CFDBD5]/50 hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/10 transition-colors px-0"
+                                                        className="h-full w-12 rounded-none text-[#CFDBD5]/40 hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/5 transition-colors px-0 border-l border-transparent"
                                                     >
                                                         +
                                                     </Button>
