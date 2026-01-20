@@ -932,11 +932,11 @@ graph TD
                                             <X className="w-4 h-4" />
                                         </Button>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                                        <div className="grid grid-cols-4 gap-4 items-end">
 
                                             {/* 1. Rol / Perfil */}
                                             <div className="space-y-2">
-                                                <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Rol / Perfil</Label>
+                                                <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1 block">Rol / Perfil</Label>
                                                 <Input
                                                     placeholder="Ej. Java Developer"
                                                     value={profile.role}
@@ -945,19 +945,19 @@ graph TD
                                                         newProfiles[idx].role = e.target.value
                                                         updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
                                                     }}
-                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-12 rounded-xl text-sm font-medium focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
+                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] text-sm font-medium focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
                                                 />
                                             </div>
 
                                             {/* 2. Seniority */}
                                             <div className="space-y-2">
-                                                <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Seniority</Label>
+                                                <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1 block">Seniority</Label>
                                                 <Select value={profile.seniority} onValueChange={(v) => {
                                                     const newProfiles = [...state.staffingDetails.profiles]
                                                     newProfiles[idx].seniority = v
                                                     updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
                                                 }}>
-                                                    <SelectTrigger className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-12 rounded-xl text-sm hover:border-[#F5CB5C]/50 transition-all focus:ring-0 focus:border-[#F5CB5C]"><SelectValue /></SelectTrigger>
+                                                    <SelectTrigger className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] text-sm hover:border-[#F5CB5C]/50 transition-all focus:ring-0 focus:border-[#F5CB5C]"><SelectValue /></SelectTrigger>
                                                     <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
                                                         <SelectItem value="Jr">Junior</SelectItem>
                                                         <SelectItem value="Ssr">Semi-Senior</SelectItem>
@@ -967,15 +967,12 @@ graph TD
                                                 </Select>
                                             </div>
 
-                                            {/* 3. Dedicación (Strict 48px & Logic) */}
+                                            {/* 3. Dedicación (Strict 50px & Minimalist) */}
                                             <div className="space-y-2">
                                                 <div className="flex justify-between items-baseline px-1">
-                                                    <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider">Dedicación</Label>
-                                                    <span className="text-[10px] text-[#CFDBD5]/60 font-mono">
-                                                        {(160 * ((profile.allocationPercentage ?? 100) / 100)).toFixed(0)} h/mes
-                                                    </span>
+                                                    <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider block">Dedicación</Label>
                                                 </div>
-                                                <div className="flex h-12 bg-[#242423] border border-[#4A4D4A] rounded-xl overflow-hidden hover:border-[#F5CB5C]/50 transition-colors group/dedication">
+                                                <div className="flex h-[50px] bg-[#242423] border border-[#4A4D4A] rounded-[1rem] overflow-hidden hover:border-[#F5CB5C]/50 transition-colors group/dedication relative">
                                                     <Button
                                                         variant="ghost"
                                                         onClick={() => {
@@ -985,29 +982,21 @@ graph TD
                                                             newProfiles[idx].allocationPercentage = val;
                                                             updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles });
                                                         }}
-                                                        className="h-full w-8 rounded-none text-[#CFDBD5]/40 hover:text-[#F5CB5C] hover:bg-transparent transition-colors px-0"
+                                                        className="h-full w-10 absolute left-0 top-0 z-10 hover:bg-[#F5CB5C]/10 hover:text-[#F5CB5C] text-[#CFDBD5]/30 rounded-none transition-colors"
                                                     >
                                                         -
                                                     </Button>
 
-                                                    <div className="flex-1 flex items-center justify-center relative bg-[#242423]">
-                                                        <Input
-                                                            type="number"
-                                                            min={0}
-                                                            max={100}
-                                                            step={5}
-                                                            value={profile.allocationPercentage ?? 100}
-                                                            onChange={(e) => {
-                                                                let val = parseInt(e.target.value) || 0;
-                                                                if (val > 100) val = 100;
-                                                                if (val < 0) val = 0;
-                                                                const newProfiles = [...state.staffingDetails.profiles]
-                                                                newProfiles[idx].allocationPercentage = val
-                                                                updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
-                                                            }}
-                                                            className="no-spinner bg-transparent border-none text-[#E8EDDF] text-center text-base font-bold h-full w-full focus:ring-0 focus:border-none shadow-none px-0"
-                                                        />
-                                                        <span className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-[#CFDBD5]/20 text-xs font-bold w-6">%</span>
+                                                    <div className="flex-1 flex flex-col items-center justify-center relative w-full pointer-events-none">
+                                                        <div className="flex items-baseline gap-0.5">
+                                                            <span className="text-[#E8EDDF] text-base font-bold tracking-tight">
+                                                                {profile.allocationPercentage ?? 100}
+                                                            </span>
+                                                            <span className="text-[#F5CB5C] text-xs font-bold mb-0.5">%</span>
+                                                        </div>
+                                                        <span className="text-[9px] text-[#CFDBD5]/50 font-mono tracking-tight leading-none -mt-0.5">
+                                                            {(160 * ((profile.allocationPercentage ?? 100) / 100)).toFixed(0)} h/mes
+                                                        </span>
                                                     </div>
 
                                                     <Button
@@ -1019,7 +1008,7 @@ graph TD
                                                             newProfiles[idx].allocationPercentage = val;
                                                             updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles });
                                                         }}
-                                                        className="h-full w-8 rounded-none text-[#CFDBD5]/40 hover:text-[#F5CB5C] hover:bg-transparent transition-colors px-0"
+                                                        className="h-full w-10 absolute right-0 top-0 z-10 hover:bg-[#F5CB5C]/10 hover:text-[#F5CB5C] text-[#CFDBD5]/30 rounded-none transition-colors"
                                                     >
                                                         +
                                                     </Button>
@@ -1028,7 +1017,7 @@ graph TD
 
                                             {/* 4. Cantidad */}
                                             <div className="space-y-2">
-                                                <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Cantidad</Label>
+                                                <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1 block">Cantidad</Label>
                                                 <Input
                                                     type="number"
                                                     min={1}
@@ -1038,13 +1027,11 @@ graph TD
                                                         newProfiles[idx].count = parseInt(e.target.value) || 1
                                                         updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
                                                     }}
-                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-12 rounded-xl text-center font-bold text-lg focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
+                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] text-center font-bold text-base focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
                                                 />
                                             </div>
 
-                                        </div>
-
-                                        {/* 5. Skills (Full Row - Below) */}
+                                        </div>{/* 5. Skills (Full Row - Below) */}
                                         <div className="mt-4">
                                             <Input
                                                 placeholder="Skills / Tecnologías (Ej. React, Node.js, AWS, Kubernetes)"
