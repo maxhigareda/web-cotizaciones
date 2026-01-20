@@ -1117,96 +1117,110 @@ graph TD
 
                                 {/* Main Risk Score Card */}
                                 <div className="col-span-1 md:col-span-2 bg-[#333533] rounded-[1.5rem] p-8 border border-[#4A4D4A] flex flex-col md:flex-row justify-between items-center relative overflow-hidden gap-6">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#F5CB5C]/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
-
-                                    <div className="relative z-10 flex flex-col gap-2">
-                                        <span className="text-xs font-bold text-[#CFDBD5] uppercase tracking-widest flex items-center gap-2">
-                                            <Activity className="w-4 h-4 text-[#F5CB5C]" /> Score de Riesgo
-                                        </span>
-                                        <div className="text-5xl font-black text-[#E8EDDF] flex items-baseline gap-2">
-                                            {criticitnessScore}
-                                            <span className="text-lg text-[#7C7F7C] font-normal">/100</span>
+                                    <div className="flex flex-col gap-6">
+                                        <div className="flex items-center justify-between bg-[#242423] p-4 rounded-xl border border-[#4A4D4A]">
+                                            <div className="flex flex-col">
+                                                <Label className="text-[#CFDBD5] font-bold uppercase tracking-wider text-sm flex items-center gap-2">
+                                                    <ShieldAlert className="w-4 h-4 text-[#F5CB5C]" /> Evaluación Estándar vs. Crítica
+                                                </Label>
+                                                <span className="text-xs text-[#7C7F7C] mt-1">Habilita el análisis de riesgo profundo (SLA, Impacto, Compliance)</span>
+                                            </div>
+                                            <Switch
+                                                checked={state.criticitness.enabled}
+                                                onCheckedChange={(v) => updateCriticitness('enabled', v)}
+                                                className="data-[state=checked]:bg-[#F5CB5C]"
+                                            />
                                         </div>
-                                        <div className={cn("inline-flex items-center gap-2 px-3 py-1 rounded-full border w-fit text-sm font-bold", criticitnessLevel.color)}>
-                                            <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                                            {criticitnessLevel.label}
+
+                                        {state.criticitness.enabled && (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                                                {/* Score Display (Moved inside enabled block) */}
+                                                <div className="relative z-10 flex flex-col gap-2 p-4 bg-[#F5CB5C]/5 rounded-2xl border border-[#F5CB5C]/20">
+                                                    <span className="text-xs font-bold text-[#CFDBD5] uppercase tracking-widest flex items-center gap-2">
+                                                        <Activity className="w-4 h-4 text-[#F5CB5C]" /> Score de Riesgo Calculado
+                                                    </span>
+                                                    <div className="text-5xl font-black text-[#E8EDDF] flex items-baseline gap-2">
+                                                        {criticitnessScore}
+                                                        <span className="text-lg text-[#7C7F7C] font-normal">/100</span>
+                                                    </div>
+                                                    <div className={cn("inline-flex items-center gap-2 px-3 py-1 rounded-full border w-fit text-sm font-bold mt-2", criticitnessLevel.color)}>
+                                                        <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                                                        {criticitnessLevel.label}
+                                                    </div>
+                                                </div>
+
+                                                {/* Micro Indicators */}
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="bg-[#242423] p-3 rounded-xl border border-[#4A4D4A] text-center flex flex-col justify-center">
+                                                        <Database className={cn("w-5 h-5 mx-auto mb-2", state.updateFrequency === 'realtime' ? "text-red-400" : "text-[#CFDBD5]")} />
+                                                        <span className="text-[10px] text-[#7C7F7C] uppercase font-bold block">Latencia</span>
+                                                        <span className="text-xs text-[#E8EDDF] font-bold">{state.updateFrequency === 'realtime' ? 'Crítica' : 'Std'}</span>
+                                                    </div>
+                                                    <div className="bg-[#242423] p-3 rounded-xl border border-[#4A4D4A] text-center flex flex-col justify-center">
+                                                        <Layers className={cn("w-5 h-5 mx-auto mb-2", state.complexity === 'high' ? "text-orange-400" : "text-[#CFDBD5]")} />
+                                                        <span className="text-[10px] text-[#7C7F7C] uppercase font-bold block">Lógica</span>
+                                                        <span className="text-xs text-[#E8EDDF] font-bold">{state.complexity === 'high' ? 'Compleja' : 'Std'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+
+                                        <div className="text-right relative z-10 w-full md:w-auto border-t md:border-t-0 border-[#4A4D4A] pt-4 md:pt-0">
+                                            <Label className="text-[#7C7F7C] text-xs uppercase font-bold mb-2 block text-left">Nivel de Soporte</Label>
+                                            <Select value={state.supportHours} onValueChange={(v: any) => updateState('supportHours', v)}>
+                                                <SelectTrigger className="w-full md:w-[180px] h-10 bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]"><SelectValue /></SelectTrigger>
+                                                <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
+                                                    <SelectItem value="business">Business (9-18h)</SelectItem>
+                                                    <SelectItem value="24/7">24/7 Critical</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     </div>
 
-                                    {/* Micro Indicators */}
-                                    <div className="grid grid-cols-3 gap-4 w-full md:w-auto">
-                                        <div className="bg-[#242423] p-3 rounded-xl border border-[#4A4D4A] text-center">
-                                            <Database className={cn("w-5 h-5 mx-auto mb-2", state.updateFrequency === 'realtime' ? "text-red-400" : "text-[#CFDBD5]")} />
-                                            <span className="text-[10px] text-[#7C7F7C] uppercase font-bold block">Latencia</span>
-                                            <span className="text-xs text-[#E8EDDF] font-bold">{state.updateFrequency === 'realtime' ? 'Crítica' : 'Std'}</span>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <Label className="text-[#CFDBD5] mb-2 block">Impacto Operativo</Label>
+                                            <Select value={state.criticitness.impactOperative} onValueChange={(v: any) => updateCriticitness('impactOperative', v)}>
+                                                <SelectTrigger className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF] h-12 rounded-xl"><SelectValue /></SelectTrigger>
+                                                <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
+                                                    <SelectItem value="low">Bajo (Interno)</SelectItem>
+                                                    <SelectItem value="medium">Medio (Departamental)</SelectItem>
+                                                    <SelectItem value="high">Alto (Core Business)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
-                                        <div className="bg-[#242423] p-3 rounded-xl border border-[#4A4D4A] text-center">
-                                            <Layers className={cn("w-5 h-5 mx-auto mb-2", state.complexity === 'high' ? "text-orange-400" : "text-[#CFDBD5]")} />
-                                            <span className="text-[10px] text-[#7C7F7C] uppercase font-bold block">Lógica</span>
-                                            <span className="text-xs text-[#E8EDDF] font-bold">{state.complexity === 'high' ? 'Compleja' : 'Std'}</span>
-                                        </div>
-                                        <div className="bg-[#242423] p-3 rounded-xl border border-[#4A4D4A] text-center">
-                                            <Users className="w-5 h-5 mx-auto mb-2 text-[#CFDBD5]" />
-                                            <span className="text-[10px] text-[#7C7F7C] uppercase font-bold block">Usuarios</span>
-                                            <span className="text-xs text-[#E8EDDF] font-bold">{state.usersCount > 50 ? 'Alto Vol.' : 'Bajo Vol.'}</span>
+                                        <div>
+                                            <Label className="text-[#CFDBD5] mb-2 block">Exposición de Datos</Label>
+                                            <Select value={state.criticitness.dataExposure} onValueChange={(v: any) => updateCriticitness('dataExposure', v)}>
+                                                <SelectTrigger className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF] h-12 rounded-xl"><SelectValue /></SelectTrigger>
+                                                <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
+                                                    <SelectItem value="internal">Interna</SelectItem>
+                                                    <SelectItem value="partners">Partners / Clientes</SelectItem>
+                                                    <SelectItem value="public">Pública / Regulatoria</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     </div>
 
-                                    <div className="text-right relative z-10 w-full md:w-auto border-t md:border-t-0 border-[#4A4D4A] pt-4 md:pt-0">
-                                        <Label className="text-[#7C7F7C] text-xs uppercase font-bold mb-2 block text-left">Nivel de Soporte</Label>
-                                        <Select value={state.supportHours} onValueChange={(v: any) => updateState('supportHours', v)}>
-                                            <SelectTrigger className="w-full md:w-[180px] h-10 bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]"><SelectValue /></SelectTrigger>
-                                            <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
-                                                <SelectItem value="business">Business (9-18h)</SelectItem>
-                                                <SelectItem value="24/7">24/7 Critical</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <Label className="text-[#CFDBD5] mb-2 block">Impacto Operativo</Label>
-                                        <Select value={state.criticitness.impactOperative} onValueChange={(v: any) => updateCriticitness('impactOperative', v)}>
-                                            <SelectTrigger className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF] h-12 rounded-xl"><SelectValue /></SelectTrigger>
+                                        <Label className="text-[#CFDBD5] mb-2 block">Impacto Financiero</Label>
+                                        <Select value={state.criticitness.impactFinancial} onValueChange={(v: any) => updateCriticitness('impactFinancial', v)}>
+                                            <SelectTrigger className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"><SelectValue /></SelectTrigger>
                                             <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
-                                                <SelectItem value="low">Bajo (Interno)</SelectItem>
-                                                <SelectItem value="medium">Medio (Departamental)</SelectItem>
-                                                <SelectItem value="high">Alto (Core Business)</SelectItem>
+                                                <SelectItem value="low">Bajo ({'<'} 10k USD)</SelectItem>
+                                                <SelectItem value="medium">Medio (10k - 100k USD)</SelectItem>
+                                                <SelectItem value="high">Alto ({'>'} 100k USD)</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div>
-                                        <Label className="text-[#CFDBD5] mb-2 block">Exposición de Datos</Label>
-                                        <Select value={state.criticitness.dataExposure} onValueChange={(v: any) => updateCriticitness('dataExposure', v)}>
-                                            <SelectTrigger className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF] h-12 rounded-xl"><SelectValue /></SelectTrigger>
-                                            <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
-                                                <SelectItem value="internal">Interna</SelectItem>
-                                                <SelectItem value="partners">Partners / Clientes</SelectItem>
-                                                <SelectItem value="public">Pública / Regulatoria</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                    <div className="col-span-1 md:col-span-2">
+                                        <CountInput label="Países Involucrados" value={state.criticitness.countriesCount} onChange={(v: number) => updateCriticitness('countriesCount', v)} min={1} />
                                     </div>
                                 </div>
-
-
-                                <div>
-                                    <Label className="text-[#CFDBD5] mb-2 block">Impacto Financiero</Label>
-                                    <Select value={state.criticitness.impactFinancial} onValueChange={(v: any) => updateCriticitness('impactFinancial', v)}>
-                                        <SelectTrigger className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"><SelectValue /></SelectTrigger>
-                                        <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
-                                            <SelectItem value="low">Bajo ({'<'} 10k USD)</SelectItem>
-                                            <SelectItem value="medium">Medio (10k - 100k USD)</SelectItem>
-                                            <SelectItem value="high">Alto ({'>'} 100k USD)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="col-span-1 md:col-span-2">
-                                    <CountInput label="Países Involucrados" value={state.criticitness.countriesCount} onChange={(v: number) => updateCriticitness('countriesCount', v)} min={1} />
-                                </div>
-                            </div>
                         )}
-                    </SectionCard>
+                            </SectionCard>
 
                 </div>
             </div >
