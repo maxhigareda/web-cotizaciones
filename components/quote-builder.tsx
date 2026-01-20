@@ -107,6 +107,7 @@ interface QuoteState {
             count: number
             startDate: string
             endDate: string
+            allocationPercentage?: number
         }>
     }
     sustainDetails: {
