@@ -331,7 +331,7 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
 }
 
 // -- Word Export --
-export async function exportToWord(data: QuoteState & { diagramImage?: string, totalWithRisk: number, durationMonths: number }) {
+export async function exportToWord(data: QuoteState & { diagramImage?: string, totalWithRisk: number, durationMonths: number, finalTotal: number }) {
     // Colors
     const HEX_GOLD = "D4AF37"
     const HEX_CHARCOAL = "333533"
@@ -464,13 +464,40 @@ export async function exportToWord(data: QuoteState & { diagramImage?: string, t
         }))
     }
 
-    // Totals Row
+    // Totals Rows
     costRows.push(new TableRow({
         children: [
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "TOTAL MENSUAL", bold: true })] })], columnSpan: 3, shading: { fill: "EEEEEE", type: ShadingType.CLEAR, color: "auto" } }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${data.totalWithRisk}`, bold: true })] })], shading: { fill: "EEEEEE", type: ShadingType.CLEAR, color: "auto" } })
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "SUBTOTAL BRUTO", bold: true })] })], columnSpan: 3 }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${data.finalTotal.toLocaleString()}`, bold: true })] })] })
         ]
     }))
+
+    if (data.retention?.enabled && data.retention.percentage > 0) {
+        const retentionAmount = data.finalTotal * (data.retention.percentage / 100)
+        const netTotal = data.finalTotal - retentionAmount
+
+        costRows.push(new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph(`Retención (${data.retention.percentage}%)`)], columnSpan: 3 }),
+                new TableCell({ children: [new Paragraph(`-$${retentionAmount.toLocaleString()}`)], shading: { fill: "FFF0F0", type: ShadingType.CLEAR, color: "auto" } })
+            ]
+        }))
+
+        costRows.push(new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "NETO A COBRAR", bold: true, color: "FFFFFF" })] })], columnSpan: 3, shading: { fill: HEX_GOLD, type: ShadingType.CLEAR, color: "auto" } }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${netTotal.toLocaleString()}`, bold: true })] })], shading: { fill: "FFFFFF", type: ShadingType.CLEAR, color: "auto" } })
+            ]
+        }))
+    } else {
+        // Simple Total if no retention
+        costRows.push(new TableRow({
+            children: [
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "TOTAL MENSUAL", bold: true })] })], columnSpan: 3, shading: { fill: "EEEEEE", type: ShadingType.CLEAR, color: "auto" } }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `$${data.finalTotal.toLocaleString()}`, bold: true })] })], shading: { fill: "EEEEEE", type: ShadingType.CLEAR, color: "auto" } })
+            ]
+        }))
+    }
 
     children.push(new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },

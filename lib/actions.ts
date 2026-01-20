@@ -402,6 +402,41 @@ export async function getAdminStats() {
     }
 }
 
+// --- CLIENT STATUS LOGIC ---
+
+export async function convertProspectToClient(email: string) {
+    if (!email) return { success: false, error: "No email provided" }
+
+    try {
+        // Find client by email or contact email
+        // Note: Schema has Client.email and Client.contactName ??
+        // Schema: Client { companyName, contactName, email, status, ... }
+        // We will match by email.
+        const client = await prisma.client.findFirst({
+            where: { email: email }
+        })
+
+        if (client) {
+            await prisma.client.update({
+                where: { id: client.id },
+                data: { status: 'CLIENTE' }
+            })
+            console.log(`Converted Prospect ${client.companyName} to CLIENTE`)
+            return { success: true }
+        } else {
+            // Maybe try to create? For now just return false if not found.
+            // Or maybe match by Quote's clientName?
+            return { success: false, reason: "Client not found" }
+        }
+
+    } catch (e: any) {
+        console.error("Failed to convert prospect:", e)
+        return { success: false, error: e.message }
+    }
+}
+
+
+
 export async function deleteQuote(quoteId: string) {
     try {
         return await prisma.quote.delete({ where: { id: quoteId } })
@@ -483,8 +518,29 @@ export async function updateQuoteStatus(quoteId: string, status: string) {
             data: { status }
         })
 
-        // Notify n8n of status change
+        // 1. Notify n8n of status change
         await sendStatusUpdateToMonday(updatedQuote, userId, userName, userEmail)
+
+        // 2. Trigger Prospect Conversion if Approved/Signed
+        if (['APROBADA', 'FIRMADA', 'ACEPTADA'].includes(status.toUpperCase())) {
+            if (updatedQuote.clientId) {
+                await prisma.client.update({
+                    where: { id: updatedQuote.clientId },
+                    data: { status: 'CLIENTE' }
+                })
+            } else {
+                // Fallback: Try to find client by name
+                const client = await prisma.client.findUnique({
+                    where: { companyName: updatedQuote.clientName }
+                })
+                if (client) {
+                    await prisma.client.update({
+                        where: { id: client.id },
+                        data: { status: 'CLIENTE' }
+                    })
+                }
+            }
+        }
 
         revalidatePath('/dashboard')
         revalidatePath('/admin')
