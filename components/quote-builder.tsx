@@ -862,8 +862,8 @@ graph TD
                     )}
 
                     {/* 4. TEAM */}
-                    <SectionCard number={state.serviceType === 'Staffing' ? "02" : "04"} title={state.serviceType === 'Staffing' ? "Perfiles y Talento" : "Equipo Requerido"} icon={Briefcase}>
-                        {state.serviceType === 'Staffing' ? (
+                    <SectionCard number={state.serviceType === 'Staffing' ? "02" : "04"} title={state.serviceType !== 'Proyecto' ? "Perfiles y Talento" : "Equipo Requerido"} icon={Briefcase}>
+                        {(state.serviceType === 'Staffing' || state.serviceType === 'Sustain') ? (
                             <div className="space-y-6">
                                 {state.staffingDetails.profiles.map((profile, idx) => (
                                     <div key={idx} className="bg-[#333533] p-6 rounded-2xl border border-[#4A4D4A] relative group">
@@ -879,7 +879,7 @@ graph TD
                                         >
                                             <X className="w-4 h-4" />
                                         </Button>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                             <div>
                                                 <Label className="text-[#CFDBD5] mb-2 block">Rol / Perfil</Label>
                                                 <Input
@@ -910,6 +910,32 @@ graph TD
                                                 </Select>
                                             </div>
                                             <div>
+                                                <Label className="text-[#CFDBD5] mb-2 block">Dedicación (%)</Label>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="relative w-full">
+                                                        <Input
+                                                            type="number"
+                                                            min={1}
+                                                            max={100}
+                                                            value={profile.allocationPercentage ?? 100}
+                                                            onChange={(e) => {
+                                                                const newProfiles = [...state.staffingDetails.profiles]
+                                                                newProfiles[idx].allocationPercentage = parseInt(e.target.value) || 0
+                                                                updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
+                                                            }}
+                                                            className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] pr-8"
+                                                        />
+                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#CFDBD5] text-xs font-bold">%</span>
+                                                    </div>
+                                                    <div className="bg-[#242423] px-3 py-2 rounded-xl border border-[#4A4D4A] min-w-[100px] text-center">
+                                                        <span className="text-[10px] text-[#CFDBD5] uppercase block">Horas</span>
+                                                        <span className="text-[#F5CB5C] font-mono font-bold">
+                                                            {(160 * ((profile.allocationPercentage ?? 100) / 100)).toFixed(0)}h
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
                                                 <Label className="text-[#CFDBD5] mb-2 block">Cantidad</Label>
                                                 <Input
                                                     type="number"
@@ -923,7 +949,7 @@ graph TD
                                                     className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]"
                                                 />
                                             </div>
-                                            <div className="md:col-span-2 lg:col-span-3">
+                                            <div className="md:col-span-2 lg:col-span-4">
                                                 <Label className="text-[#CFDBD5] mb-2 block">Skills / Tecnologías</Label>
                                                 <Input
                                                     placeholder="Ej. React, Node.js, AWS, Kubernetes"
@@ -943,7 +969,7 @@ graph TD
                                     onClick={() => {
                                         updateState('staffingDetails', {
                                             ...state.staffingDetails,
-                                            profiles: [...state.staffingDetails.profiles, { id: Date.now().toString(), role: '', seniority: 'Ssr', skills: '', count: 1, startDate: '', endDate: '' }]
+                                            profiles: [...state.staffingDetails.profiles, { id: Date.now().toString(), role: '', seniority: 'Ssr', skills: '', count: 1, startDate: '', endDate: '', allocationPercentage: 100 }]
                                         })
                                     }}
                                     className="w-full h-12 border-dashed border-2 border-[#4A4D4A] bg-transparent text-[#CFDBD5] hover:border-[#F5CB5C] hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/10"
