@@ -1265,25 +1265,28 @@ graph TD
                                 </div>
 
                                 {/* Dynamic Fields (Col 2-4) */}
-                                <AnimatePresence mode="wait">
+                                <AnimatePresence mode="popLayout">
                                     {state.retention.enabled && (
                                         <>
                                             {/* Input % (Col 2) */}
                                             <motion.div
-                                                initial={{ opacity: 0, x: -10 }}
+                                                initial={{ opacity: 0, x: -20 }}
                                                 animate={{ opacity: 1, x: 0 }}
-                                                exit={{ opacity: 0, x: -10 }}
+                                                exit={{ opacity: 0, x: -20 }}
                                                 transition={{ duration: 0.2 }}
                                                 className="space-y-2"
                                             >
                                                 <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">% Porcentaje</Label>
-                                                <div className="relative">
+                                                <div className="relative z-10">
                                                     <Input
                                                         type="number"
                                                         min={0}
                                                         max={100}
                                                         value={state.retention.percentage}
-                                                        onChange={(e) => updateState('retention', { ...state.retention, percentage: parseFloat(e.target.value) || 0 })}
+                                                        onChange={(e) => {
+                                                            const val = parseFloat(e.target.value)
+                                                            updateState('retention', { ...state.retention, percentage: isNaN(val) ? 0 : val })
+                                                        }}
                                                         className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] pl-4 pr-12 focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50 text-right font-bold text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                     />
                                                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none flex items-center gap-2">
@@ -1300,7 +1303,7 @@ graph TD
                                                 transition={{ duration: 0.2, delay: 0.1 }}
                                                 className="md:col-span-2 space-y-2"
                                             >
-                                                <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Neto a Cobrar (Estimado)</Label>
+                                                <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">NETO A COBRAR</Label>
                                                 <div className={cn(
                                                     "bg-[#1a1a1a] border h-[50px] rounded-[1rem] px-6 flex items-center justify-between transition-all duration-500",
                                                     isNetTotalFlashing ? "border-[#F5CB5C] shadow-[0_0_20px_rgba(245,203,92,0.4)] scale-[1.02]" : "border-[#F5CB5C]/30 shadow-[0_0_15px_rgba(245,203,92,0.05)]"
