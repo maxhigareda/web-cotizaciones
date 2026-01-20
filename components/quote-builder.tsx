@@ -916,7 +916,8 @@ graph TD
                         {(state.serviceType === 'Staffing' || state.serviceType === 'Sustain') ? (
                             <div className="space-y-6">
                                 {state.staffingDetails.profiles.map((profile, idx) => (
-                                    <div key={idx} className="bg-[#333533] p-6 rounded-[2rem] border border-white/5 shadow-lg relative group transition-all hover:border-[#F5CB5C]/30 hover:shadow-xl hover:shadow-black/50">
+                                    <div key={idx} className="bg-[#333533] p-6 rounded-[2rem] border border-white/5 shadow-lg relative group transition-all hover:border-[#F5CB5C]/30 hover:shadow-xl hover:shadow-black/50 overflow-hidden">
+
                                         <Button
                                             variant="ghost"
                                             size="sm"
@@ -930,11 +931,11 @@ graph TD
                                             <X className="w-4 h-4" />
                                         </Button>
 
-                                        <div className="grid grid-cols-12 gap-x-4 gap-y-6 items-start">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
 
-                                            {/* 1. Rol / Perfil (4 cols) */}
-                                            <div className="col-span-12 lg:col-span-4">
-                                                <Label className="text-[#CFDBD5] mb-2 block text-xs font-bold uppercase tracking-wider pl-1">Rol / Perfil</Label>
+                                            {/* 1. Rol / Perfil */}
+                                            <div className="space-y-2">
+                                                <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Rol / Perfil</Label>
                                                 <Input
                                                     placeholder="Ej. Java Developer"
                                                     value={profile.role}
@@ -943,19 +944,19 @@ graph TD
                                                         newProfiles[idx].role = e.target.value
                                                         updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
                                                     }}
-                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-14 rounded-[1.5rem] text-base font-medium focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
+                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] text-sm font-medium focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
                                                 />
                                             </div>
 
-                                            {/* 2. Seniority (3 cols) */}
-                                            <div className="col-span-12 md:col-span-6 lg:col-span-3">
-                                                <Label className="text-[#CFDBD5] mb-2 block text-xs font-bold uppercase tracking-wider pl-1">Seniority</Label>
+                                            {/* 2. Seniority */}
+                                            <div className="space-y-2">
+                                                <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Seniority</Label>
                                                 <Select value={profile.seniority} onValueChange={(v) => {
                                                     const newProfiles = [...state.staffingDetails.profiles]
                                                     newProfiles[idx].seniority = v
                                                     updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
                                                 }}>
-                                                    <SelectTrigger className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-14 rounded-[1.5rem] hover:border-[#F5CB5C]/50 transition-all focus:ring-0 focus:border-[#F5CB5C]"><SelectValue /></SelectTrigger>
+                                                    <SelectTrigger className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] hover:border-[#F5CB5C]/50 transition-all focus:ring-0 focus:border-[#F5CB5C]"><SelectValue /></SelectTrigger>
                                                     <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
                                                         <SelectItem value="Jr">Junior</SelectItem>
                                                         <SelectItem value="Ssr">Semi-Senior</SelectItem>
@@ -965,10 +966,15 @@ graph TD
                                                 </Select>
                                             </div>
 
-                                            {/* 3. Dedicación (3 cols) - Integrated Control */}
-                                            <div className="col-span-12 md:col-span-6 lg:col-span-3">
-                                                <Label className="text-[#CFDBD5] mb-2 block text-xs font-bold uppercase tracking-wider pl-1 text-center">Dedicación</Label>
-                                                <div className="h-14 bg-[#242423] border border-[#4A4D4A] rounded-[1.5rem] flex items-center justify-between px-1 hover:border-[#F5CB5C]/50 transition-colors group/dedication">
+                                            {/* 3. Dedicación (Integrated Control) */}
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center px-1">
+                                                    <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider">Dedicación</Label>
+                                                    <span className="text-[10px] bg-[#F5CB5C]/10 text-[#F5CB5C] px-1.5 py-0.5 rounded font-mono font-bold">
+                                                        {(160 * ((profile.allocationPercentage ?? 100) / 100)).toFixed(0)}h/mes
+                                                    </span>
+                                                </div>
+                                                <div className="flex h-[50px] bg-[#242423] border border-[#4A4D4A] rounded-[1rem] overflow-hidden hover:border-[#F5CB5C]/50 transition-colors group/dedication">
                                                     <Button
                                                         variant="ghost"
                                                         onClick={() => {
@@ -978,34 +984,29 @@ graph TD
                                                             newProfiles[idx].allocationPercentage = val;
                                                             updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles });
                                                         }}
-                                                        className="h-10 w-10 rounded-full text-[#CFDBD5]/40 hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/10 transition-colors"
+                                                        className="h-full w-10 rounded-none border-r border-[#4A4D4A]/50 text-[#CFDBD5]/50 hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/10 transition-colors px-0"
                                                     >
                                                         -
                                                     </Button>
 
-                                                    <div className="flex-1 flex flex-col items-center justify-center relative h-full">
-                                                        <div className="flex items-baseline gap-0.5">
-                                                            <Input
-                                                                type="number"
-                                                                min={0}
-                                                                max={100}
-                                                                step={5}
-                                                                value={profile.allocationPercentage ?? 100}
-                                                                onChange={(e) => {
-                                                                    let val = parseInt(e.target.value) || 0;
-                                                                    if (val > 100) val = 100;
-                                                                    if (val < 0) val = 0;
-                                                                    const newProfiles = [...state.staffingDetails.profiles]
-                                                                    newProfiles[idx].allocationPercentage = val
-                                                                    updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
-                                                                }}
-                                                                className="no-spinner bg-transparent border-none text-[#E8EDDF] text-center text-lg font-bold p-0 h-auto w-12 focus:ring-0 focus:border-none shadow-none"
-                                                            />
-                                                            <span className="text-xs text-[#CFDBD5]/50 font-bold">%</span>
-                                                        </div>
-                                                        <span className="text-[10px] text-[#F5CB5C] font-mono leading-none mt-0.5 tracking-wide opacity-80">
-                                                            {(160 * ((profile.allocationPercentage ?? 100) / 100)).toFixed(0)} <span className="opacity-50">h/mes</span>
-                                                        </span>
+                                                    <div className="flex-1 flex items-center justify-center relative bg-transparent">
+                                                        <Input
+                                                            type="number"
+                                                            min={0}
+                                                            max={100}
+                                                            step={5}
+                                                            value={profile.allocationPercentage ?? 100}
+                                                            onChange={(e) => {
+                                                                let val = parseInt(e.target.value) || 0;
+                                                                if (val > 100) val = 100;
+                                                                if (val < 0) val = 0;
+                                                                const newProfiles = [...state.staffingDetails.profiles]
+                                                                newProfiles[idx].allocationPercentage = val
+                                                                updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
+                                                            }}
+                                                            className="no-spinner bg-transparent border-none text-[#E8EDDF] text-center text-lg font-bold h-full w-full focus:ring-0 focus:border-none shadow-none px-0"
+                                                        />
+                                                        <span className="absolute right-3 pointer-events-none text-[#CFDBD5]/30 text-xs font-bold">%</span>
                                                     </div>
 
                                                     <Button
@@ -1017,16 +1018,16 @@ graph TD
                                                             newProfiles[idx].allocationPercentage = val;
                                                             updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles });
                                                         }}
-                                                        className="h-10 w-10 rounded-full text-[#CFDBD5]/40 hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/10 transition-colors"
+                                                        className="h-full w-10 rounded-none border-l border-[#4A4D4A]/50 text-[#CFDBD5]/50 hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/10 transition-colors px-0"
                                                     >
                                                         +
                                                     </Button>
                                                 </div>
                                             </div>
 
-                                            {/* 4. Cantidad (2 cols) */}
-                                            <div className="col-span-12 md:col-span-6 lg:col-span-2">
-                                                <Label className="text-[#CFDBD5] mb-2 block text-xs font-bold uppercase tracking-wider pl-1 text-center lg:text-right pr-2">Cantidad</Label>
+                                            {/* 4. Cantidad */}
+                                            <div className="space-y-2">
+                                                <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Cantidad</Label>
                                                 <Input
                                                     type="number"
                                                     min={1}
@@ -1036,26 +1037,26 @@ graph TD
                                                         newProfiles[idx].count = parseInt(e.target.value) || 1
                                                         updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
                                                     }}
-                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-14 rounded-[1.5rem] text-center font-bold text-lg focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
-                                                />
-                                            </div>
-
-                                            {/* 5. Skills (Full Row) */}
-                                            <div className="col-span-12">
-                                                <Label className="text-[#CFDBD5] mb-2 block text-xs font-bold uppercase tracking-wider pl-1">Skills / Tecnologías</Label>
-                                                <Input
-                                                    placeholder="Ej. React, Node.js, AWS, Kubernetes"
-                                                    value={profile.skills}
-                                                    onChange={(e) => {
-                                                        const newProfiles = [...state.staffingDetails.profiles]
-                                                        newProfiles[idx].skills = e.target.value
-                                                        updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
-                                                    }}
-                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-12 rounded-[1.5rem] hover:border-[#F5CB5C]/50 transition-all focus:border-[#F5CB5C]"
+                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] text-center font-bold text-lg focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
                                                 />
                                             </div>
 
                                         </div>
+
+                                        {/* 5. Skills (Full Row - Below) */}
+                                        <div className="mt-4">
+                                            <Input
+                                                placeholder="Skills / Tecnologías (Ej. React, Node.js, AWS, Kubernetes)"
+                                                value={profile.skills}
+                                                onChange={(e) => {
+                                                    const newProfiles = [...state.staffingDetails.profiles]
+                                                    newProfiles[idx].skills = e.target.value
+                                                    updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
+                                                }}
+                                                className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[40px] rounded-[0.8rem] text-xs hover:border-[#F5CB5C]/50 transition-all focus:border-[#F5CB5C]"
+                                            />
+                                        </div>
+
                                     </div>
                                 ))}
                                 <Button
