@@ -27,11 +27,11 @@ export async function uploadToDrive(formData: FormData) {
     }
 
     try {
-        // 2. Auth - Robust Key Handling
+        // 2. Auth - Robust Key Handling (Sanitized)
         const auth = new google.auth.GoogleAuth({
             credentials: {
                 client_email: CLIENT_EMAIL,
-                private_key: PRIVATE_KEY.replace(/\\n/g, '\n'), // Fix common .env newline issue
+                private_key: PRIVATE_KEY?.replace(/\\n/g, '\n'), // Ensure escaped newlines are fixed
             },
             scopes: ['https://www.googleapis.com/auth/drive.file'],
         })

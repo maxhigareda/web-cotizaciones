@@ -564,7 +564,8 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
                 return;
             }
 
-            // 2. Upload to Drive (Background / Fire and Forget)
+            // 2. Upload to Drive (CRITICAL: Await to ensure completion before redirect)
+            // FORCE SYNC: Drive Upload Trigger
             const uploadToDrivePromise = (async () => {
                 try {
                     console.log("Generating PDF for Drive Backup...")
