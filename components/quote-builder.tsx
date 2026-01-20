@@ -179,6 +179,9 @@ const TECH_OPTIONS = [
     { id: 'snowflake', name: 'Snowflake' },
     { id: 'fabric', name: 'Microsoft Fabric' },
     { id: 'powerbi', name: 'Power BI' },
+    { id: 'sqlserver', name: 'SQL Server' },
+    { id: 'logicapps', name: 'Azure Logic Apps' },
+    { id: 'purview', name: 'Microsoft Purview' },
     { id: 'tableau', name: 'Tableau' },
     { id: 'python', name: 'Python/Airflow' },
 ]

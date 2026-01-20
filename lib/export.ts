@@ -41,6 +41,23 @@ interface QuoteState {
     supportHours: 'business' | '24/7'
     serviceType?: string
     commercialDiscount?: number
+    staffingDetails: {
+        profiles: Array<{
+            id: string
+            role: string
+            seniority: string
+            skills: string
+            count: number
+            startDate: string
+            endDate: string
+            allocationPercentage?: number
+        }>
+    }
+    sustainDetails: {
+        technicalDescription: string
+        tools: string[]
+        operationHours: string
+    }
 }
 
 // -- CSV Export --
@@ -124,15 +141,22 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
     doc.text("2. Alcance y Volumetría", margin, y)
     y += 10
 
-    const bullets = [
-        `Complejidad: ${data.complexity.toUpperCase()}`,
-        `Frecuencia: ${data.updateFrequency.toUpperCase()}`,
-        `Volumetría: ${data.pipelinesCount} Pipelines, ${data.notebooksCount} Notebooks`,
-        `Modelos IA/ML: ${data.dsModelsCount}`,
-        `Consumo: ${data.reportUsers} Usuarios Finales (${data.dashboardsCount + data.reportsCount} reportes)`,
-        `Nivel de Soporte: ${data.supportHours === '24/7' ? '24/7 CRITICAL' : 'Horario de Oficina (9-18h)'}`,
-        `Riesgo Evaluado: ${data.criticitness.enabled ? 'ALTO' : 'ESTÁNDAR'}`
-    ]
+    const bullets: string[] = []
+
+    if (data.serviceType === 'Proyecto') {
+        bullets.push(`Complejidad: ${data.complexity.toUpperCase()}`)
+        bullets.push(`Frecuencia: ${data.updateFrequency.toUpperCase()}`)
+        bullets.push(`Volumetría: ${data.pipelinesCount} Pipelines, ${data.notebooksCount} Notebooks`)
+        bullets.push(`Modelos IA/ML: ${data.dsModelsCount}`)
+        bullets.push(`Consumo: ${data.reportUsers} Usuarios Finales (${data.dashboardsCount + data.reportsCount} reportes)`)
+    } else if (data.serviceType === 'Sustain') {
+        bullets.push(`Tipo de Servicio: Sustain (Mantenimiento)`)
+        bullets.push(`Horario de Soporte: ${data.supportHours === '24/7' ? '24/7 CRITICAL' : 'Business Hours (9-18h)'}`)
+        bullets.push(`SLA / Riesgo: ${data.criticitness.enabled ? 'ALTO' : 'ESTÁNDAR'}`)
+    } else {
+        bullets.push(`Tipo de Servicio: Staffing`)
+        bullets.push(`Total Recursos: ${data.staffingDetails.profiles.reduce((acc, p) => acc + p.count, 0)}`)
+    }
 
     doc.setFontSize(10)
     doc.setFont("helvetica", "normal")
@@ -161,19 +185,6 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
         y += 7
         doc.text("• Monitoreo Proactivo de Pipelines y Procesos", margin + 5, y)
         y += 7
-    } else if (data.serviceType === 'Staffing') {
-        y += 10
-        doc.setFontSize(14)
-        doc.setFont("helvetica", "bold")
-        doc.setTextColor(COLOR_CHARCOAL)
-        doc.text("3. Perfiles y Seniority", margin, y)
-        y += 10
-
-        doc.setFontSize(10)
-        doc.setFont("helvetica", "normal")
-        doc.setTextColor(COLOR_TEXT)
-        doc.text("Los perfiles asignados cuentan con certificación y experiencia comprobada en el stack tecnológico seleccionado.", margin + 5, y, { maxWidth: pageWidth - (margin * 2), align: 'left' })
-        y += 10
     }
 
     // Footer P1
@@ -210,7 +221,12 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
         // Frame
         doc.setDrawColor(200)
         doc.rect(margin, y, pdfWidth, finalH + 4)
-        doc.addImage(data.diagramImage, 'PNG', margin + 2, y + 2, pdfWidth - 4, finalH)
+        try {
+            doc.addImage(data.diagramImage, 'PNG', margin + 2, y + 2, pdfWidth - 4, finalH)
+        } catch (e) {
+            console.error(e)
+            doc.text("[Error al renderizar imagen]", margin + 10, y + 10)
+        }
 
         y += finalH + 20
     }
@@ -228,7 +244,7 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(9)
     doc.text("ROL / CONCEPTO", margin + 5, y + 5)
-    doc.text("TARIFA", margin + 80, y + 5)
+    doc.text("DETALLE", margin + 80, y + 5)
     doc.text("CANT.", margin + 110, y + 5)
     doc.text("SUBTOTAL", margin + 140, y + 5)
     y += 8
@@ -239,29 +255,40 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
     let isGray = true
 
     // Row Helper
-    const drawRow = (label: string, rate: string, count: string, total: string) => {
+    const drawRow = (label: string, detail: string, count: string, total: string) => {
         if (isGray) {
             doc.setFillColor(245, 245, 245)
             doc.rect(margin, y, pageWidth - (margin * 2), 8, 'F')
         }
         isGray = !isGray
         doc.text(label, margin + 5, y + 5)
-        doc.text(rate, margin + 80, y + 5)
+        doc.text(detail, margin + 80, y + 5)
         doc.text(count, margin + 110, y + 5)
         doc.text(total, margin + 140, y + 5)
         y += 8
     }
 
-    Object.entries(data.roles).forEach(([role, count]) => {
-        if (count > 0) {
-            const rate = RATES[role] || 0
-            drawRow(role.replace(/_/g, ' ').toUpperCase(), `$${rate.toLocaleString()}`, count.toString(), `$${(rate * count).toLocaleString()}`)
-        }
-    })
+    // RENDER ROLES
+    if (data.serviceType === 'Staffing' || data.serviceType === 'Sustain') {
+        data.staffingDetails.profiles.forEach(p => {
+            // Basic Cost Estimation per profile (approx)
+            const rate = RATES[Object.keys(RATES).find(k => p.role.toLowerCase().includes(k.replace('_', ' '))) || 'react_dev'] || 4000
+            const alloc = (p.allocationPercentage || 100) / 100
+            const sub = rate * alloc * p.count
+            drawRow(p.role, `${p.seniority} - ${p.allocationPercentage || 100}%`, p.count.toString(), `$${sub.toLocaleString()}`)
+        })
+    } else {
+        Object.entries(data.roles).forEach(([role, count]) => {
+            if (count > 0) {
+                const rate = RATES[role] || 0
+                drawRow(role.replace(/_/g, ' ').toUpperCase(), `Ssr Standard`, count.toString(), `$${(rate * count).toLocaleString()}`)
+            }
+        })
+    }
 
-    if (data.l2SupportCost > 0) drawRow("Soporte L2", "-", "Auto", `$${data.l2SupportCost.toLocaleString()}`)
-    if (data.riskCost > 0) drawRow("Riesgo Operativo", "-", `${(data.criticitnessLevel?.margin || 0) * 100}%`, `$${data.riskCost.toLocaleString()}`)
-    if (data.discountAmount > 0) drawRow("Descuento Comercial", "-", `${data.commercialDiscount}%`, `-$${data.discountAmount.toLocaleString()}`)
+    if (data.l2SupportCost > 0) drawRow("Soporte L2", "10% Costo Operativo", "-", `$${data.l2SupportCost.toLocaleString()}`)
+    if (data.riskCost > 0) drawRow("Riesgo Operativo", `${(data.criticitnessLevel?.margin || 0) * 100}% Markup`, "-", `$${data.riskCost.toLocaleString()}`)
+    if (data.discountAmount > 0) drawRow("Descuento Comercial", `${data.commercialDiscount}% Off`, "-", `-$${data.discountAmount.toLocaleString()}`)
 
     y += 5
     // Totals Box
@@ -335,19 +362,27 @@ export async function exportToWord(data: QuoteState & { diagramImage?: string, t
         new Paragraph({ text: data.description || "N/A", alignment: "both", spacing: { after: 300 } }),
 
         new Paragraph({ text: "2. Alcance y Volumetría", heading: HeadingLevel.HEADING_2 }),
-        ...[
-            `Complejidad: ${data.complexity}`,
-            `Usuarios: ${data.reportUsers}`,
-            `Pipelines: ${data.pipelinesCount}`,
-            `Soporte: ${data.supportHours}`
-        ].map(b => new Paragraph({ text: `• ${b}`, bullet: { level: 0 } })),
-
-        // Page Break for Info Separation
-        new Paragraph({ text: "", pageBreakBefore: true }),
-
-        // P2 Content
-        new Paragraph({ text: "3. Arquitectura Propuesta", heading: HeadingLevel.HEADING_2 })
     ]
+
+    // Dynamic Bullets
+    const bullets: string[] = []
+    if (data.serviceType === 'Proyecto') {
+        bullets.push(`Complejidad: ${data.complexity}`)
+        bullets.push(`Pipelines: ${data.pipelinesCount}`)
+        bullets.push(`Usuarios: ${data.reportUsers}`)
+    } else {
+        bullets.push(`Tipo de Servicio: ${data.serviceType}`)
+        bullets.push(`Perfiles: ${data.staffingDetails.profiles.length}`)
+    }
+
+    bullets.forEach(b => children.push(new Paragraph({ text: `• ${b}`, bullet: { level: 0 } })))
+
+
+    // Page Break for Info Separation
+    children.push(new Paragraph({ text: "", pageBreakBefore: true }))
+
+    // P2 Content
+    children.push(new Paragraph({ text: "3. Arquitectura Propuesta", heading: HeadingLevel.HEADING_2 }))
 
     // Diagram Image
     if (data.diagramImage) {
@@ -370,21 +405,33 @@ export async function exportToWord(data: QuoteState & { diagramImage?: string, t
     // Cost Table
     const costRows = [
         new TableRow({
-            children: ["ROL", "TARIFA", "CANT.", "SUBTOTAL"].map(t => new TableCell({
+            children: ["ROL", "DETALLE", "CANT.", "SUBTOTAL"].map(t => new TableCell({
                 children: [new Paragraph({ children: [new TextRun({ text: t, bold: true, color: "FFFFFF" })] })],
                 shading: { fill: HEX_CHARCOAL, type: ShadingType.CLEAR, color: "auto" }
             }))
         })
     ]
 
-    Object.entries(data.roles).forEach(([role, count]) => {
-        if (count > 0) {
-            const rate = RATES[role] || 0
+    // Populate Rows
+    if (data.serviceType === 'Staffing' || data.serviceType === 'Sustain') {
+        data.staffingDetails.profiles.forEach(p => {
+            const rate = RATES[Object.keys(RATES).find(k => p.role.toLowerCase().includes(k.replace('_', ' '))) || 'react_dev'] || 4000
+            const alloc = (p.allocationPercentage || 100) / 100
+            const sub = rate * alloc * p.count
             costRows.push(new TableRow({
-                children: [role, `$${rate}`, count.toString(), `$${rate * count}`].map(t => new TableCell({ children: [new Paragraph(t)] }))
+                children: [p.role, `${p.seniority} (${p.allocationPercentage || 100}%)`, p.count.toString(), `$${sub.toLocaleString()}`].map(t => new TableCell({ children: [new Paragraph(t)] }))
             }))
-        }
-    })
+        })
+    } else {
+        Object.entries(data.roles).forEach(([role, count]) => {
+            if (count > 0) {
+                const rate = RATES[role] || 0
+                costRows.push(new TableRow({
+                    children: [role, `$${rate}`, count.toString(), `$${rate * count}`].map(t => new TableCell({ children: [new Paragraph(t)] }))
+                }))
+            }
+        })
+    }
 
     // Totals Row
     costRows.push(new TableRow({
