@@ -303,9 +303,11 @@ export async function sendQuoteToN8N(quoteData: any, pdfBase64: string, filename
 export async function saveQuote(data: {
     clientName: string,
     projectType: string,
-    serviceType: string, // Added serviceType
+    serviceType: string,
     params: TechnicalParameters,
-    breakdown: CostBreakdown
+    breakdown: CostBreakdown,
+    estimatedCost?: number, // Optional override
+    technicalParameters?: string // Optional override (JSON string)
 }) {
     const cookieStore = await cookies()
     const userId = cookieStore.get('session_user_id')?.value
@@ -335,9 +337,9 @@ export async function saveQuote(data: {
             data: {
                 clientName: data.clientName,
                 projectType: data.projectType,
-                serviceType: data.serviceType, // Save serviceType
-                technicalParameters: JSON.stringify(data.params),
-                estimatedCost: data.breakdown.totalMonthlyCost,
+                serviceType: data.serviceType,
+                technicalParameters: data.technicalParameters || JSON.stringify(data.params), // Use override or serialize params
+                estimatedCost: data.estimatedCost !== undefined ? data.estimatedCost : data.breakdown.totalMonthlyCost, // Use override or breakdown
                 staffingRequirements: JSON.stringify(data.breakdown.roles),
                 diagramDefinition: data.breakdown.diagramCode,
                 userId: userId,
