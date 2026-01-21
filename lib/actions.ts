@@ -189,9 +189,9 @@ export async function sendQuoteToN8N(quoteData: any, pdfBase64: string, filename
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                filename,
+                ...quoteData, // Flatten quote properties to root
                 fileBase64: pdfBase64,
-                quote: quoteData,
+                fileName: filename, // Capitalized N as per user request in one place, but filename in signature. Using camelCase fileName for consistency with common practices or user request 'fileName'
                 timestamp: new Date().toISOString()
             })
         })
