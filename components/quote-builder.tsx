@@ -592,13 +592,18 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
             try {
                 console.log("Generating PDF for n8n Backup...")
                 let diagramDataUrl = undefined
-                const element = document.getElementById('diagram-capture-target')
+                // Safely capture diagram with timeout
                 if (element && state.serviceType !== 'Staffing') {
                     try {
-                        const canvas = await html2canvas(element, { backgroundColor: '#ffffff', scale: 2, useCORS: true })
+                        // 3 second timeout for capture
+                        const capturePromise = html2canvas(element, { backgroundColor: '#ffffff', scale: 2, useCORS: true })
+                        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Capture timeout")), 3000))
+
+                        const canvas: any = await Promise.race([capturePromise, timeoutPromise])
                         diagramDataUrl = canvas.toDataURL('image/png')
                     } catch (err) {
-                        console.warn("Failed to capture diagram:", err)
+                        console.warn("Failed to capture diagram (skipping image):", err)
+                        // Continue without image
                     }
                 }
 
