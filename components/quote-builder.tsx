@@ -626,7 +626,12 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
                     reader.onloadend = async () => {
                         try {
                             const base64String = (reader.result as string).split(',')[1];
-                            console.log("PDF Base64 generated, length:", base64String.length);
+                            console.log("PDF Base64 Length:", base64String.length); // EXACT USER LOG
+
+                            // Validate URL client-side just in case (optional, but requested)
+                            if (!process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL && !process.env.N8N_WEBHOOK_URL) {
+                                console.warn("WARNING: No N8N Webhook URL found in client env vars.");
+                            }
 
                             // Send to n8n (Server Action)
                             await sendQuoteToN8N(result.quote, base64String, filename);

@@ -177,10 +177,10 @@ async function sendToMonday(quote: any, params: any, breakdown: any, userName: s
 }
 
 export async function sendQuoteToN8N(quoteData: any, pdfBase64: string, filename: string) {
-    const webhookUrl = process.env.N8N_WEBHOOK_URL
+    const webhookUrl = process.env.N8N_WEBHOOK_URL || process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || process.env.N8N_MONDAY_WEBHOOK
     if (!webhookUrl) {
-        console.warn("N8N_WEBHOOK_URL not configured")
-        return { success: false, error: "Configuration missing" }
+        console.warn("N8N Webhook URL not configured (checked N8N_WEBHOOK_URL, NEXT_PUBLIC_N8N_WEBHOOK_URL, and N8N_MONDAY_WEBHOOK)")
+        return { success: false, error: "Configuration missing: No Webhook URL found" }
     }
 
     try {
