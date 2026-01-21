@@ -597,10 +597,11 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
                 const element = document.getElementById('diagram-capture-target')
                 if (element && state.serviceType !== 'Staffing') {
                     try {
-                        const capturePromise = html2canvas(element, { backgroundColor: '#ffffff', scale: 2, useCORS: true })
+                        // LOW RES CAPTURE: Scale 1 + JPEG to avoid 413 Payload Too Large
+                        const capturePromise = html2canvas(element, { backgroundColor: '#ffffff', scale: 1, useCORS: true })
                         const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Capture timeout")), 3000))
                         const canvas: any = await Promise.race([capturePromise, timeoutPromise])
-                        diagramDataUrl = canvas.toDataURL('image/png')
+                        diagramDataUrl = canvas.toDataURL('image/jpeg', 0.7)
                     } catch (err) {
                         console.warn("Skipping diagram capture (timeout/error):", err)
                     }

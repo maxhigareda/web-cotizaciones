@@ -254,14 +254,37 @@ export async function sendQuoteToN8N(quoteData: any, pdfBase64: string, filename
         console.log("N8N Payload Prepared. Action:", finalPayload.action)
         console.log("Sending to URL:", webhookUrl)
 
-        const res = await fetch(webhookUrl, {
+        // Log Payload Size
+        const payloadString = JSON.stringify(finalPayload)
+        console.log("Payload Size (KB):", payloadString.length / 1024)
+
+        let res = await fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(finalPayload)
+            body: payloadString
         })
 
         if (!res.ok) {
             console.error(`n8n Webhook failed with status ${res.status}`)
+
+            // 413 RETRY LOGIC (Payload Too Large)
+            if (res.status === 413) {
+                console.warn("Error 413 detected. Retrying without PDF to ensure data delivery...")
+                finalPayload.fileBase64 = "" // Clear heavy PDF
+                finalPayload.fileName = `${finalPayload.fileName} (No PDF - Size Limit)`
+
+                res = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(finalPayload)
+                })
+
+                if (res.ok) {
+                    console.log("Retry success: Data sent without PDF.")
+                    return { success: true, warning: "PDF omitted due to size limit" }
+                }
+            }
+
             console.error(`Response Text: ${await res.text()}`)
             return { success: false, error: `Webhook status ${res.status}` }
         }
