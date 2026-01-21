@@ -588,10 +588,10 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
             }
 
             // 2. Upload to Drive via n8n Webhook (FAILSAFE WRAPPER)
+            let base64String = ""
             try {
                 console.log("Generating PDF for n8n Backup...")
                 let diagramDataUrl = undefined
-                let base64String = ""
 
                 // A. Diagram Capture (Optional)
                 const element = document.getElementById('diagram-capture-target')
