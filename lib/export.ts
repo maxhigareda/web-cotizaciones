@@ -400,19 +400,22 @@ export async function generatePDFBlob(data: QuoteState & { totalMonthlyCost: num
 
     const bullets: string[] = []
 
+    // ROBUST CHECK with Defaults
     if (data.serviceType === 'Proyecto') {
-        bullets.push(`Complejidad: ${data.complexity.toUpperCase()}`)
-        bullets.push(`Frecuencia: ${data.updateFrequency.toUpperCase()}`)
-        bullets.push(`Volumetría: ${data.pipelinesCount} Pipelines, ${data.notebooksCount} Notebooks`)
-        bullets.push(`Modelos IA/ML: ${data.dsModelsCount}`)
-        bullets.push(`Consumo: ${data.reportUsers} Usuarios Finales (${data.dashboardsCount + data.reportsCount} reportes)`)
+        bullets.push(`Complejidad: ${(data.complexity || 'N/A').toUpperCase()}`)
+        bullets.push(`Frecuencia: ${(data.updateFrequency || 'N/A').toUpperCase()}`)
+        bullets.push(`Volumetría: ${data.pipelinesCount || 0} Pipelines, ${data.notebooksCount || 0} Notebooks`)
+        bullets.push(`Modelos IA/ML: ${data.dsModelsCount || 0}`)
+        bullets.push(`Consumo: ${data.reportUsers || 0} Usuarios Finales (${(data.dashboardsCount || 0) + (data.reportsCount || 0)} reportes)`)
     } else if (data.serviceType === 'Sustain') {
         bullets.push(`Tipo de Servicio: Sustain (Mantenimiento)`)
         bullets.push(`Horario de Soporte: ${data.supportHours === '24/7' ? '24/7 CRITICAL' : 'Business Hours (9-18h)'}`)
-        bullets.push(`SLA / Riesgo: ${data.criticitness.enabled ? 'ALTO' : 'ESTÁNDAR'}`)
+        bullets.push(`SLA / Riesgo: ${data.criticitness?.enabled ? 'ALTO' : 'ESTÁNDAR'}`)
     } else {
         bullets.push(`Tipo de Servicio: Staffing`)
-        bullets.push(`Total Recursos: ${data.staffingDetails.profiles.reduce((acc, p) => acc + p.count, 0)}`)
+        // Safe access to profiles
+        const totalResources = data.staffingDetails?.profiles?.reduce((acc, p) => acc + (p.count || 0), 0) || 0
+        bullets.push(`Total Recursos: ${totalResources}`)
     }
 
     doc.setFontSize(10)
