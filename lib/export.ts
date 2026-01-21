@@ -403,11 +403,10 @@ export async function generatePDFBlob(data: QuoteState & { totalMonthlyCost: num
     const currencySymbol = { 'USD': '$', 'EUR': '€', 'ARS': '$', 'MXN': '$', 'COP': '$', 'CLP': '$' }[currencyCode] || '$'
 
     const fmt = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: currencyCode,
-            maximumFractionDigits: 0
-        }).format(amount * rateMultiplier)
+        return `${currencyCode} ${new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount * rateMultiplier)}`
     }
 
     // Colors
