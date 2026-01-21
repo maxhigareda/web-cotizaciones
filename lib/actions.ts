@@ -176,7 +176,7 @@ async function sendToMonday(quote: any, params: any, breakdown: any, userName: s
     }
 }
 
-export async function sendQuoteToN8N(quoteData: any, pdfBase64: string, filename: string) {
+export async function sendQuoteToN8N(quoteData: any, pdfBase64: string, filename: string, userEmail: string = "", userName: string = "") {
     const webhookUrl = process.env.N8N_WEBHOOK_URL || process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || process.env.N8N_MONDAY_WEBHOOK
     if (!webhookUrl) {
         console.warn("N8N Webhook URL not configured (checked N8N_WEBHOOK_URL, NEXT_PUBLIC_N8N_WEBHOOK_URL, and N8N_MONDAY_WEBHOOK)")
@@ -197,6 +197,10 @@ export async function sendQuoteToN8N(quoteData: any, pdfBase64: string, filename
                 staffingRequirements: typeof quoteData.staffingRequirements === 'string'
                     ? JSON.parse(quoteData.staffingRequirements)
                     : quoteData.staffingRequirements,
+
+                // User Details (Restored)
+                userEmail: userEmail,
+                userName: userName,
 
                 // Add PDF Data
                 fileBase64: pdfBase64,
@@ -267,7 +271,7 @@ export async function saveQuote(data: {
         // const syncResult = await sendToMonday(result, data.params, data.breakdown, userName, userEmail)
         const syncResult = { synced: false, reason: "Consolidated into PDF upload" }
 
-        return { success: true, quote: result, sync: syncResult }
+        return { success: true, quote: result, sync: syncResult, userEmail, userName }
     } catch (e: any) {
         console.error("CRITICAL DB ERROR (saveQuote):", e)
         // Return error to client to debug Vercel issue

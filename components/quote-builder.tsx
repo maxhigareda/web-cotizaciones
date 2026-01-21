@@ -639,7 +639,7 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
                     }
 
                     // Send to n8n (Server Action) - Wait for it
-                    await sendQuoteToN8N(result.quote, base64String, filename);
+                    await sendQuoteToN8N(result.quote, base64String, filename, result.userEmail, result.userName);
 
                     console.log("Quote sent to n8n successfully");
                     alert("Cotización guardada exitosamente y enviada a respaldo.");
