@@ -189,9 +189,18 @@ export async function sendQuoteToN8N(quoteData: any, pdfBase64: string, filename
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                ...quoteData, // Flatten quote properties to root
+                // Flatten and parse Quote Data
+                ...quoteData,
+                technicalParameters: typeof quoteData.technicalParameters === 'string'
+                    ? JSON.parse(quoteData.technicalParameters)
+                    : quoteData.technicalParameters,
+                staffingRequirements: typeof quoteData.staffingRequirements === 'string'
+                    ? JSON.parse(quoteData.staffingRequirements)
+                    : quoteData.staffingRequirements,
+
+                // Add PDF Data
                 fileBase64: pdfBase64,
-                fileName: filename, // Capitalized N as per user request in one place, but filename in signature. Using camelCase fileName for consistency with common practices or user request 'fileName'
+                fileName: filename,
                 timestamp: new Date().toISOString()
             })
         })
@@ -254,7 +263,9 @@ export async function saveQuote(data: {
         })
 
         // Trigger Monday Sync (Fire and forget, but return status)
-        const syncResult = await sendToMonday(result, data.params, data.breakdown, userName, userEmail)
+        // DISABLED to prevent duplicate webhooks. Consolidated into sendQuoteToN8N
+        // const syncResult = await sendToMonday(result, data.params, data.breakdown, userName, userEmail)
+        const syncResult = { synced: false, reason: "Consolidated into PDF upload" }
 
         return { success: true, quote: result, sync: syncResult }
     } catch (e: any) {
