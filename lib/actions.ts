@@ -176,37 +176,84 @@ async function sendToMonday(quote: any, params: any, breakdown: any, userName: s
     }
 }
 
+// --- N8N WEBHOOK SENDER (Strict Schema Compliance) ---
 export async function sendQuoteToN8N(quoteData: any, pdfBase64: string, filename: string, userEmail: string = "", userName: string = "") {
     const webhookUrl = process.env.N8N_WEBHOOK_URL || process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || process.env.N8N_MONDAY_WEBHOOK
     if (!webhookUrl) {
-        console.warn("N8N Webhook URL not configured (checked N8N_WEBHOOK_URL, NEXT_PUBLIC_N8N_WEBHOOK_URL, and N8N_MONDAY_WEBHOOK)")
-        return { success: false, error: "Configuration missing: No Webhook URL found" }
+        console.warn("N8N Webhook URL not configured")
+        return { success: false, error: "Configuration missing" }
     }
 
     try {
         console.log(`Sending quote to n8n Webhook: ${filename}`)
+
+        // 1. Parse JSON fields safely
+        const technicalParameters = typeof quoteData.technicalParameters === 'string'
+            ? JSON.parse(quoteData.technicalParameters)
+            : quoteData.technicalParameters || {}
+
+        const staffingDetails = typeof quoteData.staffingRequirements === 'string'
+            ? JSON.parse(quoteData.staffingRequirements)
+            : quoteData.staffingRequirements || []
+
+        // 2. Build Base Payload (Shared Fields)
+        const basePayload = {
+            action: "create",
+            id: quoteData.id,
+            userEmail: userEmail,
+            userName: userName, // Optional but good to have
+            clientName: quoteData.clientName,
+            serviceType: quoteData.serviceType,
+            status: quoteData.status || "BORRADOR",
+            totalCost: Number(quoteData.estimatedCost || 0),
+            fileBase64: pdfBase64,
+            fileName: filename,
+            date: new Date().toISOString()
+        }
+
+        // 3. Construct Specific Payload based on Type
+        let finalPayload: any = { ...basePayload }
+
+        if (quoteData.serviceType === 'Staffing') {
+            finalPayload.technicalParameters = {
+                clientName: quoteData.clientName,
+                serviceType: "Staffing",
+                durationMonths: technicalParameters.durationMonths || 6, // Default or actual
+                staffingDetails: {
+                    profiles: staffingDetails // The array of roles
+                }
+            }
+        }
+        else if (quoteData.serviceType === 'Sustain') {
+            finalPayload.technicalParameters = {
+                clientName: quoteData.clientName,
+                serviceType: "Sustain",
+                supportHours: technicalParameters.supportHours || "Business Hours",
+                sustainDetails: technicalParameters.sustainDetails || {}
+            }
+        }
+        else if (quoteData.serviceType === 'Proyecto') {
+            finalPayload.project = quoteData.projectType || "Proyecto",
+                finalPayload.description = technicalParameters.description || "Sin descripción",
+                finalPayload.technicalParameters = {
+                    serviceType: "Proyecto",
+                    complexity: technicalParameters.complexity || "Medium",
+                    // Pass through other critical params
+                    pipelinesCount: technicalParameters.pipelinesCount,
+                    reportUsers: technicalParameters.reportUsers
+                }
+        }
+        else {
+            // Fallback for generic types
+            finalPayload.technicalParameters = technicalParameters
+        }
+
+        console.log("N8N Payload Preview (Type):", quoteData.serviceType)
+
         const res = await fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                // Flatten and parse Quote Data
-                ...quoteData,
-                technicalParameters: typeof quoteData.technicalParameters === 'string'
-                    ? JSON.parse(quoteData.technicalParameters)
-                    : quoteData.technicalParameters,
-                staffingRequirements: typeof quoteData.staffingRequirements === 'string'
-                    ? JSON.parse(quoteData.staffingRequirements)
-                    : quoteData.staffingRequirements,
-
-                // User Details (Restored)
-                userEmail: userEmail,
-                userName: userName,
-
-                // Add PDF Data
-                fileBase64: pdfBase64,
-                fileName: filename,
-                timestamp: new Date().toISOString()
-            })
+            body: JSON.stringify(finalPayload)
         })
 
         if (!res.ok) {

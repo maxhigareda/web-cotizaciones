@@ -587,27 +587,26 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
                 return;
             }
 
-            // 2. Upload to Drive via n8n Webhook
-            // FORCE SYNC: n8n Webhook Trigger
+            // 2. Upload to Drive via n8n Webhook (FAILSAFE WRAPPER)
             try {
                 console.log("Generating PDF for n8n Backup...")
                 let diagramDataUrl = undefined
-                // Safely capture diagram with timeout
+                let base64String = ""
+
+                // A. Diagram Capture (Optional)
                 const element = document.getElementById('diagram-capture-target')
                 if (element && state.serviceType !== 'Staffing') {
                     try {
-                        // 3 second timeout for capture
                         const capturePromise = html2canvas(element, { backgroundColor: '#ffffff', scale: 2, useCORS: true })
                         const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Capture timeout")), 3000))
-
                         const canvas: any = await Promise.race([capturePromise, timeoutPromise])
                         diagramDataUrl = canvas.toDataURL('image/png')
                     } catch (err) {
-                        console.warn("Failed to capture diagram (skipping image):", err)
-                        // Continue without image
+                        console.warn("Skipping diagram capture (timeout/error):", err)
                     }
                 }
 
+                // B. PDF Generation Blob
                 const blob = await generatePDFBlob({
                     ...state,
                     totalMonthlyCost,
@@ -622,47 +621,37 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
                     finalTotal
                 })
 
+                // C. Conversion to Base64 (Strict)
                 if (blob) {
-                    const filename = `[${state.clientName}][${state.serviceType}][${new Date().toISOString().split('T')[0]}].pdf`.replace(/\s+/g, '_')
-
-                    // STRICT ASYNC/AWAIT BASE64 GENERATION
-                    const base64String = await new Promise<string>((resolve, reject) => {
+                    base64String = await new Promise<string>((resolve, reject) => {
                         const reader = new FileReader();
                         reader.readAsDataURL(blob);
-                        reader.onload = () => {
-                            const result = reader.result as string;
-                            const base64 = result.split(',')[1];
-                            resolve(base64);
-                        };
+                        reader.onload = () => resolve((reader.result as string).split(',')[1]);
                         reader.onerror = (error) => reject(error);
                     });
-
-                    console.log("PDF Base64 Length:", base64String.length); // EXACT USER LOG
-
-                    // Validate URL client-side just in case
-                    if (!process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL && !process.env.N8N_WEBHOOK_URL && !process.env.N8N_MONDAY_WEBHOOK) {
-                        console.warn("WARNING: No N8N Webhook URL found in client env vars.");
-                    }
-
-                    // Send to n8n (Server Action) - Wait for it
-                    await sendQuoteToN8N(result.quote, base64String, filename, result.userEmail, result.userName);
-
-                    console.log("Quote sent to n8n successfully");
-                    alert("Cotización guardada exitosamente y enviada a respaldo.");
-                    router.push('/dashboard');
+                    console.log("PDF generated successfully. Length:", base64String.length)
                 } else {
-                    console.error("Failed to generate PDF Blob");
-                    alert("Error crítico: No se pudo generar el PDF.");
-                    router.push('/dashboard');
+                    console.error("PDF Blob returned null")
                 }
 
-            } catch (e) {
-                console.warn("Failed to initiate n8n upload:", e)
-                router.push('/dashboard'); // Fallback redirect
+                // D. Send to N8N (Always send, even if PDF is empty string, let action handle it)
+                const filename = `[${state.clientName}][${state.serviceType}].pdf`.replace(/\s+/g, '_')
+                await sendQuoteToN8N(result.quote, base64String || "", filename, result.userEmail, result.userName);
+                console.log("N8N Webhook fired successfully")
+
+            } catch (pdfError) {
+                // CORE FIX: Make this non-blocking!
+                console.error("CRITICAL: PDF Generation or N8N failed, but DB Saved.", pdfError)
             }
-        } catch (e) {
-            console.error(e)
-            alert("Error al guardar cotización.")
+
+            // 3. FINAL SUCCESS UI (Guaranteed Execution)
+            alert("Cotización guardada exitosamente.")
+            router.push('/dashboard')
+
+        } catch (e: any) {
+            console.error("Failed to save quote (DB Error):", e)
+            alert(`Error al guardar: ${e.message}`)
+        } finally {
             setIsSaving(false)
         }
     }
