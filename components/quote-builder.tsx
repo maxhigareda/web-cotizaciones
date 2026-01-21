@@ -18,6 +18,7 @@ import { generateMermaidUpdate } from "@/lib/ai"
 import { exportToPDF, exportToWord, generatePDFBlob } from "@/lib/export"
 import html2canvas from 'html2canvas'
 import { motion, AnimatePresence } from "framer-motion"
+import { sendQuoteToN8N } from "@/lib/actions"
 
 // Hardcoded fallback rates in case DB fails or during transition
 const FALLBACK_RATES = {
@@ -593,8 +594,12 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
                 let diagramDataUrl = undefined
                 const element = document.getElementById('diagram-capture-target')
                 if (element && state.serviceType !== 'Staffing') {
-                    const canvas = await html2canvas(element, { backgroundColor: '#ffffff', scale: 2, useCORS: true })
-                    diagramDataUrl = canvas.toDataURL('image/png')
+                    try {
+                        const canvas = await html2canvas(element, { backgroundColor: '#ffffff', scale: 2, useCORS: true })
+                        diagramDataUrl = canvas.toDataURL('image/png')
+                    } catch (err) {
+                        console.warn("Failed to capture diagram:", err)
+                    }
                 }
 
                 const blob = await generatePDFBlob({
@@ -611,35 +616,49 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
                     finalTotal
                 })
 
-                const filename = `${state.clientName}_${state.serviceType}_${new Date().toISOString().split('T')[0]}.pdf`.replace(/\s+/g, '_')
+                if (blob) {
+                    const filename = `[${state.clientName}][${state.serviceType}][${new Date().toISOString().split('T')[0]}].pdf`.replace(/\s+/g, '_')
 
-                // Convert Blob to Base64
-                const base64String = await new Promise<string>((resolve, reject) => {
+                    // Convert Blob to Base64
                     const reader = new FileReader();
                     reader.readAsDataURL(blob);
-                    reader.onloadend = () => {
-                        const result = reader.result as string;
-                        // Remove data:application/pdf;base64, prefix
-                        const base64 = result.split(',')[1];
-                        resolve(base64);
-                    };
-                    reader.onerror = reject;
-                });
 
-                // Send to n8n (Server Action)
-                const { sendQuoteToN8N } = await import('@/lib/actions')
-                await sendQuoteToN8N(result.quote, base64String, filename)
+                    reader.onloadend = async () => {
+                        try {
+                            const base64String = (reader.result as string).split(',')[1];
+                            console.log("PDF Base64 generated, length:", base64String.length);
+
+                            // Send to n8n (Server Action)
+                            await sendQuoteToN8N(result.quote, base64String, filename);
+
+                            console.log("Quote sent to n8n successfully");
+                            alert("Cotización guardada exitosamente y enviada a respaldo.");
+                            router.push('/dashboard');
+                        } catch (uploadError) {
+                            console.error("Error uploading to n8n:", uploadError);
+                            // Still redirect as DB save was successful
+                            alert("Cotización guardada en BD, pero falló el respaldo PDF.");
+                            router.push('/dashboard');
+                        }
+                    };
+
+                    reader.onerror = (readError) => {
+                        console.error("Error reading PDF Blob:", readError);
+                        alert("Cotización guardada, error al generar PDF.");
+                        router.push('/dashboard');
+                    }
+                } else {
+                    console.error("Failed to generate PDF Blob");
+                    router.push('/dashboard');
+                }
 
             } catch (e) {
                 console.warn("Failed to initiate n8n upload:", e)
+                router.push('/dashboard'); // Fallback redirect
             }
-
-            alert("Cotización guardada exitosamente.")
-            router.push('/dashboard')
         } catch (e) {
             console.error(e)
             alert("Error al guardar cotización.")
-        } finally {
             setIsSaving(false)
         }
     }
