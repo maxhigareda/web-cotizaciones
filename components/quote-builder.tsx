@@ -239,7 +239,8 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
         'MXN': 17.50,
         'COP': 3900.0,
         'CLP': 980.0,
-        'BRL': 5.0
+        'BRL': 5.0,
+        'UYU': 39.0
     }
     const [currency, setCurrency] = useState('USD')
     const [exchangeRates, setExchangeRates] = useState<Record<string, number>>(FALLBACK_EXCHANGE_RATES)
@@ -1522,15 +1523,22 @@ graph TD
                             <h4 className="text-[#F5CB5C] text-xs font-bold uppercase tracking-widest flex items-center gap-2">
                                 <Calculator className="w-4 h-4" /> Inversión Estimada
                             </h4>
-                            <div className="flex bg-[#333533] p-1 rounded-lg border border-[#4A4D4A]">
-                                <button
-                                    onClick={() => setCurrency('USD')}
-                                    className={cn("px-2 py-1 text-[10px] font-bold rounded-md transition-colors", currency === 'USD' ? "bg-[#F5CB5C] text-black" : "text-[#CFDBD5] hover:text-white")}
-                                >USD</button>
-                                <button
-                                    onClick={() => setCurrency('ARS')}
-                                    className={cn("px-2 py-1 text-[10px] font-bold rounded-md transition-colors", currency === 'ARS' ? "bg-[#F5CB5C] text-black" : "text-[#CFDBD5] hover:text-white")}
-                                >ARS</button>
+                            <div className="w-[100px]">
+                                <Select value={currency} onValueChange={(val) => setCurrency(val)}>
+                                    <SelectTrigger className="h-7 text-[10px] font-bold bg-[#333533] border-[#4A4D4A] text-[#E8EDDF] focus:border-[#F5CB5C] rounded-lg">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
+                                        <SelectItem value="USD">USD</SelectItem>
+                                        <SelectItem value="EUR">EUR</SelectItem>
+                                        <SelectItem value="ARS">ARS</SelectItem>
+                                        <SelectItem value="MXN">MXN</SelectItem>
+                                        <SelectItem value="COP">COP</SelectItem>
+                                        <SelectItem value="CLP">CLP</SelectItem>
+                                        <SelectItem value="BRL">BRL</SelectItem>
+                                        <SelectItem value="UYU">UYU</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                         <div className="text-6xl font-mono font-bold tracking-tighter text-[#E8EDDF] drop-shadow-[0_0_15px_rgba(245,203,92,0.1)]">
