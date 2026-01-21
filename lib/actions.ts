@@ -178,7 +178,7 @@ async function sendToMonday(quote: any, params: any, breakdown: any, userName: s
 
 // --- N8N WEBHOOK SENDER (Strict Schema Compliance) ---
 // --- N8N WEBHOOK SENDER (Strict Schema Compliance) ---
-export async function sendQuoteToN8N(quoteData: any, pdfBase64: string, filename: string, userEmail: string = "", userName: string = "", currency: string = "USD", exchangeRate: number = 1.0) {
+export async function sendQuoteToN8N(quoteData: any, pdfBase64: string, filename: string, userEmail: string = "", userName: string = "", currency: string = "USD", exchangeRate: number = 1.0, originalUSDAmount: number = 0) {
     // PRIORITY: User asked for NEXT_PUBLIC_N8N_MONDAY_WEBHOOK specifically
     const webhookUrl = process.env.NEXT_PUBLIC_N8N_MONDAY_WEBHOOK || process.env.N8N_MONDAY_WEBHOOK || process.env.N8N_WEBHOOK_URL || process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL
 
@@ -211,6 +211,7 @@ export async function sendQuoteToN8N(quoteData: any, pdfBase64: string, filename
             totalCost: Number(quoteData.estimatedCost || 0).toFixed(2), // Ensure 2 decimals
             currency: currency, // GLOBAL CURRENCY
             exchangeRate: exchangeRate,
+            originalUSDAmount: Number(originalUSDAmount).toFixed(2), // NEW FIELD
             fileBase64: pdfBase64,
             fileName: filename,
             date: new Date().toISOString()

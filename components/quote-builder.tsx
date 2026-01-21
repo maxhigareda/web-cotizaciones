@@ -1915,3 +1915,4 @@ interface SectionCardProps {
                 </div>
             )
         }
+}
