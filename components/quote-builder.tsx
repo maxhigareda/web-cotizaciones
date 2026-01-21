@@ -593,6 +593,7 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
                 console.log("Generating PDF for n8n Backup...")
                 let diagramDataUrl = undefined
                 // Safely capture diagram with timeout
+                const element = document.getElementById('diagram-capture-target')
                 if (element && state.serviceType !== 'Staffing') {
                     try {
                         // 3 second timeout for capture
