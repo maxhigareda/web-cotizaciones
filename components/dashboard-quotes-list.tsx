@@ -42,11 +42,47 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
     const [isClient, setIsClient] = useState(false)
     const [activeTab, setActiveTab] = useState('All')
 
+    // Realtime Subscription
     useEffect(() => {
         setIsClient(true)
         const validQuotes = Array.isArray(serverQuotes) ? serverQuotes : []
         validQuotes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         setMergedQuotes(validQuotes)
+
+        // Init Supabase only if env vars exist
+        // Import dynamically to avoid build errors if package missing (though we installed it)
+        const initRealtime = async () => {
+            try {
+                const { createClient } = await import('@supabase/supabase-js')
+                const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+                const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+                if (supabaseUrl && supabaseKey) {
+                    console.log("Initializing Supabase Realtime...")
+                    const supabase = createClient(supabaseUrl, supabaseKey)
+
+                    const channel = supabase
+                        .channel('dashboard-quotes')
+                        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'Quote' }, (payload) => {
+                            console.log("Realtime Update Received:", payload)
+                            // Update local state
+                            setMergedQuotes(prev => prev.map(q =>
+                                q.id === payload.new.id ? { ...q, ...payload.new } : q
+                            ))
+                        })
+                        .subscribe()
+
+                    return () => {
+                        supabase.removeChannel(channel)
+                    }
+                }
+            } catch (e) {
+                console.warn("Supabase Realtime logic skipped:", e)
+            }
+        }
+
+        initRealtime()
+
     }, [serverQuotes])
 
     const handleDelete = (id: string) => {

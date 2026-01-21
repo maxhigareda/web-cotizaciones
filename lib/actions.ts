@@ -223,7 +223,7 @@ export async function sendQuoteToN8N(quoteData: any, pdfBase64: string, filename
                 serviceType: "Staffing",
                 durationMonths: technicalParameters.durationMonths || 6, // Default or actual
                 staffingDetails: {
-                    profiles: staffingDetails // The array of roles
+                    profiles: staffingDetails.filter((p: any) => p.count > 0) // Clean empty profiles
                 }
             }
         }

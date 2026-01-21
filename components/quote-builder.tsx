@@ -659,6 +659,7 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
 
             // 3. FINAL SUCCESS UI (Guaranteed Execution)
             alert("Cotización guardada exitosamente.")
+            resetQuoteState() // CLEAN INTERFACE
             router.push('/dashboard')
 
         } catch (e: any) {
@@ -667,6 +668,50 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
         } finally {
             setIsSaving(false)
         }
+    }
+
+    // --- RESET LOGIC ---
+    const resetQuoteState = () => {
+        setState({
+            clientName: '',
+            description: '',
+            complexity: 'medium',
+            updateFrequency: 'daily',
+            roles: Object.keys(FALLBACK_RATES).reduce((acc, key) => ({ ...acc, [key]: 0 }), {} as Record<RoleKey, number>),
+            pipelinesCount: 0,
+            notebooksCount: 0,
+            manualProcessPct: 0,
+            automationsCount: 0,
+            pipelineExecutions: 0,
+            usersCount: 0,
+            reportsCount: 0,
+            reportUsers: 0,
+            isFinancialOrSales: false,
+            techStack: [],
+            dsModelsCount: 0,
+            dashboardsCount: 0,
+            criticitness: {
+                enabled: false,
+                level: 'low',
+                impactOperative: 'low',
+                impactFinancial: 'low',
+                dataExposure: 'internal',
+                countriesCount: 1
+            },
+            serviceType: 'Proyecto', // Reset to default
+            durationMonths: 6,
+            supportHours: 'business',
+            staffingDetails: { profiles: [] },
+            sustainDetails: {
+                technicalDescription: '',
+                tools: [],
+                operationHours: 'Business Hours'
+            },
+            commercialDiscount: 0,
+            retention: { enabled: false, percentage: 0 },
+            clientContact: { name: '', role: '', email: '' }
+        })
+        setChartCode('graph LR\n  Start --> End') // Reset Diagram
     }
 
     const handleExport = async (type: 'pdf' | 'word') => {
