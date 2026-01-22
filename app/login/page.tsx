@@ -10,11 +10,13 @@ import { Loader2, ArrowRight, Lock } from 'lucide-react'
 
 import { createClient } from '@supabase/supabase-js'
 
-// Initialize Supabase Client (Standard Client-side)
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-)
+// Initialize Supabase Client (Lazy)
+const getSupabaseClient = () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!url || !key) return null
+    return createClient(url, key)
+}
 
 export default function LoginPage() {
     const [loading, setLoading] = useState(false)
@@ -24,6 +26,14 @@ export default function LoginPage() {
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true)
         setError(null)
+
+        const supabase = getSupabaseClient()
+        if (!supabase) {
+            setError("Configuración de Google Login incompleta (Faltan variables de entorno)")
+            setIsGoogleLoading(false)
+            return
+        }
+
         try {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
