@@ -10,10 +10,11 @@ import { Loader2, ArrowRight, Lock } from 'lucide-react'
 
 import { createClient } from '@supabase/supabase-js'
 
-// Initialize Supabase Client (Lazy)
 const getSupabaseClient = () => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    // Hardcoded fallbacks for explicit 'physical' persistence as requested
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://gcajouecfyhcpbazxjhy.supabase.co"
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_NDFtz_7ldXuNu3yP3ZsVfA_te2fF1_S"
+
     if (!url || !key) return null
     return createClient(url, key)
 }
