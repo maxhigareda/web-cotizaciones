@@ -70,7 +70,7 @@ export async function GET(request: Request) {
                 cookieStore.set('session_user_id', user.id, cookieOptions)
 
                 // Redirect to Dashboard
-                return NextResponse.redirect(`${origin}/dashboard`)
+                return NextResponse.redirect(`${origin}/quote/new`)
             }
         }
     }
