@@ -42,9 +42,14 @@ const SENIORITY_MODIFIERS = {
 
 const HOURS_MODIFIERS = {
     'business': 1.0,
+    '9x5': 1.0,
     '24/7': 1.5,
-    'combined': 1.2
+    '24x7': 1.5,
+    'combined': 1.2,
+    'custom': 1.2
 }
+
+
 
 const COMPLEXITY_MODIFIERS = {
     'low': 1.0,
@@ -591,9 +596,9 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
         }
 
         // Apply Service Type Specific Role Multipliers
-        // Sustain: Operation Hours
+        // Sustain: Operation Hours (Now Support Window)
         if (state.serviceType === 'Sustain') {
-            const hoursMod = HOURS_MODIFIERS[state.sustainDetails.operationHours as keyof typeof HOURS_MODIFIERS] || 1.0
+            const hoursMod = HOURS_MODIFIERS[state.sustainDetails.supportWindow as keyof typeof HOURS_MODIFIERS] || 1.0
             baseRoles *= hoursMod
         }
         // Project: Complexity
