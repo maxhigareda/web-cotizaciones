@@ -1640,7 +1640,7 @@ graph TD
                             </div>
                         )}
                     </SectionCard>
-                    )}
+
 
                     {/* 5. TECH */}
                     {/* 5. TECH - Included in Scorecard for Sustain */}
