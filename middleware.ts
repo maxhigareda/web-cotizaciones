@@ -4,6 +4,11 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname
 
+    // 0. Bypass Auth Routes entirely
+    if (path.startsWith('/auth')) {
+        return NextResponse.next()
+    }
+
     // Cookie name depends on your auth implementation. 
     // Mapped to 'session_role' from lib/auth.ts
     const authRole = request.cookies.get('session_role')?.value

@@ -9,10 +9,13 @@ export async function GET(request: Request) {
     const origin = requestUrl.origin
 
     // 1. Validate Code
-    console.log(`[Auth Callback] Code received: ${code ? 'YES' : 'NO'}`)
+    const allParams = Object.fromEntries(requestUrl.searchParams.entries())
+    console.log(`[Auth Callback] Params received:`, allParams)
 
     if (!code) {
-        return NextResponse.redirect(`${origin}/login?error=Google login validation failed (No code)`)
+        const errorDescription = requestUrl.searchParams.get('error_description') || requestUrl.searchParams.get('error')
+        const msg = errorDescription ? `Provider Error: ${errorDescription}` : "Validation failed: No code received"
+        return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(msg)}`)
     }
 
     const supabase = createClient(
