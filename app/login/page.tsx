@@ -43,7 +43,9 @@ export default function LoginPage() {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${window.location.origin}/auth/callback`,
+                    redirectTo: process.env.NODE_ENV === 'production'
+                        ? 'https://web-cotizaciones.vercel.app/auth/callback'
+                        : `${window.location.origin}/auth/callback`,
                     queryParams: {
                         access_type: 'offline',
                         prompt: 'consent',
@@ -77,7 +79,7 @@ export default function LoginPage() {
             }
         } catch (err) {
             console.error("Auth process failed", err)
-            setError(err instanceof Error ? err.message : "Error en el proceso")
+            setError(err instanceof Error ? err.message : "Error. Verifica tus credenciales.")
         } finally {
             setLoading(false)
         }
@@ -147,6 +149,20 @@ export default function LoginPage() {
                             )}
                         </Button>
 
+
+
+                        <div className="text-center mt-4">
+                            <button
+                                type="button"
+                                onClick={() => setIsRegistering(!isRegistering)}
+                                className="text-sm text-[#F5CB5C] hover:text-[#E0B84C] font-semibold underline underline-offset-4 transition-colors"
+                            >
+                                {isRegistering
+                                    ? '¿Ya tienes cuenta? Ingresa aquí'
+                                    : '¿No tienes cuenta? Regístrate aquí'}
+                            </button>
+                        </div>
+
                         <div className="relative my-6">
                             <div className="absolute inset-0 flex items-center">
                                 <span className="w-full border-t border-[#2D2D2D]" />
@@ -198,6 +214,6 @@ export default function LoginPage() {
                     </div>
                 </CardContent>
             </Card>
-        </main>
+        </main >
     )
 }
