@@ -9,6 +9,8 @@ export async function GET(request: Request) {
     const origin = requestUrl.origin
 
     // 1. Validate Code
+    console.log(`[Auth Callback] Code received: ${code ? 'YES' : 'NO'}`)
+
     if (!code) {
         return NextResponse.redirect(`${origin}/login?error=Google login validation failed (No code)`)
     }

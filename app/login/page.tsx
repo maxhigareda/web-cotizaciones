@@ -44,8 +44,8 @@ export default function LoginPage() {
                 provider: 'google',
                 options: {
                     redirectTo: process.env.NODE_ENV === 'production'
-                        ? 'https://web-cotizaciones.vercel.app/auth/callback'
-                        : `${window.location.origin}/auth/callback`,
+                        ? 'https://web-cotizaciones.vercel.app/auth/v1/callback'
+                        : `${window.location.origin}/auth/v1/callback`,
                     queryParams: {
                         access_type: 'offline',
                         prompt: 'consent',
