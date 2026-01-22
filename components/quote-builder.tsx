@@ -847,9 +847,31 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
             supportHours: 'business',
             staffingDetails: { profiles: [] },
             sustainDetails: {
+                solutionName: '',
                 technicalDescription: '',
-                tools: [],
-                operationHours: 'Business Hours'
+                techStack: [],
+                metrics: {
+                    pipelinesCount: 0,
+                    notebooksCount: 0,
+                    reportsCount: 0,
+                    dsModelsCount: 0,
+                    automationLevel: 0,
+                    updateFrequency: 'daily'
+                },
+                businessOwner: '',
+                devHours: 0,
+                incidentRate: 0,
+                supportWindow: '9x5',
+                criticalHours: '',
+                criticalDays: '',
+                criticalityMatrix: {
+                    impactOperative: 1,
+                    impactFinancial: 1,
+                    userCoverage: 1,
+                    countryCoverage: 1,
+                    technicalMaturity: 1,
+                    dependencies: 1
+                }
             },
             commercialDiscount: 0,
             retention: { enabled: false, percentage: 0 },
