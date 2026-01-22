@@ -55,9 +55,31 @@ interface QuoteState {
         }>
     }
     sustainDetails: {
+        solutionName: string
         technicalDescription: string
-        tools: string[]
-        operationHours: string
+        techStack: string[]
+        metrics: {
+            pipelinesCount: number
+            notebooksCount: number
+            reportsCount: number
+            dsModelsCount: number
+            automationLevel: number
+            updateFrequency: string
+        }
+        businessOwner: string
+        devHours: number
+        incidentRate: number
+        supportWindow: string
+        criticalHours: string
+        criticalDays: string
+        criticalityMatrix: {
+            impactOperative: number
+            impactFinancial: number
+            userCoverage: number
+            countryCoverage: number
+            technicalMaturity: number
+            dependencies: number
+        }
     }
     retention?: {
         enabled: boolean
@@ -217,8 +239,8 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
         bullets.push(`Consumo: ${data.reportUsers} Usuarios Finales (${data.dashboardsCount + data.reportsCount} reportes)`)
     } else if (data.serviceType === 'Sustain') {
         bullets.push(`Tipo de Servicio: Sustain (Mantenimiento)`)
-        bullets.push(`Horario de Soporte: ${data.supportHours === '24/7' ? '24/7 CRITICAL' : 'Business Hours (9-18h)'}`)
-        bullets.push(`SLA / Riesgo: ${data.criticitness.enabled ? 'ALTO' : 'ESTÁNDAR'}`)
+        bullets.push(`Horario de Soporte: ${data.sustainDetails.supportWindow === '24x7' || data.sustainDetails.supportWindow === '24/7' ? '24/7 CRITICAL' : 'Business Hours (9x5)'}`)
+        bullets.push(`Nivel de Servicio: ${data.criticitness.enabled ? 'ALTO' : 'ESTÁNDAR'}`)
     } else {
         bullets.push(`Tipo de Servicio: Staffing`)
         bullets.push(`Total Recursos: ${data.staffingDetails.profiles.reduce((acc, p) => acc + p.count, 0)}`)
@@ -247,7 +269,7 @@ export async function exportToPDF(data: QuoteState & { totalMonthlyCost: number,
         doc.setTextColor(COLOR_TEXT)
         doc.text("• Continuidad Operativa: Mantenimiento correctivo y evolutivo.", margin + 5, y)
         y += 7
-        doc.text(`• Respuesta ante Incidentes: ${data.supportHours === '24/7' ? '< 1 hora (Crítico)' : '< 4 horas (Business Hours)'}`, margin + 5, y)
+        doc.text(`• Respuesta ante Incidentes: ${data.sustainDetails.supportWindow === '24x7' || data.sustainDetails.supportWindow === '24/7' ? '< 1 hora (Crítico)' : '< 4 horas (Business Hours)'}`, margin + 5, y)
         y += 7
         doc.text("• Monitoreo Proactivo de Pipelines y Procesos", margin + 5, y)
         y += 7
@@ -473,8 +495,8 @@ export async function generatePDFBlob(data: QuoteState & { totalMonthlyCost: num
         bullets.push(`Consumo: ${data.reportUsers || 0} Usuarios Finales (${(data.dashboardsCount || 0) + (data.reportsCount || 0)} reportes)`)
     } else if (data.serviceType === 'Sustain') {
         bullets.push(`Tipo de Servicio: Sustain (Mantenimiento)`)
-        bullets.push(`Horario de Soporte: ${data.supportHours === '24/7' ? '24/7 CRITICAL' : 'Business Hours (9-18h)'}`)
-        bullets.push(`SLA / Riesgo: ${data.criticitness?.enabled ? 'ALTO' : 'ESTÁNDAR'}`)
+        bullets.push(`Horario de Soporte: ${data.sustainDetails.supportWindow === '24x7' || data.sustainDetails.supportWindow === '24/7' ? '24/7 CRITICAL' : 'Business Hours (9x5)'}`)
+        bullets.push(`Nivel de Servicio: ${data.criticitness?.enabled ? 'ALTO' : 'ESTÁNDAR'}`)
     } else {
         bullets.push(`Tipo de Servicio: Staffing`)
         // Safe access to profiles
@@ -505,7 +527,7 @@ export async function generatePDFBlob(data: QuoteState & { totalMonthlyCost: num
         doc.setTextColor(COLOR_TEXT)
         doc.text("• Continuidad Operativa: Mantenimiento correctivo y evolutivo.", margin + 5, y)
         y += 7
-        doc.text(`• Respuesta ante Incidentes: ${data.supportHours === '24/7' ? '< 1 hora (Crítico)' : '< 4 horas (Business Hours)'}`, margin + 5, y)
+        doc.text(`• Respuesta ante Incidentes: ${data.sustainDetails.supportWindow === '24x7' || data.sustainDetails.supportWindow === '24/7' ? '< 1 hora (Crítico)' : '< 4 horas (Business Hours)'}`, margin + 5, y)
         y += 7
         doc.text("• Monitoreo Proactivo de Pipelines y Procesos", margin + 5, y)
         y += 7
