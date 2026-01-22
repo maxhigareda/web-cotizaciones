@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { loginAction } from '@/lib/auth'
+import { loginAction, registerAction } from '@/lib/auth'
 import { Label } from '@/components/ui/label'
 import { Loader2, ArrowRight, Lock } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
@@ -59,21 +59,25 @@ export default function LoginPage() {
         }
     }
 
+    const [isRegistering, setIsRegistering] = useState(false)
+
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         setLoading(true)
-        // ... (existing logic)
         setError(null)
 
         const formData = new FormData(event.currentTarget)
         try {
-            const result = await loginAction(formData)
+            // Choose action based on mode
+            const action = isRegistering ? registerAction : loginAction
+            const result = await action(formData)
+
             if (result?.error) {
                 setError(result.error)
             }
         } catch (err) {
-            console.error("Auth failed", err)
-            setError(err instanceof Error ? err.message : "Error de autenticación")
+            console.error("Auth process failed", err)
+            setError(err instanceof Error ? err.message : "Error en el proceso")
         } finally {
             setLoading(false)
         }
@@ -92,10 +96,10 @@ export default function LoginPage() {
                         <Lock className="w-8 h-8 text-[#F5CB5C]" />
                     </div>
                     <CardTitle className="text-3xl font-black text-[#E8EDDF] tracking-tight mb-2">
-                        Ingreso al Portal
+                        {isRegistering ? 'Crear Cuenta' : 'Ingreso al Portal'}
                     </CardTitle>
                     <CardDescription className="text-[#CFDBD5] text-base">
-                        Sistema Corporativo de Cotizaciones
+                        {isRegistering ? 'Únete al equipo de Consultores' : 'Sistema Corporativo de Cotizaciones'}
                     </CardDescription>
                 </CardHeader>
 
@@ -138,7 +142,7 @@ export default function LoginPage() {
                             {loading && <Loader2 className="w-6 h-6 animate-spin" />}
                             {loading ? 'Procesando...' : (
                                 <>
-                                    Ingresar al Sistema <ArrowRight className="w-6 h-6" />
+                                    {isRegistering ? 'Crear Cuenta' : 'Ingresar al Sistema'} <ArrowRight className="w-6 h-6" />
                                 </>
                             )}
                         </Button>

@@ -205,6 +205,51 @@ export async function loginAction(formData: FormData) {
     }
 }
 
+export async function registerAction(formData: FormData) {
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    if (!email || !password) {
+        return { error: "Credenciales incompletas" }
+    }
+
+    // 1. Check if user already exists
+    const existingUser = await prisma.user.findUnique({ where: { email } })
+    if (existingUser) {
+        return { error: "El usuario ya existe. Intenta iniciar sesión." }
+    }
+
+    try {
+        // 2. Create User in Prisma
+        const hashedPassword = await bcrypt.hash(password, 10)
+        const name = email.split('@')[0] // Default name from email part
+
+        const newUser = await prisma.user.create({
+            data: {
+                name,
+                email,
+                password: hashedPassword,
+                role: 'USER', // Default role 'consultor'
+            }
+        })
+
+        // 3. Auto-Login (Set Session)
+        const cookieStore = await cookies()
+        const cookieOptions = { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production' }
+
+        cookieStore.set('session_role', newUser.role, cookieOptions)
+        cookieStore.set('session_user', newUser.name, cookieOptions)
+        cookieStore.set('session_user_id', newUser.id, cookieOptions)
+
+    } catch (e) {
+        console.error("Registration Failed:", e)
+        return { error: "Error al crear el usuario. Intenta nuevamente." }
+    }
+
+    // 4. Redirect after success
+    redirect('/quote/new')
+}
+
 export async function logoutAction() {
     const cookieStore = await cookies()
     cookieStore.delete('session_role')
