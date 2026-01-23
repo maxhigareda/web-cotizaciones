@@ -4,9 +4,11 @@ import { useState, useEffect, useMemo } from 'react'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Download, FileSpreadsheet, LayoutGrid, DollarSign, Briefcase, Activity, Layers } from 'lucide-react'
+import { Download, FileSpreadsheet, LayoutGrid, DollarSign, Search, FilterX } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -52,19 +54,50 @@ export function AdminHistory({ quotes: serverQuotes }: AdminHistoryProps) {
     const [isClient, setIsClient] = useState(false)
     const [activeTab, setActiveTab] = useState('All')
 
+    // Filters
+    const [consultantFilter, setConsultantFilter] = useState("ALL")
+    const [clientQuery, setClientQuery] = useState("")
+    const [minAmount, setMinAmount] = useState("")
+    const [maxAmount, setMaxAmount] = useState("")
+
     useEffect(() => {
         setIsClient(true)
-        // Strictly use server quotes, no local merging for Admin View
         const validQuotes = Array.isArray(serverQuotes) ? serverQuotes : []
         validQuotes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         setMergedQuotes(validQuotes)
     }, [serverQuotes])
 
+    // Derive Unique Consultants
+    const consultants = useMemo(() => {
+        const unique = new Set<string>()
+        mergedQuotes.forEach(q => {
+            const name = q.user?.name || q.user?.email || "Sistema"
+            unique.add(name)
+        })
+        return Array.from(unique).sort()
+    }, [mergedQuotes])
+
     // Filter Logic
     const filteredQuotes = useMemo(() => {
-        if (activeTab === 'All') return mergedQuotes
-        return mergedQuotes.filter(q => (q.serviceType || 'Proyecto') === activeTab)
-    }, [mergedQuotes, activeTab])
+        return mergedQuotes.filter(q => {
+            // 1. Service Type (Tab)
+            if (activeTab !== 'All' && (q.serviceType || 'Proyecto') !== activeTab) return false
+
+            // 2. Consultant
+            const cName = q.user?.name || q.user?.email || "Sistema"
+            if (consultantFilter !== "ALL" && cName !== consultantFilter) return false
+
+            // 3. Client Name
+            if (clientQuery && !q.clientName?.toLowerCase().includes(clientQuery.toLowerCase())) return false
+
+            // 4. Amount Range
+            const cost = Number(q.estimatedCost) || 0
+            if (minAmount && cost < Number(minAmount)) return false
+            if (maxAmount && cost > Number(maxAmount)) return false
+
+            return true
+        })
+    }, [mergedQuotes, activeTab, consultantFilter, clientQuery, minAmount, maxAmount])
 
     // Metrics Logic
     const metrics = useMemo(() => {
@@ -150,6 +183,70 @@ export function AdminHistory({ quotes: serverQuotes }: AdminHistoryProps) {
                             Exportar
                         </Button>
                     </div>
+                </div>
+
+                {/* FILTERS BAR */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-[#242423]/50 rounded-2xl border border-[#2D2D2D]">
+                    {/* Consultant Filter */}
+                    <div>
+                        <Select value={consultantFilter} onValueChange={setConsultantFilter}>
+                            <SelectTrigger className="bg-[#171717] border-[#4A4D4A] text-[#E8EDDF] h-10 rounded-xl">
+                                <SelectValue placeholder="Filtrar por Consultor" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
+                                <SelectItem value="ALL">Todos los Consultores</SelectItem>
+                                {consultants.map(c => (
+                                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {/* Client Search */}
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#CFDBD5]" />
+                        <Input
+                            placeholder="Buscar Cliente..."
+                            value={clientQuery}
+                            onChange={(e) => setClientQuery(e.target.value)}
+                            className="pl-9 bg-[#171717] border-[#4A4D4A] text-[#E8EDDF] h-10 rounded-xl"
+                        />
+                    </div>
+
+                    {/* Amount Range */}
+                    <div className="flex items-center gap-2">
+                        <Input
+                            placeholder="Min $"
+                            type="number"
+                            value={minAmount}
+                            onChange={(e) => setMinAmount(e.target.value)}
+                            className="bg-[#171717] border-[#4A4D4A] text-[#E8EDDF] h-10 rounded-xl"
+                        />
+                        <span className="text-[#CFDBD5]">-</span>
+                        <Input
+                            placeholder="Max $"
+                            type="number"
+                            value={maxAmount}
+                            onChange={(e) => setMaxAmount(e.target.value)}
+                            className="bg-[#171717] border-[#4A4D4A] text-[#E8EDDF] h-10 rounded-xl"
+                        />
+                    </div>
+
+                    {/* Reset Button */}
+                    <Button
+                        variant="ghost"
+                        onClick={() => {
+                            setConsultantFilter("ALL")
+                            setClientQuery("")
+                            setMinAmount("")
+                            setMaxAmount("")
+                            setActiveTab("All")
+                        }}
+                        className="text-[#CFDBD5] hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/10 h-10 rounded-xl"
+                    >
+                        <FilterX className="w-4 h-4 mr-2" />
+                        Limpiar Filtros
+                    </Button>
                 </div>
 
                 {/* Tabs */}
