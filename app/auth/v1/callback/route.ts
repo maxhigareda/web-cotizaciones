@@ -99,7 +99,34 @@ export async function GET(request: Request) {
         cookieStore.set('session_user', user.name || user.email, cookieOptions)
         cookieStore.set('session_user_id', user.id, cookieOptions)
 
-        return NextResponse.redirect(`${origin}/quote/new`)
+        return new NextResponse(`
+            <html>
+                <head>
+                    <title>Email Verificado</title>
+                    <meta charset="utf-8">
+                    <style>
+                        body { background: #171717; color: #E8EDDF; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center; }
+                        h1 { color: #F5CB5C; margin-bottom: 20px; }
+                        p { font-size: 1.1rem; opacity: 0.8; }
+                        .card { background: #2D2D2D; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #4ade80; }
+                    </style>
+                </head>
+                <body>
+                    <div class="card">
+                        <h1>¡Email Verificado! ✅</h1>
+                        <p>Ya puedes cerrar esta pestaña.</p>
+                        <p>Tu sesión se iniciará automáticamente en la pestaña anterior.</p>
+                        <script>
+                            setTimeout(() => {
+                                window.close();
+                            }, 2500);
+                        </script>
+                    </div>
+                </body>
+            </html>
+        `, {
+            headers: { 'Content-Type': 'text/html' },
+        })
     }
 
     return NextResponse.redirect(`${origin}/login?error=Unknown Auth State`)
