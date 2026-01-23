@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -27,6 +27,23 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false)
     const [isGoogleLoading, setIsGoogleLoading] = useState(false)
     const [error, setError] = useState<string | null>(searchParams.get('error'))
+
+    // Real-Time Auth Listener
+    useEffect(() => {
+        const supabase = getSupabaseClient()
+        if (!supabase) return
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session) {
+                setSuccessMessage("¡Cuenta verificada! Redirigiendo...")
+                setTimeout(() => {
+                    window.location.href = '/quote/new'
+                }, 1500)
+            }
+        })
+
+        return () => subscription.unsubscribe()
+    }, [])
 
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true)
