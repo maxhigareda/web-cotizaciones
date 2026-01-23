@@ -77,11 +77,12 @@ export default function LoginPage() {
             const action = isRegistering ? registerAction : loginAction
             const result = await action(formData)
 
-            if (result?.error) {
+            if (result && 'error' in result && result.error) {
                 setError(result.error)
-            } else if (result?.success && result.message) {
+            } else if (result && 'success' in result && result.success) {
                 // For Registration Success
-                setSuccessMessage(result.message)
+                // Use type assertion or access safely after check
+                setSuccessMessage((result as any).message)
             }
         } catch (err) {
             console.error("Auth process failed", err)
