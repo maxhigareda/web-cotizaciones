@@ -70,37 +70,42 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                             </div>
                         ) : (
                             <Table>
-                                <TableHeader className="hover:bg-transparent">
+                                <TableHeader className="hover:bg-transparent bg-[#242423]/50">
                                     <TableRow className="border-[#333533] hover:bg-transparent">
-                                        <TableHead className="text-[#F5CB5C] font-bold">Empresa</TableHead>
-                                        <TableHead className="text-[#F5CB5C] font-bold">Contacto</TableHead>
-                                        <TableHead className="text-[#F5CB5C] font-bold">Email</TableHead>
-                                        <TableHead className="text-[#F5CB5C] font-bold text-right">Estatus</TableHead>
+                                        <TableHead className="text-[#F5CB5C] font-bold py-5 pl-8 text-base">Empresa</TableHead>
+                                        <TableHead className="text-[#F5CB5C] font-bold py-5 text-base">Contacto</TableHead>
+                                        <TableHead className="text-[#F5CB5C] font-bold py-5 text-base">Email</TableHead>
+                                        <TableHead className="text-[#F5CB5C] font-bold py-5 pr-8 text-right text-base">Estatus</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {clients.map((client) => (
-                                        <TableRow key={client.id} className="border-[#333533] hover:bg-[#333533]">
-                                            <TableCell className="font-medium text-[#E8EDDF] flex items-center gap-2">
-                                                <Building className="w-4 h-4 text-[#CFDBD5]" />
-                                                {client.companyName}
+                                        <TableRow key={client.id} className="border-[#333533] hover:bg-[#333533]/50 transition-colors group">
+                                            <TableCell className="font-medium text-[#E8EDDF] py-5 pl-8 flex items-center gap-3">
+                                                <div className="p-2 rounded-lg bg-[#242423] text-[#CFDBD5] group-hover:text-[#F5CB5C] transition-colors">
+                                                    <Building className="w-5 h-5" />
+                                                </div>
+                                                <span className="text-lg">{client.companyName}</span>
                                             </TableCell>
-                                            <TableCell className="text-[#CFDBD5]">
+                                            <TableCell className="text-[#CFDBD5] py-5 text-base">
                                                 <div className="flex items-center gap-2">
-                                                    <User className="w-3 h-3 opacity-70" />
+                                                    <User className="w-4 h-4 opacity-70" />
                                                     {client.contactName || '-'}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-[#CFDBD5]">
+                                            <TableCell className="text-[#CFDBD5] py-5 text-base">
                                                 <div className="flex items-center gap-2">
-                                                    <Mail className="w-3 h-3 opacity-70" />
+                                                    <Mail className="w-4 h-4 opacity-70" />
                                                     {client.email || '-'}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-right py-5 pr-8">
                                                 <Badge className={`
-                                                    ${client.status === 'CLIENTE' ? 'bg-[#F5CB5C] text-[#242423]' : 'bg-[#CFDBD5] text-[#242423]'}
-                                                    hover:opacity-80
+                                                    ${client.status === 'CLIENTE'
+                                                        ? 'bg-[#F5CB5C]/20 text-[#F5CB5C] border border-[#F5CB5C]/50'
+                                                        : 'bg-[#CFDBD5]/10 text-[#CFDBD5] border border-[#CFDBD5]/30'
+                                                    }
+                                                    px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm backdrop-blur-md
                                                 `}>
                                                     {client.status}
                                                 </Badge>
