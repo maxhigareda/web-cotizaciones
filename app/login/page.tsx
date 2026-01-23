@@ -144,9 +144,15 @@ export default function LoginPage() {
             if (result && 'error' in result && result.error) {
                 setError(result.error)
             } else if (result && 'success' in result && result.success) {
-                // For Registration Success
-                // Use type assertion or access safely after check
-                setSuccessMessage((result as any).message)
+                // FORCE CLIENT-SIDE NAVIGATION
+                // This ensures cookies are read freshly by the browser
+                setSuccessMessage("Acceso concedido. Entrando...")
+
+                // Prevent button re-enable
+                setLoading(true)
+
+                const target = (result as any).redirectUrl || '/quote/new'
+                window.location.href = target
             }
         } catch (err) {
             console.error("Auth process failed", err)
