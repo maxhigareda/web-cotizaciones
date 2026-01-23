@@ -329,8 +329,10 @@ export async function searchClients(query: string) {
                     }
                 } : {})
             },
-            orderBy: { createdAt: 'desc' }, // Show most recent first
-            take: 10,
+            // Global List: Show A-Z for better finding, or Created Desc if preferred?
+            // "Globalizar" implies access to everything. A-Z is standard for lists.
+            orderBy: { companyName: 'asc' },
+            // Removed 'take: 10' to show ALL clients as requested ("Consulta Global")
             select: { id: true, companyName: true, contactName: true, email: true, status: true }
         })
         return clients

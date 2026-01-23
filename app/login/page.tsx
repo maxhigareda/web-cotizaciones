@@ -35,21 +35,61 @@ export default function LoginPage() {
         const supabase = getSupabaseClient()
         if (!supabase) return
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN' && session && !isRedirecting.current) {
-                // Double check if we are NOT already on the target page (rare but safe)
-                if (window.location.pathname === '/quote/new') return
+        // RESET Semaphore on every mount to ensure we are ready
+        isRedirecting.current = false
 
+        // 1. Initial State Check (Silent Redirect if already logged in)
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user && !isRedirecting.current) {
+                console.log("User already active, redirecting silent")
                 isRedirecting.current = true
-                setSuccessMessage("¡Cuenta verificada! Redirigiendo...")
-
-                setTimeout(() => {
-                    window.location.href = '/quote/new'
-                }, 1500)
+                // Basic sync without UI flash
+                syncSessionAction().then(() => {
+                    window.location.assign('/quote/new')
+                })
             }
         })
 
-        return () => subscription.unsubscribe()
+        // 2. Strict Event Listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log(`[Auth Event] ${event}`, session?.user?.email)
+
+            if (!session) return
+
+            // ONLY handle explicit sign-ins that are NOT initial session restoration
+            // 'SIGNED_IN' triggers on login. 'USER_UPDATED' triggers on email confirm (link click).
+            // We want to block generic re-renders or 'INITIAL_SESSION' from looping.
+
+            if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && !isRedirecting.current) {
+                if (window.location.pathname === '/quote/new') return
+
+                // Filter: If it's just a session refresh, ignore? 
+                // We assume explicit action if we are on login page.
+
+                isRedirecting.current = true
+
+                // Show message specific to event?
+                const isVerification = event === 'USER_UPDATED' || window.location.hash.includes('type=recovery') || window.location.hash.includes('type=invite')
+
+                if (isVerification) {
+                    setSuccessMessage("¡Cuenta verificada! Sincronizando...")
+                } else {
+                    setSuccessMessage("Ingreso detectado. Redirigiendo...")
+                }
+
+                await syncSessionAction()
+
+                // Delay slightly for UX only if message was shown
+                setTimeout(() => {
+                    window.location.assign('/quote/new')
+                }, 800)
+            }
+        })
+
+        return () => {
+            subscription.unsubscribe()
+            isRedirecting.current = false // Reset on unmount
+        }
     }, [])
 
     const handleGoogleLogin = async () => {
