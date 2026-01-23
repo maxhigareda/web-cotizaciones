@@ -63,10 +63,13 @@ export default function LoginPage() {
 
     const [isRegistering, setIsRegistering] = useState(false)
 
+    const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         setLoading(true)
         setError(null)
+        setSuccessMessage(null)
 
         const formData = new FormData(event.currentTarget)
         try {
@@ -76,6 +79,9 @@ export default function LoginPage() {
 
             if (result?.error) {
                 setError(result.error)
+            } else if (result?.success && result.message) {
+                // For Registration Success
+                setSuccessMessage(result.message)
             }
         } catch (err) {
             console.error("Auth process failed", err)
@@ -133,6 +139,12 @@ export default function LoginPage() {
                         {error && (
                             <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/50 text-red-500 text-sm font-medium text-center">
                                 {error}
+                            </div>
+                        )}
+
+                        {successMessage && (
+                            <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/50 text-green-500 text-sm font-medium text-center">
+                                {successMessage}
                             </div>
                         )}
 
