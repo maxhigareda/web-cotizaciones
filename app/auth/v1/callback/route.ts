@@ -67,30 +67,28 @@ export async function GET(request: Request) {
     try {
         console.log(`[DB-CHECK] Escribiendo en proyecto: gcajouecfyhcpbazxjhy`)
 
-        // [TEST] Force CREATE instead of Upsert to see explicit errors
-        // Temporary logic for debugging persistence
-        try {
-            user = await prisma.user.create({
-                data: {
-                    name: fullName,
-                    email: email,
-                    password: '',
-                    role: 'USER',
-                }
-            })
-            console.log(`[DB] Éxito: Create user ID=${user.id}`)
-        } catch (createError: any) {
-            if (createError.code === 'P2002') {
-                console.log(`[DB] Usuario ya existe (P2002). Intentando recuperar...`)
-                user = await prisma.user.findUnique({ where: { email } })
-            } else {
-                throw createError // Re-throw to catch block below
+        // 3. User Sync (Upsert Strategy) - RESTORED
+        console.log(`[AUTH] Nuevo usuario detectado: ${email}. Intentando persistencia en DB...`)
+
+        user = await prisma.user.upsert({
+            where: { email: email },
+            update: {
+                // Determine if we need to update anything. 
+                // For now, keeping it safe (no overrides).
+            },
+            create: {
+                name: fullName,
+                email: email,
+                password: '',
+                role: 'USER', // Default role 'USER' (mapped to Consultor)
             }
-        }
+        })
+
+        console.log(`[DB] Éxito: Usuario asegurado ID=${user.id}`)
 
     } catch (dbError: any) {
         console.error("[Auth] Database Sync Error:", dbError)
-        return NextResponse.redirect(`${origin}/login?error=Error Base de Datos: ${encodeURIComponent(dbError.message)}`)
+        return NextResponse.redirect(`${origin}/login?error=Error BD: ${encodeURIComponent(dbError.message)}`)
     }
 
     // Set App-Specific Session Cookies
