@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Download, FileSpreadsheet, LayoutGrid, DollarSign, Search, FilterX } from 'lucide-react'
+import { Download, FileSpreadsheet, LayoutGrid, DollarSign, Search, FilterX, Activity } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -55,11 +55,34 @@ export function AdminHistory({ quotes: serverQuotes, consultants: serverConsulta
     const [isClient, setIsClient] = useState(false)
     const [activeTab, setActiveTab] = useState('All')
 
-    // Filters
+    // Filters Input State
     const [consultantFilter, setConsultantFilter] = useState("ALL")
     const [clientQuery, setClientQuery] = useState("")
     const [minAmount, setMinAmount] = useState("")
     const [maxAmount, setMaxAmount] = useState("")
+
+    // Applied Filters (Actual Filter State)
+    const [appliedFilters, setAppliedFilters] = useState({
+        consultant: "ALL",
+        client: "",
+        min: "",
+        max: ""
+    })
+    const [isFiltering, setIsFiltering] = useState(false)
+
+    const handleApplyFilters = () => {
+        setIsFiltering(true)
+        // Simulate a small delay for better UX interactions
+        setTimeout(() => {
+            setAppliedFilters({
+                consultant: consultantFilter,
+                client: clientQuery,
+                min: minAmount,
+                max: maxAmount
+            })
+            setIsFiltering(false)
+        }, 600)
+    }
 
     useEffect(() => {
         setIsClient(true)
@@ -95,19 +118,19 @@ export function AdminHistory({ quotes: serverQuotes, consultants: serverConsulta
 
             // 2. Consultant
             const cName = q.user?.name || q.user?.email || "Sistema"
-            if (consultantFilter !== "ALL" && cName !== consultantFilter) return false
+            if (appliedFilters.consultant !== "ALL" && cName !== appliedFilters.consultant) return false
 
             // 3. Client Name
-            if (clientQuery && !q.clientName?.toLowerCase().includes(clientQuery.toLowerCase())) return false
+            if (appliedFilters.client && !q.clientName?.toLowerCase().includes(appliedFilters.client.toLowerCase())) return false
 
             // 4. Amount Range
             const cost = Number(q.estimatedCost) || 0
-            if (minAmount && cost < Number(minAmount)) return false
-            if (maxAmount && cost > Number(maxAmount)) return false
+            if (appliedFilters.min && cost < Number(appliedFilters.min)) return false
+            if (appliedFilters.max && cost > Number(appliedFilters.max)) return false
 
             return true
         })
-    }, [mergedQuotes, activeTab, consultantFilter, clientQuery, minAmount, maxAmount])
+    }, [mergedQuotes, activeTab, appliedFilters])
 
     // Metrics Logic
     const metrics = useMemo(() => {
@@ -244,21 +267,42 @@ export function AdminHistory({ quotes: serverQuotes, consultants: serverConsulta
                         />
                     </div>
 
-                    {/* Reset Button */}
-                    <Button
-                        variant="ghost"
-                        onClick={() => {
-                            setConsultantFilter("ALL")
-                            setClientQuery("")
-                            setMinAmount("")
-                            setMaxAmount("")
-                            setActiveTab("All")
-                        }}
-                        className="text-[#CFDBD5] hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/10 h-10 rounded-xl border border-transparent hover:border-[#F5CB5C]/30"
-                    >
-                        <FilterX className="w-4 h-4 mr-2" />
-                        Limpiar Filtros
-                    </Button>
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                        <Button
+                            onClick={handleApplyFilters}
+                            disabled={isFiltering}
+                            className="bg-[#F5CB5C] text-[#171717] hover:bg-[#F5CB5C]/90 font-bold h-10 px-6 rounded-xl flex-1 transition-all"
+                        >
+                            {isFiltering ? (
+                                <Activity className="w-4 h-4 animate-spin mr-2" />
+                            ) : (
+                                <Search className="w-4 h-4 mr-2" />
+                            )}
+                            {isFiltering ? "..." : "Aplicar"}
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            onClick={() => {
+                                setConsultantFilter("ALL")
+                                setClientQuery("")
+                                setMinAmount("")
+                                setMaxAmount("")
+                                setActiveTab("All")
+                                setAppliedFilters({
+                                    consultant: "ALL",
+                                    client: "",
+                                    min: "",
+                                    max: ""
+                                })
+                            }}
+                            className="text-[#CFDBD5] hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/10 h-10 w-10 p-0 rounded-xl border border-transparent hover:border-[#F5CB5C]/30"
+                            title="Limpiar Filtros"
+                        >
+                            <FilterX className="w-4 h-4" />
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Tabs */}
