@@ -23,7 +23,6 @@ export async function GET(request: Request) {
     const cookieStore = await cookies()
 
     // Create a Supabase client configured to use cookies
-    // Hardcoded fallbacks to match app/login/page.tsx and ensure consistency
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://gcajouecfyhcpbazxjhy.supabase.co"
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_NDFtz_7ldXuNu3yP3ZsVfA_te2fF1_S"
 
@@ -46,7 +45,6 @@ export async function GET(request: Request) {
     )
 
     // Exchange the code for a session
-    // This will verify the PKCE verifier stored in the cookies
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
@@ -64,48 +62,45 @@ export async function GET(request: Request) {
 
     let user = null
 
+    // 3. User Sync (Upsert Strategy) - STRICT SYNC
+    // We use the Supabase User ID as the Prisma Primary Key
     try {
-        console.log(`[DB-CHECK] Escribiendo en proyecto: gcajouecfyhcpbazxjhy`)
+        console.log(`[AUTH] Sincronizando usuario verificado: ${email}`)
 
-        // 3. User Sync (Upsert Strategy) - STRICT SYNC
-        // We use the Supabase User ID as the Prisma Primary Key
-        try {
-            console.log(`[AUTH] Sincronizando usuario verificado: ${email}`)
-
-            user = await prisma.user.upsert({
-                where: { email: email },
-                update: {}, // No updates, just ensure existence
-                create: {
-                    id: data.session.user.id, // CRITICAL: Use Supabase ID
-                    name: fullName,
-                    email: email,
-                    password: '', // Managed by Supabase
-                    role: 'USER',
-                }
-            })
-
-            console.log(`[DB] Éxito: Usuario persistido ID=${user.id}`)
-
-        } catch (dbError: any) {
-            console.error("[Auth] Database Sync Error:", dbError)
-            return NextResponse.redirect(`${origin}/login?error=Error BD: ${encodeURIComponent(dbError.message)}`)
-        }
-
-        // Set App-Specific Session Cookies
-        if (user) {
-            const cookieOptions = {
-                path: '/',
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax' as const
+        user = await prisma.user.upsert({
+            where: { email: email },
+            update: {}, // No updates, just ensure existence
+            create: {
+                id: data.session.user.id, // CRITICAL: Use Supabase ID
+                name: fullName,
+                email: email,
+                password: '', // Managed by Supabase
+                role: 'USER',
             }
+        })
 
-            cookieStore.set('session_role', user.role, cookieOptions)
-            cookieStore.set('session_user', user.name || user.email, cookieOptions)
-            cookieStore.set('session_user_id', user.id, cookieOptions)
+        console.log(`[DB] Éxito: Usuario persistido ID=${user.id}`)
 
-            return NextResponse.redirect(`${origin}/quote/new`)
+    } catch (dbError: any) {
+        console.error("[Auth] Database Sync Error:", dbError)
+        return NextResponse.redirect(`${origin}/login?error=Error BD: ${encodeURIComponent(dbError.message)}`)
+    }
+
+    // Set App-Specific Session Cookies
+    if (user) {
+        const cookieOptions = {
+            path: '/',
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax' as const
         }
 
-        return NextResponse.redirect(`${origin}/login?error=Unknown Auth State`)
+        cookieStore.set('session_role', user.role, cookieOptions)
+        cookieStore.set('session_user', user.name || user.email, cookieOptions)
+        cookieStore.set('session_user_id', user.id, cookieOptions)
+
+        return NextResponse.redirect(`${origin}/quote/new`)
     }
+
+    return NextResponse.redirect(`${origin}/login?error=Unknown Auth State`)
+}
