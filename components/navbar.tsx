@@ -22,6 +22,7 @@ export default function Navbar({ userRole, userName }: { userRole?: string | nul
                     {userRole === 'USER' && (
                         <>
                             <Link href="/dashboard" className="text-sm font-medium text-[#CFDBD5] hover:text-[#F5CB5C] transition-colors">Mis Cotizaciones</Link>
+                            <Link href="/clients" className="text-sm font-medium text-[#CFDBD5] hover:text-[#F5CB5C] transition-colors">Mis Clientes</Link>
                             <Link href="/quote/new" className="text-sm font-medium text-[#CFDBD5] hover:text-[#F5CB5C] transition-colors">Nueva Cotización</Link>
                         </>
                     )}
