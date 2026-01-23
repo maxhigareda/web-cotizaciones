@@ -36,6 +36,19 @@ export async function loginAction(formData: FormData) {
 
     if (error) {
         console.error("[Login] Supabase Auth Error:", error.message)
+
+        // DUAL CHECK: If Supabase fails, check if user exists in Prisma (Legacy/Manual without Auth)
+        try {
+            const legacyUser = await prisma.user.findUnique({ where: { email } })
+            if (legacyUser) {
+                console.warn("[Login] Legacy user found in DB but not in Auth:", email)
+                return { error: "Cuenta antigua detectada. Por favor contacta soporte para migrarte." }
+            }
+        } catch (e) {
+            console.error("[Login] Legacy check failed", e)
+        }
+
+        // Standard Error
         return { error: "Credenciales inválidas o correo no verificado." }
     }
 
@@ -66,6 +79,8 @@ export async function loginAction(formData: FormData) {
     cookieStore.set('session_role', user.role, cookieOptions)
     cookieStore.set('session_user', user.name, cookieOptions)
     cookieStore.set('session_user_id', user.id, cookieOptions)
+
+    console.log(`[AUTH] Login Exitoso: ${email}`)
 
     if (user.role === 'ADMIN') {
         redirect('/admin')
