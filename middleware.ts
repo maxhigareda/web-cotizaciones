@@ -4,8 +4,8 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname
 
-    // 0. Bypass Auth Routes entirely
-    if (path.startsWith('/auth')) {
+    // 0. Bypass Auth Routes and Login entirely to prevent loops
+    if (path.startsWith('/auth') || path.startsWith('/login')) {
         return NextResponse.next()
     }
 
