@@ -2,14 +2,68 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { Mail, ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
+
+const getSupabaseClient = () => {
+    // Client-side Safe Construction
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://gcajouecfyhcpbazxjhy.supabase.co"
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_NDFtz_7ldXuNu3yP3ZsVfA_te2fF1_S"
+    return createBrowserClient(url, key)
+}
 
 function VerifyContent() {
     const searchParams = useSearchParams()
     const email = searchParams.get('email')
+    const router = useRouter()
+    const [isChecking, setIsChecking] = useState(false)
+
+    useEffect(() => {
+        const supabase = getSupabaseClient()
+        let intervalId: NodeJS.Timeout
+
+        const checkSession = async () => {
+            // We check the session. If the user clicked the link in another tab,
+            // Supabase Auth (if configured with localStorage) might pick it up,
+            // OR we rely on the server-side cookie being set by the callback.
+            // But since the callback is in another tab, THIS tab might not know about the cookie
+            // unless we force a check or the browser shares it. 
+            // `getUser()` hits the Supabase Auth API, which should know if the user is verified/logged in.
+
+            try {
+                const { data: { user } } = await supabase.auth.getUser()
+                if (user) {
+                    console.log("Verified! Redirecting...")
+                    setIsChecking(true)
+                    // Refresh to pick up server-side middleware/cookies
+                    router.refresh()
+                    router.replace('/quote/new')
+                    clearInterval(intervalId)
+                }
+            } catch (e) {
+                console.error("Poll check failed", e)
+            }
+        }
+
+        // Poll every 3 seconds
+        intervalId = setInterval(checkSession, 3000)
+
+        // Also listen for event (if using same browser instance/tab for some reason)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' || session) {
+                setIsChecking(true)
+                router.replace('/quote/new')
+            }
+        })
+
+        return () => {
+            clearInterval(intervalId)
+            subscription.unsubscribe()
+        }
+    }, [router])
 
     return (
         <Card className="w-full max-w-lg bg-[#171717] border border-[#2D2D2D] shadow-2xl rounded-[2.5rem] relative z-10 overflow-hidden">
@@ -35,14 +89,20 @@ function VerifyContent() {
 
                 <div className="space-y-4 text-center">
                     <div className="flex items-center gap-3 text-[#CFDBD5] bg-[#1F1F1F]/50 p-4 rounded-2xl border border-[#2D2D2D]">
-                        <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                        {isChecking ? (
+                            <Loader2 className="w-5 h-5 text-[#F5CB5C] animate-spin shrink-0" />
+                        ) : (
+                            <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                        )}
                         <span className="text-left text-sm leading-relaxed">
-                            Por favor, haz clic en el enlace del correo para activar tu cuenta de <strong>Consultor</strong>.
+                            {isChecking ? "Verificado. Redirigiendo..." : (
+                                <>Por favor, haz clic en el enlace del correo para activar tu cuenta de <strong>Consultor</strong>.</>
+                            )}
                         </span>
                     </div>
 
                     <p className="text-xs text-[#CFDBD5]/50 px-4">
-                        Si no lo encuentras, revisa tu carpeta de Spam.
+                        Esta pantalla te redirigirá automáticamente cuando verifiques.
                     </p>
                 </div>
 
