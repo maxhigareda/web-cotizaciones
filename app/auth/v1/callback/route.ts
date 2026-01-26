@@ -75,7 +75,7 @@ export async function GET(request: Request) {
                 name: fullName,
                 email: email,
                 password: '', // Managed by Supabase
-                role: 'USER',
+                role: 'CONSULTOR',
             }
         })
 

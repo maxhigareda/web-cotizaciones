@@ -51,6 +51,10 @@ export async function loginAction(formData: FormData) {
     if (error) {
         console.error("[Login] Supabase Auth Error:", error.message)
 
+        if (error.message.includes("Email not confirmed")) {
+            return { error: "Tu correo electrónico no ha sido verificado. Por favor revisa tu bandeja de entrada." }
+        }
+
         // DUAL CHECK EXTREME: Auto-Migrate to Supabase Auth
         // If user exists in Prisma but not Supabase, we CREATE them silently with email_confirm: true
         try {
@@ -89,7 +93,7 @@ export async function loginAction(formData: FormData) {
                                 name: legacyUser.name,
                                 email,
                                 password: '',
-                                role: legacyUser.role || 'USER',
+                                role: legacyUser.role || 'CONSULTOR',
                             }
                         })
                     } catch (err) { console.error("DB Sync post-migration", err) }
@@ -110,7 +114,7 @@ export async function loginAction(formData: FormData) {
         }
 
         // Standard Error
-        return { error: "Credenciales inválidas o correo no verificado." }
+        return { error: "Credenciales inválidas." }
     }
 
     // 2. Sync with Prisma (Upsert)
@@ -126,7 +130,7 @@ export async function loginAction(formData: FormData) {
                 name: fullName,
                 email,
                 password: '', // Managed by Supabase
-                role: 'USER',
+                role: 'CONSULTOR', // Default role for new users
             }
         })
     } catch (dbError) {
@@ -141,7 +145,7 @@ export async function loginAction(formData: FormData) {
     cookieStore.set('session_user', user.name, cookieOptions)
     cookieStore.set('session_user_id', user.id, cookieOptions)
 
-    console.log(`[AUTH] Login Exitoso: ${email}`)
+    console.log(`[AUTH] Login Exitoso: ${email}, Rol: ${user.role}`)
 
     // Return URL instead of Redirecting (Avoids NEXT_REDIRECT error in try/catch blocks)
     return {
@@ -162,31 +166,67 @@ export async function registerAction(formData: FormData) {
     // We check our DB first to give a fast, clear error
     const existingUser = await prisma.user.findUnique({ where: { email } })
     if (existingUser) {
-        return { error: "Cuenta existente. Por favor, inicia sesión." }
+        return { error: "Este correo ya está registrado. Por favor, inicia sesión." }
     }
 
-    // 2. Supabase Admin Creation (Bypass Email Verification)
+    const cookieStore = await cookies()
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+    const supabase = createServerClient(supabaseUrl, supabaseKey, {
+        cookies: {
+            get(name: string) { return cookieStore.get(name)?.value },
+            set(name: string, value: string, options: CookieOptions) { cookieStore.set({ name, value, ...options }) },
+            remove(name: string, options: CookieOptions) { cookieStore.delete({ name, ...options }) },
+        },
+    })
+
+    // 2. Supabase Standard Signup (Triggers Email Verification)
     try {
-        const adminClient = createAdminClient()
-        // Create user directly as confirmed
-        const { data, error } = await adminClient.auth.admin.createUser({
+        const { data, error } = await supabase.auth.signUp({
             email,
             password,
-            email_confirm: true, // AUTO-CONFIRM
-            user_metadata: { full_name: email.split('@')[0] }
+            options: {
+                data: { full_name: email.split('@')[0] }
+            }
         })
 
         if (error) {
-            console.error("[Register] Admin Create Error:", error)
+            console.error("[Register] Supabase Check Error:", error)
+            // Supabase sometimes returns "User already registered" as an error (rare with config, but possible)
+            if (error.message.includes("already registered") || error.status === 400) {
+                return { error: "Este correo ya está registrado. Por favor, inicia sesión." }
+            }
             return { error: error.message }
         }
 
         if (data.user) {
-            // 3. Auto-Login immediately after creation
-            return await loginAction(formData)
+            // 3. Persist in Prisma IMMEDIATELLY as 'CONSULTOR'
+            // We do this even if they haven't verified yet, so we have the record.
+            // They won't be able to login until verification because loginAction checks Supabase session.
+            try {
+                await prisma.user.create({
+                    data: {
+                        id: data.user.id, // SYNC ID VITAL
+                        name: email.split('@')[0],
+                        email,
+                        password: '', // Managed by Supabase
+                        role: 'CONSULTOR',
+                    }
+                })
+                console.log(`[Register] User persisted in DB: ${email}`)
+            } catch (dbError) {
+                console.error("[Register] DB Persistence Failed:", dbError)
+                // If this fails, we might have a zombie auth user. 
+                // But generally safe to ignore or return error? 
+                // Let's return success but log it - login sync will catch it later anyway.
+            }
+
+            return { success: true, pendingVerification: true }
         }
 
-        return { error: "Error desconocido al crear usuario." }
+        // If we get here, something odd happened (maybe confirmation disabled?)
+        return { error: "Registro incompleto. Inténtalo de nuevo." }
 
     } catch (e: any) {
         console.error("Registration Critical Failure", e)

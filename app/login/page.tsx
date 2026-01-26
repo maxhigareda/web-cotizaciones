@@ -143,16 +143,24 @@ export default function LoginPage() {
 
             if (result && 'error' in result && result.error) {
                 setError(result.error)
-            } else if (result && 'success' in result && result.success) {
-                // FORCE CLIENT-SIDE NAVIGATION
-                // This ensures cookies are read freshly by the browser
-                setSuccessMessage("Acceso concedido. Entrando...")
+            } else if (result && 'success' in result) {
+                if ((result as any).pendingVerification) {
+                    const emailVal = formData.get('email') as string
+                    window.location.href = `/auth/verify?email=${encodeURIComponent(emailVal)}`
+                    return
+                }
 
-                // Prevent button re-enable
-                setLoading(true)
+                if (result.success) {
+                    // FORCE CLIENT-SIDE NAVIGATION
+                    // This ensures cookies are read freshly by the browser
+                    setSuccessMessage("Acceso concedido. Entrando...")
 
-                const target = (result as any).redirectUrl || '/quote/new'
-                window.location.href = target
+                    // Prevent button re-enable
+                    setLoading(true)
+
+                    const target = (result as any).redirectUrl || '/quote/new'
+                    window.location.href = target
+                }
             }
         } catch (err) {
             console.error("Auth process failed", err)
