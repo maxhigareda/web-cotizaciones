@@ -118,7 +118,7 @@ export function downloadCSV(data: any[], filename: string) {
     saveAs(blob, `${filename}.csv`)
 }
 
-// -- Shared PDF Logic --
+// -- Shared PDF Logic (Redesigned) --
 function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2SupportCost: number, riskCost: number, totalWithRisk: number, discountAmount: number, finalTotal: number, criticitnessLevel: any, diagramImage?: string, currency?: string, exchangeRate?: number, durationMonths: number }) {
     const doc = new jsPDF({
         orientation: 'p',
@@ -129,13 +129,22 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
 
     const pageWidth = doc.internal.pageSize.width
     const pageHeight = doc.internal.pageSize.height
-    const margin = 25 // 2.5cm margin standard
+    const margin = 20
+    const contentWidth = pageWidth - (margin * 2)
 
     // Colors
-    const COLOR_GOLD = '#D4AF37'
-    const COLOR_CHARCOAL = '#333533'
-    const COLOR_TEXT = '#454545'
-    const COLOR_LIGHT_GRAY = '#F5F5F5'
+    const COLOR_HEADER = '#1A1A1A' // Charcoal Solid
+    const COLOR_ACCENT = '#D4AF37' // Gold
+    const COLOR_TEXT_DARK = '#333333'
+    const COLOR_TEXT_LIGHT = '#666666'
+    const COLOR_ROW_EVEN = '#F4F4F4' // Very light gray
+    const COLOR_ROW_ODD = '#FFFFFF'
+    const COLOR_TOTAL_BG = '#E8F6F6' // Cyan-ish tint (similar to ref but subtle) or use Gold tint? User said "similar to cyan button". Let's stick to our Gold brand but use a tint.
+    // Actually user said "similar al botón cian de la referencia". I'll use a very subtle gray/gold mix or just the accent color for text.
+    // Let's go with a solid box for Total Project.
+
+    // Fonts
+    const FONT_MAIN = "helvetica"
 
     // Helpers
     const currencyCode = data.currency || 'USD'
@@ -149,290 +158,257 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     }
 
     const drawHeader = () => {
-        // Nestlé Logo (Left)
-        if (LOGO_NESTLE) {
-            try {
-                doc.addImage(LOGO_NESTLE, 'PNG', margin, 10, 25, 25)
-            } catch (e) {
-                console.warn("Error adding Nestle logo", e)
-            }
-        }
+        // Solid Header Block
+        doc.setFillColor(COLOR_HEADER)
+        doc.rect(0, 0, pageWidth, 40, 'F')
 
-        // SI Logo (Right)
+        // Title
+        doc.setFont(FONT_MAIN, "bold")
+        doc.setFontSize(24)
+        doc.setTextColor(255, 255, 255)
+        doc.text("PROPUESTA COMERCIAL", margin, 28)
+
+        // SI Logo (White/Overlay) - In Top Right
+        // We use the same logo but if it has transparency it works on dark.
         if (LOGO_SI) {
             try {
-                doc.addImage(LOGO_SI, 'PNG', pageWidth - margin - 35, 12, 35, 15)
-            } catch (e) { console.warn("Error adding SI logo", e) }
-        } else {
-            // Text Fallback
-            doc.setFont("times", "bold")
-            doc.setFontSize(16)
-            doc.setTextColor(COLOR_CHARCOAL)
-            doc.text("The Store Intelligence", pageWidth - margin, 20, { align: 'right' })
+                // Resize for header
+                doc.addImage(LOGO_SI, 'PNG', pageWidth - margin - 50, 8, 50, 24)
+            } catch (e) { }
         }
     }
 
-    const drawFooter = (pageNo: number, totalPages: number) => {
-        doc.setFont("helvetica", "normal")
+    const drawFooter = () => {
+        // Thin strip at bottom
+        doc.setFillColor(COLOR_HEADER)
+        doc.rect(0, pageHeight - 12, pageWidth, 12, 'F')
+
         doc.setFontSize(8)
-        doc.setTextColor(150)
-        doc.text(`Confidencial - The Store Intelligence | Página ${pageNo} de ${totalPages}`, margin, pageHeight - 10)
+        doc.setTextColor(200, 200, 200)
+        doc.text("The Store Intelligence  |  www.storeintelligence.com  |  Confidencial", pageWidth / 2, pageHeight - 5, { align: "center" })
     }
 
-    // --- PAGE 1: COVER ---
+    // --- PAGE 1: COVER & SUMMARY ---
     drawHeader()
 
-    // Title Block (Centered, Elegant)
-    let y = 100
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(28)
-    doc.setTextColor(COLOR_CHARCOAL)
-    doc.text("PROPUESTA TÉCNICA", pageWidth / 2, y, { align: 'center' })
-    y += 15
-    doc.setFontSize(16)
-    doc.setTextColor(COLOR_GOLD)
-    doc.text("ESTIMACIÓN DE INVERSIÓN & ALCANCE", pageWidth / 2, y, { align: 'center' })
+    let y = 60
 
-    // Project Info
-    y = 160
-    doc.setLineWidth(0.5)
-    doc.setDrawColor(200)
-    doc.line(margin + 40, y, pageWidth - margin - 40, y)
-    y += 20
-
-    doc.setFont("helvetica", "normal")
-    doc.setFontSize(12)
-    doc.setTextColor(COLOR_TEXT)
-    const infoX = pageWidth / 2
-
-    doc.text(`Cliente:`, infoX - 10, y, { align: 'right' })
-    doc.setFont("helvetica", "bold")
-    doc.text(data.clientName || 'N/A', infoX + 5, y)
-    y += 10
-
-    doc.setFont("helvetica", "normal")
-    doc.text(`Fecha:`, infoX - 10, y, { align: 'right' })
-    doc.setFont("helvetica", "bold")
-    doc.text(new Date().toLocaleDateString(), infoX + 5, y)
-    y += 10
-
-    doc.setFont("helvetica", "normal")
-    doc.text(`ID Proyecto:`, infoX - 10, y, { align: 'right' })
-    doc.setFont("helvetica", "bold")
-    doc.text(new Date().getTime().toString().substr(-6), infoX + 5, y)
-
-    if (data.clientContact?.name) {
-        y += 10
-        doc.setFont("helvetica", "normal")
-        doc.text(`Solicitante:`, infoX - 10, y, { align: 'right' })
-        doc.setFont("helvetica", "bold")
-        doc.text(data.clientContact.name, infoX + 5, y)
+    // Client Logo / Info Section
+    if (LOGO_NESTLE) {
+        try {
+            doc.addImage(LOGO_NESTLE, 'PNG', margin, y, 30, 30) // Nestlé Highlighted
+        } catch (e) { }
     }
 
-    drawFooter(1, 4)
+    // Client Details (Right aligned next to logo?)
+    // User asked "Nestlé como cliente destacado".
 
-    // --- PAGE 2: EXECUTIVE SUMMARY ---
-    doc.addPage()
-    drawHeader()
-    y = 50
-
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(16)
-    doc.setTextColor(COLOR_GOLD)
-    doc.text("1. RESUMEN EJECUTIVO", margin, y)
-    y += 15
-
-    doc.setFont("helvetica", "normal")
+    // Metadata block
+    const metaX = margin + 40
+    doc.setFont(FONT_MAIN, "normal")
     doc.setFontSize(10)
-    doc.setTextColor(COLOR_TEXT)
+    doc.setTextColor(COLOR_TEXT_LIGHT)
+    doc.text("PREPARADO PARA:", metaX, y + 5)
 
-    // Description/Context
-    const descText = data.description && data.description.length > 10
-        ? data.description
-        : `La presente propuesta tiene como objetivo detallar el alcance, la metodología y la inversión requerida para el servicio de ${data.serviceType || 'desarrollo'}. ` +
-        "Nuestra solución busca optimizar los procesos de negocio mediante el uso de tecnologías de datos avanzadas, garantizando escalabilidad y eficiencia operativa."
+    doc.setFont(FONT_MAIN, "bold")
+    doc.setFontSize(14)
+    doc.setTextColor(COLOR_TEXT_DARK)
+    doc.text(data.clientName || 'Cliente Confidencial', metaX, y + 12)
 
-    const splitDesc = doc.splitTextToSize(descText, pageWidth - (margin * 2))
-    doc.text(splitDesc, margin, y, { lineHeightFactor: 1.5, align: "justify", maxWidth: pageWidth - (margin * 2) })
+    doc.setFont(FONT_MAIN, "normal")
+    doc.setFontSize(10)
+    doc.setTextColor(COLOR_TEXT_LIGHT)
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, metaX, y + 20)
+    if (data.clientContact?.name) {
+        doc.text(`Attn: ${data.clientContact.name}`, metaX, y + 26)
+    }
+
+    y += 50
+
+    // 1. Executive Summary
+    doc.setFont(FONT_MAIN, "bold")
+    doc.setFontSize(12)
+    doc.setTextColor(COLOR_ACCENT) // Gold Headers
+    doc.text("RESUMEN EJECUTIVO", margin, y)
+    y += 8
+
+    doc.setDrawColor(200)
+    doc.setLineWidth(0.1)
+    doc.line(margin, y, pageWidth - margin, y) // Divider
+    y += 8
+
+    doc.setFont(FONT_MAIN, "normal")
+    doc.setFontSize(10)
+    doc.setTextColor(COLOR_TEXT_DARK)
+
+    const desc = data.description && data.description.length > 5 ? data.description : "Propuesta de servicios profesionales."
+    const splitDesc = doc.splitTextToSize(desc, contentWidth)
+    doc.text(splitDesc, margin, y, { lineHeightFactor: 1.5, align: "justify", maxWidth: contentWidth })
+
     y += (splitDesc.length * 6) + 15
 
-    // Scope / Metrics
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(14)
-    doc.setTextColor(COLOR_CHARCOAL)
-    doc.text("Alcance y Métricas Clave", margin, y)
+    // Scope Metrics (Grid)
+    doc.setFont(FONT_MAIN, "bold")
+    doc.setFontSize(12)
+    doc.setTextColor(COLOR_ACCENT)
+    doc.text("ALCANCE Y MÉTRICAS", margin, y)
+    y += 8
+    doc.line(margin, y, pageWidth - margin, y)
     y += 10
 
-    const bullets: string[] = []
+    // Simple Grid for Metrics
+    const metrics: string[] = []
     if (data.serviceType === 'Proyecto') {
-        bullets.push(`Complejidad del Proyecto: ${data.complexity.toUpperCase()}`)
-        bullets.push(`Pipelines de Datos: ${data.pipelinesCount}`)
-        bullets.push(`Notebooks de Procesamiento: ${data.notebooksCount}`)
-        bullets.push(`Reportes y Dashboards: ${data.reportsCount + data.dashboardsCount}`)
-        bullets.push(`Usuarios Finales: ${data.reportUsers}`)
-    } else if (data.serviceType === 'Sustain') {
-        bullets.push(`Modelo de Servicio: Sustain (Mantenimiento Continuo)`)
-        bullets.push(`Ventana de Soporte: ${data.sustainDetails.supportWindow === '24x7' ? '24/7 Crítico' : 'Horario Comercial (9x5)'}`)
-        bullets.push(`Nivel de Criticidad: ${data.criticitness.enabled ? 'Alta' : 'Estándar'}`)
-        bullets.push(`Objetos bajo Soporte: ${data.sustainDetails.metrics?.pipelinesCount || 0} Pipelines, ${data.sustainDetails.metrics?.notebooksCount || 0} Notebooks`)
+        metrics.push(`Complejidad: ${data.complexity}`)
+        metrics.push(`Pipelines: ${data.pipelinesCount}`)
+        metrics.push(`Notebooks: ${data.notebooksCount}`)
+        metrics.push(`Modelos ML: ${data.dsModelsCount}`)
     } else {
-        bullets.push(`Servicio: Staffing de Profesionales`)
-        bullets.push(`Total de Perfiles: ${data.staffingDetails.profiles.reduce((a, b) => a + b.count, 0)}`)
+        metrics.push(`Servicio: ${data.serviceType}`)
+        metrics.push(`Perfiles: ${data.staffingDetails.profiles.reduce((a, b) => a + b.count, 0)}`)
     }
 
-    doc.setFont("helvetica", "normal")
+    // Draw little boxes or just list
+    let mx = margin
     doc.setFontSize(10)
-    bullets.forEach(b => {
-        doc.text(`•  ${b}`, margin + 5, y)
-        y += 7
+    doc.setTextColor(COLOR_TEXT_DARK)
+    metrics.forEach(m => {
+        doc.setFillColor(COLOR_ROW_EVEN)
+        doc.rect(mx, y, 40, 15, 'F') // box
+        doc.text(m, mx + 20, y + 9, { align: 'center' })
+        mx += 45
     })
 
-    drawFooter(2, 4)
+    y += 30
 
-    // --- PAGE 3: BUDGET DETAIL ---
+    drawFooter()
+
+    // --- PAGE 2: COST ESTIMATION (The "Quotation" Design) ---
     doc.addPage()
     drawHeader()
     y = 50
 
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(16)
-    doc.setTextColor(COLOR_GOLD)
-    doc.text("2. DETALLE DE INVERSIÓN", margin, y)
-    y += 15
+    doc.setFont(FONT_MAIN, "bold")
+    doc.setFontSize(14)
+    doc.setTextColor(COLOR_HEADER)
+    doc.text("DETALLE DE INVERSIÓN (ESTIMADO)", margin, y)
+    y += 10
 
-    // Table Setup
-    const col1X = margin
-    const col2X = margin + 90
-    const col3X = pageWidth - margin - 35
-    const rowHeight = 10
+    // Table Header
+    const colDescX = margin + 2
+    const colDuraX = pageWidth - margin - 70 // Center-ish
+    const colPriceX = pageWidth - margin - 35
+    const colTotalX = pageWidth - margin - 2
 
-    // Header Row
-    doc.setFillColor(COLOR_CHARCOAL)
-    doc.rect(margin, y, pageWidth - (margin * 2), rowHeight, 'F')
+    const rowH = 10
+
+    // Header Row (Solid Color)
+    doc.setFillColor(COLOR_HEADER)
+    doc.rect(margin, y, contentWidth, rowH, 'F')
+
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(9)
-    doc.setFont("helvetica", "bold")
-    doc.text("CONCEPTO / ROL", col1X + 5, y + 6)
-    doc.text("DETALLE", margin + 60, y + 6)
-    doc.text("DURACIÓN/CANT.", col2X, y + 6)
-    doc.text("SUBTOTAL (MES)", col3X, y + 6, { align: 'right' })
-    y += rowHeight
+    doc.setFont(FONT_MAIN, "bold")
 
-    // Data Row Render
-    doc.setTextColor(COLOR_TEXT)
-    doc.setFont("helvetica", "normal")
-    let isGray = true
+    doc.text("DESCRIPCIÓN", colDescX, y + 6.5)
+    doc.text("DURACIÓN/CANT.", colDuraX, y + 6.5, { align: 'center' })
+    doc.text("MENSUAL", colPriceX, y + 6.5, { align: 'right' })
+    doc.text("TOTAL", colTotalX, y + 6.5, { align: 'right' })
 
-    const drawRow = (c1: string, c2: string, c3: string, c4: string) => {
-        if (isGray) {
-            doc.setFillColor(COLOR_LIGHT_GRAY)
-            doc.rect(margin, y, pageWidth - (margin * 2), rowHeight, 'F')
-        }
-        isGray = !isGray
+    y += rowH
 
-        doc.text(c1, col1X + 5, y + 6)
-        doc.text(c2, margin + 60, y + 6)
-        doc.text(c3, col2X + 5, y + 6)
-        doc.text(c4, col3X, y + 6, { align: 'right' })
+    // Helper to draw clean rows
+    let isOdd = true
+    const drawRow = (desc: string, duration: string, monthly: string, total: string) => {
+        doc.setFillColor(isOdd ? COLOR_ROW_ODD : COLOR_ROW_EVEN)
+        doc.rect(margin, y, contentWidth, rowH, 'F')
 
-        y += rowHeight
+        doc.setTextColor(COLOR_TEXT_DARK)
+        doc.setFont(FONT_MAIN, "normal")
+
+        doc.text(desc, colDescX, y + 6.5)
+        doc.text(duration, colDuraX, y + 6.5, { align: 'center' })
+        doc.text(monthly, colPriceX, y + 6.5, { align: 'right' })
+        doc.text(total, colTotalX, y + 6.5, { align: 'right' })
+
+        y += rowH
+        isOdd = !isOdd
     }
 
-    // Populate Rows
+    // Populate Data
     if (data.serviceType === 'Staffing' || data.serviceType === 'Sustain') {
         data.staffingDetails.profiles.forEach(p => {
             const rate = RATES[Object.keys(RATES).find(k => p.role.toLowerCase().includes(k.replace('_', ' '))) || 'react_dev'] || 4000
             const alloc = (p.allocationPercentage || 100) / 100
             const sub = rate * alloc * p.count
-            drawRow(p.role, `${p.seniority} (${p.allocationPercentage || 100}%)`, `${p.count} Rec.`, fmt(sub))
+            drawRow(
+                `${p.role} (${p.seniority})`,
+                `${p.count} Rec.`,
+                fmt(sub),
+                fmt(sub * data.durationMonths)
+            )
         })
     } else {
         Object.entries(data.roles).forEach(([role, count]) => {
             if (count > 0) {
                 const rate = RATES[role] || 0
-                drawRow(role.replace(/_/g, ' ').toUpperCase(), "Ssr Standard", `${count} Rec.`, fmt(rate * count))
+                const monthly = rate * count
+                drawRow(
+                    role.replace(/_/g, ' ').toUpperCase(),
+                    `${count} Rec.`,
+                    fmt(monthly),
+                    fmt(monthly * data.durationMonths)
+                )
             }
         })
     }
 
-    // Extra Costs
-    if (data.l2SupportCost > 0) drawRow("Soporte L2", "Mantenimiento", "10%", fmt(data.l2SupportCost))
-    if (data.riskCost > 0) drawRow("Riesgo Operativo", "Markup Criticidad", `${(data.criticitnessLevel?.margin || 0) * 100}%`, fmt(data.riskCost))
-    if (data.discountAmount > 0) drawRow("Descuento Comercial", "Bonificación", `${data.commercialDiscount}%`, `-${fmt(data.discountAmount)}`)
+    // Totals Block
+    y += 10
 
-    drawFooter(3, 4)
-
-    // --- PAGE 4: TOTALS & CLOSING ---
-    doc.addPage()
-    drawHeader()
-    y = 50
-
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(16)
-    doc.setTextColor(COLOR_GOLD)
-    doc.text("3. RESUMEN COMERCIAL", margin, y)
-    y += 20
-
-    // Totals Box
-    doc.setDrawColor(212, 175, 55)
-    doc.setLineWidth(0.8)
-    doc.rect(margin + 20, y, pageWidth - (margin * 2) - 40, 45)
-
-    let boxY = y + 15
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(12)
-    doc.setTextColor(COLOR_CHARCOAL)
-
-    // Monthly Total
-    doc.text("INVERSIÓN MENSUAL:", margin + 30, boxY)
-    doc.text(fmt(data.finalTotal), pageWidth - margin - 30, boxY, { align: 'right' })
-    boxY += 15
-
-    // Project Total
-    doc.setFontSize(16)
-    doc.setTextColor(COLOR_CHARCOAL)
-    doc.text(`TOTAL PROYECTO (${data.durationValue} ${data.durationUnit.toUpperCase()}):`, margin + 30, boxY)
-    doc.setTextColor(COLOR_GOLD) // Highlight
-    doc.text(fmt(data.finalTotal * data.durationMonths), pageWidth - margin - 30, boxY, { align: 'right' })
-
-    y += 65
-
-    // Retentions Note
-    if (data.retention?.enabled) {
-        doc.setFontSize(9)
-        doc.setTextColor(COLOR_TEXT)
-        doc.text(`* Nota: Los montos expresados NO incluyen IVA. Se ha considerado una retención de ${data.retention.percentage}% en las proyecciones financieras internas, pero no se descuenta del total a facturar en esta propuesta.`, margin, y, { maxWidth: pageWidth - (margin * 2) })
-        y += 20
+    // Check space
+    if (y > pageHeight - 60) {
+        doc.addPage()
+        drawHeader()
+        y = 50
     }
 
-    // Signatures Placeholders
-    y = pageHeight - 60
-    doc.setDrawColor(150)
-    doc.setLineWidth(0.3)
+    // Monthly Summary (Small)
+    doc.setFont(FONT_MAIN, "bold")
+    doc.setTextColor(COLOR_TEXT_DARK)
+    doc.text("Subtotal Mensual:", pageWidth - margin - 60, y)
+    doc.text(fmt(data.finalTotal), pageWidth - margin - 2, y, { align: 'right' })
+    y += 15
 
-    // Line 1
-    doc.line(margin + 20, y, margin + 70, y)
-    doc.setFontSize(8)
-    doc.setTextColor(COLOR_CHARCOAL)
-    doc.text("Por THE STORE INTELLIGENCE", margin + 25, y + 5)
+    // TOTAL PROJECT BLOCK (Highlighted)
+    doc.setFillColor(COLOR_ACCENT) // Gold block
+    doc.rect(pageWidth - margin - 80, y - 5, 80, 20, 'F')
 
-    // Line 2
-    doc.line(pageWidth - margin - 70, y, pageWidth - margin - 20, y)
-    doc.text("Por EL CLIENTE", pageWidth - margin - 60, y + 5)
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(10)
 
-    drawFooter(4, 4)
+    // Clean Duration Text
+    const durationClean = Math.round(data.durationValue) === data.durationValue
+        ? data.durationValue.toString()
+        : data.durationValue.toFixed(1)
 
+    doc.text(`TOTAL PROYECTO (${durationClean} ${data.durationUnit.toUpperCase()})`, pageWidth - margin - 40, y + 3, { align: 'center' })
+
+    doc.setFontSize(16)
+    doc.text(fmt(data.finalTotal * data.durationMonths), pageWidth - margin - 40, y + 10, { align: 'center' })
+
+    drawFooter()
+
+    const filename = `cotizacion_${(data.clientName || 'proyecto').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
+    doc.save(filename)
     return doc
 }
 
-// -- PDF Export (Enterprise Standard) --
+// -- PDF Export Linker --
 export async function exportToPDF(data: any) {
-    const doc = createPDFDocument(data)
-    const filename = `cotizacion_${(data.clientName || 'proyecto').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
-    doc.save(filename)
+    createPDFDocument(data)
 }
 
-// -- Generate PDF Blob (Restored) --
 export async function generatePDFBlob(data: any) {
     const doc = createPDFDocument(data)
     return doc.output('blob')
@@ -442,9 +418,6 @@ export async function generatePDFBlob(data: any) {
 export async function exportToWord(data: QuoteState & { totalMonthlyCost: number, l2SupportCost: number, riskCost: number, totalWithRisk: number, discountAmount: number, finalTotal: number, criticitnessLevel: any, diagramImage?: string, currency?: string, exchangeRate?: number, durationMonths: number }) {
     const HEX_GOLD = "D4AF37"
     const HEX_CHARCOAL = "333533"
-
-    // Header Logic (Assuming standard header for now, passing text)
-    // Docx headers are tricky with Base64 images without proper sizing, will stick to text for stability or simple images if needed.
 
     const doc = new Document({
         sections: [{
@@ -494,14 +467,6 @@ export async function exportToWord(data: QuoteState & { totalMonthlyCost: number
                 new Table({
                     width: { size: 80, type: WidthType.PERCENTAGE },
                     alignment: AlignmentType.CENTER,
-                    borders: {
-                        top: { style: BorderStyle.NONE, size: 0, color: "auto" },
-                        bottom: { style: BorderStyle.NONE, size: 0, color: "auto" },
-                        left: { style: BorderStyle.NONE, size: 0, color: "auto" },
-                        right: { style: BorderStyle.NONE, size: 0, color: "auto" },
-                        insideHorizontal: { style: BorderStyle.NONE, size: 0, color: "auto" },
-                        insideVertical: { style: BorderStyle.NONE, size: 0, color: "auto" },
-                    },
                     rows: [
                         new TableRow({
                             children: [
