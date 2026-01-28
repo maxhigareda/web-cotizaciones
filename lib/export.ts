@@ -112,7 +112,7 @@ export function downloadCSV(data: any[], filename: string) {
     saveAs(blob, `${filename}.csv`)
 }
 
-// -- Refined 4-Page PDF --
+// -- Final Polished PDF --
 function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2SupportCost: number, riskCost: number, totalWithRisk: number, discountAmount: number, finalTotal: number, criticitnessLevel: any, diagramImage?: string, currency?: string, exchangeRate?: number, durationMonths: number }) {
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true })
 
@@ -125,7 +125,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     const COLOR_GOLD = '#D4AF37'
     const COLOR_CHARCOAL = '#333533'
     const COLOR_TEXT = '#454545'
-    const COLOR_ROW_ALT = '#F9F9F9' // Very subtle gray for striping
+    const COLOR_ROW_ALT = '#F9F9F9'
 
     // Fonts
     const FONT_REG = "helvetica"
@@ -148,19 +148,17 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
 
     // --- Header & Footer ---
     const drawHeader = () => {
-        // Alliance Style: SI Left, Client Right
         if (LOGO_SI) {
             try {
-                doc.addImage(LOGO_SI, 'PNG', margin, 10, 40, 18) // Left
+                doc.addImage(LOGO_SI, 'PNG', margin, 10, 40, 18)
             } catch (e) { }
         }
         if (LOGO_NESTLE) {
             try {
-                doc.addImage(LOGO_NESTLE, 'PNG', pageWidth - margin - 25, 10, 25, 25) // Right
+                doc.addImage(LOGO_NESTLE, 'PNG', pageWidth - margin - 25, 10, 25, 25)
             } catch (e) { }
         }
 
-        // Gold Divider
         doc.setDrawColor(COLOR_GOLD)
         doc.setLineWidth(0.5)
         doc.line(margin, 40, pageWidth - margin, 40)
@@ -179,7 +177,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     doc.setFont(FONT_BOLD, "bold")
     doc.setFontSize(32)
     doc.setTextColor(COLOR_CHARCOAL)
-    doc.text("PROPUESTA TÉCNICA", pageWidth / 2, y, { align: "center" })
+    doc.text("PROPUESTA TÉCNICA", pageWidth / 2, y, { align: "center" }) // UTF-8 check: Ã‰ -> É. jsPDF helvetica supports accents usually.
 
     y += 15
     doc.setFontSize(16)
@@ -187,27 +185,26 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     doc.text("ESTIMACIÓN DE ALCANCE E INVERSIÓN", pageWidth / 2, y, { align: "center" })
 
     y += 50
-    // Box for details
     doc.setDrawColor(220)
     doc.setLineWidth(0.1)
     doc.rect(margin + 20, y, contentWidth - 40, 50)
 
-    let infoY = y + 15
+    let infoY = y + 20 // Adjusted spacing
     const drawInfo = (label: string, value: string) => {
         doc.setFontSize(11)
         doc.setFont(FONT_REG, "normal")
         doc.setTextColor(COLOR_TEXT)
-        doc.text(label, margin + 30, infoY)
+        doc.text(label, margin + 40, infoY)
 
         doc.setFont(FONT_BOLD, "bold")
-        doc.text(value, pageWidth - margin - 30, infoY, { align: "right" })
-        infoY += 10
+        doc.text(value, pageWidth - margin - 40, infoY, { align: "right" })
+        infoY += 12
     }
 
     drawInfo("Cliente:", data.clientName)
     drawInfo("Fecha:", new Date().toLocaleDateString())
     drawInfo("Referencia:", `COT-${new Date().getTime().toString().substr(-6)}`)
-    if (data.clientContact?.name) drawInfo("Solicitado por:", data.clientContact.name)
+    // REMOVED 'Solicitado por' as requested
 
     drawFooter(1)
 
@@ -226,9 +223,11 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     doc.setFontSize(10)
     doc.setTextColor(COLOR_TEXT)
     const desc = data.description || "Solución tecnológica para optimización de datos."
+
+    // Changing to LEFT align to fix spacing issues
     const splitDesc = doc.splitTextToSize(desc, contentWidth)
-    doc.text(splitDesc, margin, y, { align: "justify", lineHeightFactor: 1.5, maxWidth: contentWidth })
-    y += (splitDesc.length * 6) + 10
+    doc.text(splitDesc, margin, y, { align: "left", lineHeightFactor: 1.5, maxWidth: contentWidth })
+    y += (splitDesc.length * 6) + 15
 
     // Diagram
     if (data.diagramImage) {
@@ -239,22 +238,21 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         const imgProps = doc.getImageProperties(data.diagramImage)
         const pdfW = contentWidth
         const pdfH = (imgProps.height * pdfW) / imgProps.width
-
-        // Ensure it fits (max 120mm height)
         const maxH = 120
         const finalH = Math.min(pdfH, maxH)
 
         try {
-            doc.addImage(data.diagramImage, 'PNG', margin, y, pdfW, finalH)
+            // Centering image
+            const imgX = margin + (contentWidth - pdfW) / 2
+            doc.addImage(data.diagramImage, 'PNG', imgX, y, pdfW, finalH)
         } catch (e) {
             doc.text("[Error visualizando diagrama]", margin, y + 10)
         }
-        y += finalH + 10
     }
 
     drawFooter(2)
 
-    // --- PAGE 3: BUDGET ---
+    // --- PAGE 3: BUDGET & FINANCIALS ---
     doc.addPage()
     drawHeader()
     y = 50
@@ -286,13 +284,13 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         isReview = !isReview
 
         doc.setTextColor(COLOR_TEXT)
-        doc.setFont(FONT_BOLD, "bold") // Label Bold
+        doc.setFont(FONT_BOLD, "bold")
         doc.text(label, margin + 5, y + 6)
 
         doc.setFont(FONT_REG, "normal")
         doc.text(meta, pageWidth - margin - 80, y + 6, { align: 'center' })
 
-        doc.setFont(FONT_BOLD, "bold") // Money Bold
+        doc.setFont(FONT_BOLD, "bold")
         doc.text(monthly, pageWidth - margin - 40, y + 6, { align: 'right' })
         doc.text(total, pageWidth - margin - 5, y + 6, { align: 'right' })
         y += 10
@@ -320,20 +318,17 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     if (data.riskCost > 0) drawRow("Fee de Riesgo/Criticidad", `${((data.criticitnessLevel?.margin || 0) * 100).toFixed(0)}%`, fmt(data.riskCost), fmt(data.riskCost * data.durationMonths))
     if (data.discountAmount > 0) drawRow("Descuento Comercial", `${data.commercialDiscount}%`, `-${fmt(data.discountAmount)}`, `-${fmt(data.discountAmount * data.durationMonths)}`)
 
-    drawFooter(3)
+    // --- CONSOLIDATED TOTALS ON PAGE 3 ---
+    y += 10
 
-    // --- PAGE 4: SUMMARY & TOTALS ---
-    doc.addPage()
-    drawHeader()
-    y = 50
+    // Check space
+    if (y > pageHeight - 60) {
+        doc.addPage()
+        drawHeader()
+        y = 50
+    }
 
-    doc.setFont(FONT_BOLD, "bold")
-    doc.setFontSize(16)
-    doc.setTextColor(COLOR_CHARCOAL)
-    doc.text("3. RESUMEN COMERCIAL Y APROBACIÓN", margin, y)
-    y += 20
-
-    // Totals Box (Minimalist, Outline)
+    // Totals Box (Consolidated)
     doc.setDrawColor(COLOR_GOLD)
     doc.setLineWidth(0.8)
     doc.rect(margin + 20, y, contentWidth - 40, 45)
@@ -341,6 +336,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     let ty = y + 15
     doc.setFontSize(12)
     doc.setTextColor(COLOR_TEXT)
+    doc.setFont(FONT_REG, "normal")
     doc.text("Inversión Mensual Estimada:", margin + 30, ty)
     doc.setFont(FONT_BOLD, "bold")
     doc.text(fmt(data.finalTotal), pageWidth - margin - 30, ty, { align: "right" })
@@ -353,9 +349,8 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     doc.setFontSize(18)
     doc.text(fmt(data.finalTotal * data.durationMonths), pageWidth - margin - 30, ty, { align: "right" })
 
-    y += 65
-
     // Notes
+    y += 55
     doc.setFontSize(9)
     doc.setTextColor(COLOR_TEXT)
     doc.setFont(FONT_REG, "normal")
@@ -365,8 +360,27 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         doc.text(`* Se ha considerado una retención financiera interna del ${data.retention.percentage}%, ya incluida en los cálculos de margen.`, margin, y)
     }
 
+    drawFooter(3)
+
+    // --- PAGE 4: APPROVALS ---
+    doc.addPage()
+    drawHeader()
+    y = 50
+
+    doc.setFont(FONT_BOLD, "bold")
+    doc.setFontSize(16)
+    doc.setTextColor(COLOR_CHARCOAL)
+    doc.text("3. APROBACIÓN", margin, y)
+    y += 20
+
+    doc.setFont(FONT_REG, "normal")
+    doc.setFontSize(10)
+    doc.setTextColor(COLOR_TEXT)
+    doc.text("Al firmar este documento, el Cliente autoriza el inicio de los servicios descritos según los términos económicos detallados anteriormente.", margin, y, { maxWidth: contentWidth })
+
+    y += 50 // Space
+
     // Signatures
-    y = pageHeight - 60
     doc.setDrawColor(150)
     doc.setLineWidth(0.2)
 
@@ -377,7 +391,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     doc.line(pageWidth - margin - 80, y, pageWidth - margin - 10, y)
     doc.text("Por EL CLIENTE", pageWidth - margin - 70, y + 5)
 
-    drawFooter(4)
+    drawFooter(4) // This will be the last page
 
     const filename = `cotizacion_${(data.clientName || 'proyecto').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
     doc.save(filename)
@@ -395,15 +409,14 @@ export async function generatePDFBlob(data: any) {
 
 // -- Word Export (Aligned) --
 export async function exportToWord(data: any) {
-    // Basic implementation to satisfy build - reusing structures
     const doc = new Document({
         sections: [{
             properties: {},
             children: [
                 new Paragraph({ children: [new TextRun({ text: "Propuesta Técnica (Versión Editable)", bold: true, size: 48 })] }),
-                new Paragraph({ text: "Por favor use el PDF para la versión oficial y formateada.", spacing: { after: 200 } }),
+                new Paragraph({ text: "Versión simplificada para edición. Ver PDF para diseño final.", spacing: { after: 200 } }),
                 new Paragraph({ text: `Cliente: ${data.clientName}` }),
-                new Paragraph({ text: `Total Proyecto: $${(data.finalTotal * data.durationMonths).toLocaleString()}` })
+                new Paragraph({ text: `TOTAL: $${(data.finalTotal * data.durationMonths).toLocaleString()}` })
             ]
         }]
     })
