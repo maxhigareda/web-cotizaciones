@@ -112,7 +112,7 @@ export function downloadCSV(data: any[], filename: string) {
     saveAs(blob, `${filename}.csv`)
 }
 
-// -- Fixed Blue Identity PDF --
+// -- Optimized Blue PDF --
 function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2SupportCost: number, riskCost: number, totalWithRisk: number, discountAmount: number, finalTotal: number, criticitnessLevel: any, diagramImage?: string, currency?: string, exchangeRate?: number, durationMonths: number }) {
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true })
 
@@ -121,11 +121,11 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     const margin = 20
     const contentWidth = pageWidth - (margin * 2)
 
-    // Corporate Blue (Strict)
-    const COLOR_PRIMARY = '#004B8D' // Refined Corporate Blue
+    // Corporate Blue 
+    const COLOR_PRIMARY = '#004B8D'
     const COLOR_CHARCOAL = '#333533'
     const COLOR_TEXT = '#454545'
-    const COLOR_ROW_ALT = '#F0F5FA' // Light Blue gray
+    const COLOR_ROW_ALT = '#F0F5FA'
 
     const FONT_REG = "helvetica"
     const FONT_BOLD = "helvetica"
@@ -147,32 +147,33 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
 
     // --- Header & Footer ---
     const drawHeader = () => {
-        // FIXED SI LOGO LOGIC (Strict Vertical/Ratio)
+        const logoH = 14 // ~53px
+
+        // SI Logo (Left) - Fixed Height, Auto Width
         if (LOGO_SI) {
             try {
                 const props = doc.getImageProperties(LOGO_SI)
-                // Set fixed height, allow width to float based on ratio
-                const targetHeight = 20
-                const targetWidth = (props.width * targetHeight) / props.height
-                doc.addImage(LOGO_SI, 'PNG', margin, 10, targetWidth, targetHeight)
+                const w = (props.width * logoH) / props.height
+                doc.addImage(LOGO_SI, 'PNG', margin, 10, w, logoH)
             } catch (e) {
-                // Fallback text if image fails
                 doc.setFontSize(10)
-                doc.text("THE STORE INTELLIGENCE", margin, 20)
+                doc.text("STORE INTELLIGENCE", margin, 20)
             }
         }
 
-        // Nestlé (Right)
+        // Nestlé (Right) - Same Height
         if (LOGO_NESTLE) {
             try {
-                doc.addImage(LOGO_NESTLE, 'PNG', pageWidth - margin - 20, 10, 20, 20)
+                const props = doc.getImageProperties(LOGO_NESTLE)
+                const w = (props.width * logoH) / props.height
+                doc.addImage(LOGO_NESTLE, 'PNG', pageWidth - margin - w, 10, w, logoH)
             } catch (e) { }
         }
 
         // Blue Divider
         doc.setDrawColor(COLOR_PRIMARY)
         doc.setLineWidth(0.8)
-        doc.line(margin, 38, pageWidth - margin, 38)
+        doc.line(margin, 30, pageWidth - margin, 30) // Raised slightly
     }
 
     const drawFooter = (pageNum: number) => {
@@ -196,9 +197,9 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     doc.text("ESTIMACIÓN DE ALCANCE E INVERSIÓN", pageWidth / 2, y, { align: "center" })
 
     y += 50
-    // Box for details (Blue Border)
+    // Box for details
     doc.setDrawColor(COLOR_PRIMARY)
-    doc.setLineWidth(0.5) // Slightly clearer
+    doc.setLineWidth(0.5)
     doc.rect(margin + 20, y, contentWidth - 40, 45)
 
     let infoY = y + 15
@@ -216,42 +217,40 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     drawInfo("Cliente:", data.clientName)
     drawInfo("Fecha:", new Date().toLocaleDateString())
     drawInfo("Referencia:", `COT-${new Date().getTime().toString().substr(-6)}`)
-    // NO 'Solicitado por'
 
     drawFooter(1)
 
-    // --- PAGE 2: ARCHITECTURE & STACK ---
+    // --- PAGE 2: ARCHITECTURE & STACK (CONSOLIDATED) ---
     doc.addPage()
     drawHeader()
-    y = 50
+    y = 40 // Content Start
 
     doc.setFont(FONT_BOLD, "bold")
-    doc.setFontSize(16)
+    doc.setFontSize(14)
     doc.setTextColor(COLOR_PRIMARY)
     doc.text("1. RESUMEN Y ARQUITECTURA", margin, y)
-    y += 10
+    y += 8
 
+    // Summary
     doc.setFont(FONT_REG, "normal")
-    doc.setFontSize(10)
+    doc.setFontSize(9)
     doc.setTextColor(COLOR_TEXT)
-    const desc = data.description || "Solución tecnológica."
-
-    // Left Align (Justified requests)
+    const desc = data.description || "Solución tecnológica para optimización de datos."
     const splitDesc = doc.splitTextToSize(desc, contentWidth)
-    doc.text(splitDesc, margin, y, { align: "left", lineHeightFactor: 1.5, maxWidth: contentWidth })
-    y += (splitDesc.length * 6) + 15
+    doc.text(splitDesc, margin, y, { align: "left", lineHeightFactor: 1.4, maxWidth: contentWidth })
+    y += (splitDesc.length * 5) + 8
 
-    // Diagram
+    // Diagram (Max Height Control 90mm)
     if (data.diagramImage) {
         doc.setFont(FONT_BOLD, "bold")
         doc.setTextColor(COLOR_CHARCOAL)
         doc.text("Diagrama de Solución:", margin, y)
-        y += 8
+        y += 6
 
         const imgProps = doc.getImageProperties(data.diagramImage)
-        const pdfW = contentWidth * 0.9
+        const pdfW = contentWidth * 0.85 // 85% width
         const pdfH = (imgProps.height * pdfW) / imgProps.width
-        const maxH = 90
+        const maxH = 90 // Max 90mm
         const finalH = Math.min(pdfH, maxH)
 
         try {
@@ -260,94 +259,93 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         } catch (e) {
             doc.text("[Diagrama]", margin, y + 10)
         }
-        y += finalH + 15
+        y += finalH + 10
     }
 
-    // TECH STACK GRID
-    // Check space
-    if (y > pageHeight - 60) {
+    // TECH STACK (2 COLUMNS)
+    // Avoid page break at all costs here unless impossible
+    if (y + 30 > pageHeight - 20) {
         doc.addPage()
         drawHeader()
-        y = 50
+        y = 40
     }
 
     doc.setFont(FONT_BOLD, "bold")
     doc.setFontSize(12)
     doc.setTextColor(COLOR_PRIMARY)
     doc.text("STACK TECNOLÓGICO", margin, y)
-    y += 8
+    y += 6
 
-    const boxW = contentWidth / 2 - 2
-    const boxH = 14
+    // Grid (2 Col)
+    const colW = (contentWidth / 2) - 3
+    const rowH = 12
     const startX = margin
 
-    const drawItem = (x: number, label: string, val: string) => {
+    const drawStk = (x: number, label: string, val: string) => {
         doc.setFillColor(COLOR_ROW_ALT)
-        doc.rect(x, y, boxW, boxH, 'F')
+        doc.rect(x, y, colW, rowH, 'F')
 
-        // Label (Blue text)
-        doc.setFontSize(9)
+        doc.setFontSize(8)
         doc.setTextColor(COLOR_PRIMARY)
         doc.setFont(FONT_BOLD, "bold")
-        doc.text(label, x + 4, y + 9)
+        doc.text(label, x + 3, y + 8)
 
-        // Value (Dark text)
         doc.setTextColor(COLOR_TEXT)
         doc.setFont(FONT_REG, "normal")
-        doc.text(val, x + boxW - 4, y + 9, { align: "right" })
+        doc.text(val, x + colW - 3, y + 8, { align: "right" })
     }
 
-    drawItem(startX, "Infraestructura", "Azure / AWS")
-    drawItem(startX + boxW + 4, "Procesamiento", "Databricks / Python")
-    y += boxH + 2
-    drawItem(startX, "Visualización", "Power BI / Tableau")
-    drawItem(startX + boxW + 4, "Almacenamiento", "Snowflake / Delta")
+    drawStk(startX, "Infraestructura", "Azure / AWS")
+    drawStk(startX + colW + 6, "Procesamiento", "Databricks / Python")
+    y += rowH + 2
+    drawStk(startX, "Visualización", "Power BI / Tableau")
+    drawStk(startX + colW + 6, "Almacenamiento", "Snowflake / Delta")
 
     drawFooter(2)
 
-    // --- PAGE 3: INVESTMENT & SUMMARY ---
+    // --- PAGE 3: INVESTMENT & SUMMARY (CONSOLIDATED) ---
     doc.addPage()
     drawHeader()
-    y = 50
+    y = 40
 
     doc.setFont(FONT_BOLD, "bold")
-    doc.setFontSize(16)
+    doc.setFontSize(14)
     doc.setTextColor(COLOR_PRIMARY)
     doc.text("2. DETALLE DE INVERSIÓN", margin, y)
-    y += 15
+    y += 10
 
     // Table Header
     doc.setFillColor(COLOR_PRIMARY)
-    doc.rect(margin, y, contentWidth, 10, 'F')
+    doc.rect(margin, y, contentWidth, 8, 'F')
     doc.setTextColor(255)
-    doc.setFontSize(9)
+    doc.setFontSize(8)
     doc.setFont(FONT_BOLD, "bold")
-    doc.text("CONCEPTO", margin + 5, y + 6)
-    doc.text("DURACIÓN", pageWidth - margin - 80, y + 6, { align: 'center' })
-    doc.text("MENSUAL", pageWidth - margin - 40, y + 6, { align: 'right' })
-    doc.text("SUBTOTAL", pageWidth - margin - 5, y + 6, { align: 'right' })
-    y += 10
+    doc.text("CONCEPTO", margin + 5, y + 5)
+    doc.text("DURACIÓN", pageWidth - margin - 75, y + 5, { align: 'center' })
+    doc.text("MENSUAL", pageWidth - margin - 40, y + 5, { align: 'right' })
+    doc.text("SUBTOTAL", pageWidth - margin - 5, y + 5, { align: 'right' })
+    y += 8
 
     // Rows
     let isReview = true
     const drawRow = (label: string, meta: string, monthly: string, total: string) => {
         if (isReview) {
             doc.setFillColor(COLOR_ROW_ALT)
-            doc.rect(margin, y, contentWidth, 10, 'F')
+            doc.rect(margin, y, contentWidth, 8, 'F')
         }
         isReview = !isReview
 
         doc.setTextColor(COLOR_TEXT)
         doc.setFont(FONT_BOLD, "bold")
-        doc.text(label, margin + 5, y + 6)
+        doc.text(label, margin + 5, y + 5)
 
         doc.setFont(FONT_REG, "normal")
-        doc.text(meta, pageWidth - margin - 80, y + 6, { align: 'center' })
+        doc.text(meta, pageWidth - margin - 75, y + 5, { align: 'center' })
 
         doc.setFont(FONT_BOLD, "bold")
-        doc.text(monthly, pageWidth - margin - 40, y + 6, { align: 'right' })
-        doc.text(total, pageWidth - margin - 5, y + 6, { align: 'right' })
-        y += 10
+        doc.text(monthly, pageWidth - margin - 40, y + 5, { align: 'right' })
+        doc.text(total, pageWidth - margin - 5, y + 5, { align: 'right' })
+        y += 8
     }
 
     if (data.serviceType === 'Staffing' || data.serviceType === 'Sustain') {
@@ -371,21 +369,25 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     if (data.riskCost > 0) drawRow("Fee de Riesgo", `${((data.criticitnessLevel?.margin || 0) * 100).toFixed(0)}%`, fmt(data.riskCost), fmt(data.riskCost * data.durationMonths))
     if (data.discountAmount > 0) drawRow("Descuento", `${data.commercialDiscount}%`, `-${fmt(data.discountAmount)}`, `-${fmt(data.discountAmount * data.durationMonths)}`)
 
-    // CONSOLIDATED SUMMARY
+    // CONSOLIDATED TOTALS (Must stay on Page 3 if possible)
     y += 10
-    if (y > pageHeight - 60) {
+
+    // Logic: If less than bottom margin available, we might have to break, but we want to avoid it.
+    // Box height ~40mm.
+    if (y + 40 > pageHeight - 20) {
+        // Only if absolutely necessary
         doc.addPage()
         drawHeader()
-        y = 50
+        y = 40
     }
 
     // Totals Box
     doc.setDrawColor(COLOR_PRIMARY)
-    doc.setLineWidth(0.8)
-    doc.rect(margin + 20, y, contentWidth - 40, 45)
+    doc.setLineWidth(0.6)
+    doc.rect(margin + 20, y, contentWidth - 40, 40)
 
     let ty = y + 15
-    doc.setFontSize(12)
+    doc.setFontSize(11)
     doc.setTextColor(COLOR_TEXT)
     doc.setFont(FONT_REG, "normal")
     doc.text("Inversión Mensual Estimada:", margin + 30, ty)
@@ -401,15 +403,14 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     doc.text(fmt(data.finalTotal * data.durationMonths), pageWidth - margin - 30, ty, { align: "right" })
 
     // Notes
-    y += 55
-    doc.setFontSize(9)
+    y += 50
+    doc.setFontSize(8)
     doc.setTextColor(COLOR_TEXT)
     doc.setFont(FONT_REG, "normal")
-    // Use clear text
     doc.text("* Valores no incluyen impuestos aplicables.", margin, y)
     if (data.retention?.enabled) {
-        y += 5
-        doc.text(`* Retención financiera interna del ${data.retention.percentage}%.`, margin, y)
+        y += 4
+        doc.text(`* Retención financiera interna del ${data.retention.percentage}% aplicada pro-forma.`, margin, y)
     }
 
     drawFooter(3)
@@ -420,17 +421,17 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     y = 50
 
     doc.setFont(FONT_BOLD, "bold")
-    doc.setFontSize(16)
+    doc.setFontSize(14)
     doc.setTextColor(COLOR_PRIMARY)
     doc.text("3. APROBACIÓN", margin, y)
-    y += 20
+    y += 15
 
     doc.setFont(FONT_REG, "normal")
     doc.setFontSize(10)
     doc.setTextColor(COLOR_TEXT)
     doc.text("Firma de conformidad con la propuesta presentada.", margin, y)
 
-    y += 50
+    y += 40
 
     doc.setDrawColor(150)
     doc.setLineWidth(0.2)
