@@ -112,7 +112,7 @@ export function downloadCSV(data: any[], filename: string) {
     saveAs(blob, `${filename}.csv`)
 }
 
-// -- Optimized Blue PDF --
+// -- Optimized PDF with Dynamic Stack --
 function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2SupportCost: number, riskCost: number, totalWithRisk: number, discountAmount: number, finalTotal: number, criticitnessLevel: any, diagramImage?: string, currency?: string, exchangeRate?: number, durationMonths: number }) {
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true })
 
@@ -147,9 +147,9 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
 
     // --- Header & Footer ---
     const drawHeader = () => {
-        const logoH = 14 // ~53px
+        const logoH = 10 // Reduced height for Symmetry (10mm ~ 38px)
 
-        // SI Logo (Left) - Fixed Height, Auto Width
+        // SI Logo (Left)
         if (LOGO_SI) {
             try {
                 const props = doc.getImageProperties(LOGO_SI)
@@ -161,7 +161,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
             }
         }
 
-        // Nestlé (Right) - Same Height
+        // Nestlé (Right)
         if (LOGO_NESTLE) {
             try {
                 const props = doc.getImageProperties(LOGO_NESTLE)
@@ -173,7 +173,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         // Blue Divider
         doc.setDrawColor(COLOR_PRIMARY)
         doc.setLineWidth(0.8)
-        doc.line(margin, 30, pageWidth - margin, 30) // Raised slightly
+        doc.line(margin, 25, pageWidth - margin, 25)
     }
 
     const drawFooter = (pageNum: number) => {
@@ -220,10 +220,10 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
 
     drawFooter(1)
 
-    // --- PAGE 2: ARCHITECTURE & STACK (CONSOLIDATED) ---
+    // --- PAGE 2: ARCHITECTURE & STACK (DYNAMIC) ---
     doc.addPage()
     drawHeader()
-    y = 40 // Content Start
+    y = 35 // Content Start
 
     doc.setFont(FONT_BOLD, "bold")
     doc.setFontSize(14)
@@ -240,7 +240,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     doc.text(splitDesc, margin, y, { align: "left", lineHeightFactor: 1.4, maxWidth: contentWidth })
     y += (splitDesc.length * 5) + 8
 
-    // Diagram (Max Height Control 90mm)
+    // Diagram
     if (data.diagramImage) {
         doc.setFont(FONT_BOLD, "bold")
         doc.setTextColor(COLOR_CHARCOAL)
@@ -248,9 +248,9 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         y += 6
 
         const imgProps = doc.getImageProperties(data.diagramImage)
-        const pdfW = contentWidth * 0.85 // 85% width
+        const pdfW = contentWidth * 0.9 // 90% width
         const pdfH = (imgProps.height * pdfW) / imgProps.width
-        const maxH = 90 // Max 90mm
+        const maxH = 95
         const finalH = Math.min(pdfH, maxH)
 
         try {
@@ -262,51 +262,70 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         y += finalH + 10
     }
 
-    // TECH STACK (2 COLUMNS)
-    // Avoid page break at all costs here unless impossible
+    // DYNAMIC TECH STACK
     if (y + 30 > pageHeight - 20) {
         doc.addPage()
         drawHeader()
-        y = 40
+        y = 35
     }
 
     doc.setFont(FONT_BOLD, "bold")
     doc.setFontSize(12)
     doc.setTextColor(COLOR_PRIMARY)
-    doc.text("STACK TECNOLÓGICO", margin, y)
-    y += 6
+    doc.text("STACK TECNOLÓGICO SELECCIONADO", margin, y)
+    y += 8
+
+    // Process tech stack into categories (Simple heuristic mapping or just list)
+    // Since we don't have categories in techStack string array easily, we list them in a grid.
+    const stackItems = data.techStack || []
 
     // Grid (2 Col)
     const colW = (contentWidth / 2) - 3
-    const rowH = 12
+    const rowH = 10
     const startX = margin
 
-    const drawStk = (x: number, label: string, val: string) => {
-        doc.setFillColor(COLOR_ROW_ALT)
-        doc.rect(x, y, colW, rowH, 'F')
+    // Helper Text
+    let colIdx = 0
+    let rowY = y
 
-        doc.setFontSize(8)
-        doc.setTextColor(COLOR_PRIMARY)
-        doc.setFont(FONT_BOLD, "bold")
-        doc.text(label, x + 3, y + 8)
-
+    if (stackItems.length === 0) {
+        doc.setFont(FONT_REG, "italic")
+        doc.setFontSize(9)
         doc.setTextColor(COLOR_TEXT)
-        doc.setFont(FONT_REG, "normal")
-        doc.text(val, x + colW - 3, y + 8, { align: "right" })
-    }
+        doc.text("No se han seleccionado tecnologías específicas.", margin, y)
+        y += 10
+    } else {
+        stackItems.forEach((item, i) => {
+            const x = colIdx === 0 ? startX : startX + colW + 6
 
-    drawStk(startX, "Infraestructura", "Azure / AWS")
-    drawStk(startX + colW + 6, "Procesamiento", "Databricks / Python")
-    y += rowH + 2
-    drawStk(startX, "Visualización", "Power BI / Tableau")
-    drawStk(startX + colW + 6, "Almacenamiento", "Snowflake / Delta")
+            doc.setFillColor(COLOR_ROW_ALT)
+            doc.rect(x, rowY, colW, rowH, 'F')
+
+            doc.setFontSize(9)
+            doc.setTextColor(COLOR_PRIMARY)
+            doc.setFont(FONT_BOLD, "bold")
+            doc.text("Componente:", x + 3, rowY + 6.5)
+
+            doc.setTextColor(COLOR_TEXT)
+            doc.setFont(FONT_REG, "normal")
+            doc.text(item, x + colW - 3, rowY + 6.5, { align: "right" })
+
+            if (colIdx === 1) {
+                rowY += rowH + 2
+                colIdx = 0
+            } else {
+                colIdx = 1
+            }
+        })
+        y = rowY + (colIdx === 1 ? rowH + 2 : 0) + 5
+    }
 
     drawFooter(2)
 
     // --- PAGE 3: INVESTMENT & SUMMARY (CONSOLIDATED) ---
     doc.addPage()
     drawHeader()
-    y = 40
+    y = 35
 
     doc.setFont(FONT_BOLD, "bold")
     doc.setFontSize(14)
@@ -369,16 +388,12 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     if (data.riskCost > 0) drawRow("Fee de Riesgo", `${((data.criticitnessLevel?.margin || 0) * 100).toFixed(0)}%`, fmt(data.riskCost), fmt(data.riskCost * data.durationMonths))
     if (data.discountAmount > 0) drawRow("Descuento", `${data.commercialDiscount}%`, `-${fmt(data.discountAmount)}`, `-${fmt(data.discountAmount * data.durationMonths)}`)
 
-    // CONSOLIDATED TOTALS (Must stay on Page 3 if possible)
+    // CONSOLIDATED TOTALS (Must stay on Page 3)
     y += 10
-
-    // Logic: If less than bottom margin available, we might have to break, but we want to avoid it.
-    // Box height ~40mm.
     if (y + 40 > pageHeight - 20) {
-        // Only if absolutely necessary
         doc.addPage()
         drawHeader()
-        y = 40
+        y = 35
     }
 
     // Totals Box

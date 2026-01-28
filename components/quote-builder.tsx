@@ -901,7 +901,7 @@ export default function QuoteBuilder({ dbRates = [] }: { dbRates?: ServiceRate[]
             if (state.serviceType !== 'Staffing') {
                 const element = document.getElementById('diagram-capture-target')
                 if (element) {
-                    const canvas = await html2canvas(element, { backgroundColor: '#ffffff', scale: 2, useCORS: true })
+                    const canvas = await html2canvas(element, { backgroundColor: '#ffffff', scale: 4, useCORS: true })
                     diagramDataUrl = canvas.toDataURL('image/png')
                 }
             }
