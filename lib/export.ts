@@ -112,7 +112,7 @@ export function downloadCSV(data: any[], filename: string) {
     saveAs(blob, `${filename}.csv`)
 }
 
-// -- Blue Identity PDF --
+// -- Fixed Blue Identity PDF --
 function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2SupportCost: number, riskCost: number, totalWithRisk: number, discountAmount: number, finalTotal: number, criticitnessLevel: any, diagramImage?: string, currency?: string, exchangeRate?: number, durationMonths: number }) {
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true })
 
@@ -121,11 +121,11 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     const margin = 20
     const contentWidth = pageWidth - (margin * 2)
 
-    // Corporate Blue Identity
-    const COLOR_PRIMARY = '#0056D2' // Corporate Strong Blue (Estimated)
+    // Corporate Blue (Strict)
+    const COLOR_PRIMARY = '#004B8D' // Refined Corporate Blue
     const COLOR_CHARCOAL = '#333533'
     const COLOR_TEXT = '#454545'
-    const COLOR_ROW_ALT = '#F2F6FC' // Very light blue tint for rows
+    const COLOR_ROW_ALT = '#F0F5FA' // Light Blue gray
 
     const FONT_REG = "helvetica"
     const FONT_BOLD = "helvetica"
@@ -147,15 +147,19 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
 
     // --- Header & Footer ---
     const drawHeader = () => {
-        // SI Logo Adjustment (Vertical, Maintain Ratio)
+        // FIXED SI LOGO LOGIC (Strict Vertical/Ratio)
         if (LOGO_SI) {
             try {
-                // Assuming vertical stack naturally or just fit height better
                 const props = doc.getImageProperties(LOGO_SI)
-                const h = 22 // Taller than before
-                const w = (props.width * h) / props.height
-                doc.addImage(LOGO_SI, 'PNG', margin, 10, w, h)
-            } catch (e) { }
+                // Set fixed height, allow width to float based on ratio
+                const targetHeight = 20
+                const targetWidth = (props.width * targetHeight) / props.height
+                doc.addImage(LOGO_SI, 'PNG', margin, 10, targetWidth, targetHeight)
+            } catch (e) {
+                // Fallback text if image fails
+                doc.setFontSize(10)
+                doc.text("THE STORE INTELLIGENCE", margin, 20)
+            }
         }
 
         // Nestlé (Right)
@@ -166,8 +170,8 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         }
 
         // Blue Divider
-        doc.setDrawColor(COLOR_PRIMARY) // Blue
-        doc.setLineWidth(0.8) // Thicker
+        doc.setDrawColor(COLOR_PRIMARY)
+        doc.setLineWidth(0.8)
         doc.line(margin, 38, pageWidth - margin, 38)
     }
 
@@ -183,7 +187,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     let y = 100
     doc.setFont(FONT_BOLD, "bold")
     doc.setFontSize(32)
-    doc.setTextColor(COLOR_PRIMARY) // Blue Title
+    doc.setTextColor(COLOR_PRIMARY)
     doc.text("PROPUESTA TÉCNICA", pageWidth / 2, y, { align: "center" })
 
     y += 15
@@ -194,7 +198,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     y += 50
     // Box for details (Blue Border)
     doc.setDrawColor(COLOR_PRIMARY)
-    doc.setLineWidth(0.2)
+    doc.setLineWidth(0.5) // Slightly clearer
     doc.rect(margin + 20, y, contentWidth - 40, 45)
 
     let infoY = y + 15
@@ -212,7 +216,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     drawInfo("Cliente:", data.clientName)
     drawInfo("Fecha:", new Date().toLocaleDateString())
     drawInfo("Referencia:", `COT-${new Date().getTime().toString().substr(-6)}`)
-    // Solicitado por REMOVED
+    // NO 'Solicitado por'
 
     drawFooter(1)
 
@@ -230,12 +234,12 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     doc.setFont(FONT_REG, "normal")
     doc.setFontSize(10)
     doc.setTextColor(COLOR_TEXT)
-    const desc = data.description || "Solución tecnológica para optimización de datos."
+    const desc = data.description || "Solución tecnológica."
 
-    // Aligned Left (Fixed Rivers)
+    // Left Align (Justified requests)
     const splitDesc = doc.splitTextToSize(desc, contentWidth)
     doc.text(splitDesc, margin, y, { align: "left", lineHeightFactor: 1.5, maxWidth: contentWidth })
-    y += (splitDesc.length * 6) + 10
+    y += (splitDesc.length * 6) + 15
 
     // Diagram
     if (data.diagramImage) {
@@ -245,7 +249,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         y += 8
 
         const imgProps = doc.getImageProperties(data.diagramImage)
-        const pdfW = contentWidth * 0.9 // 90% width
+        const pdfW = contentWidth * 0.9
         const pdfH = (imgProps.height * pdfW) / imgProps.width
         const maxH = 90
         const finalH = Math.min(pdfH, maxH)
@@ -254,55 +258,65 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
             const imgX = margin + (contentWidth - pdfW) / 2
             doc.addImage(data.diagramImage, 'PNG', imgX, y, pdfW, finalH)
         } catch (e) {
-            doc.text("[Error visualizando diagrama]", margin, y + 10)
+            doc.text("[Diagrama]", margin, y + 10)
         }
         y += finalH + 15
     }
 
-    // TECH STACK BLOCK
+    // TECH STACK GRID
+    // Check space
+    if (y > pageHeight - 60) {
+        doc.addPage()
+        drawHeader()
+        y = 50
+    }
+
     doc.setFont(FONT_BOLD, "bold")
     doc.setFontSize(12)
     doc.setTextColor(COLOR_PRIMARY)
     doc.text("STACK TECNOLÓGICO", margin, y)
     y += 8
 
-    // Grid Setup
-    const boxW = contentWidth / 2 - 5
-    const boxH = 15
+    const boxW = contentWidth / 2 - 2
+    const boxH = 14
     const startX = margin
 
-    // Helper Text
-    const drawStackItem = (x: number, label: string, val: string) => {
+    const drawItem = (x: number, label: string, val: string) => {
         doc.setFillColor(COLOR_ROW_ALT)
         doc.rect(x, y, boxW, boxH, 'F')
+
+        // Label (Blue text)
         doc.setFontSize(9)
-        doc.setTextColor(COLOR_TEXT)
+        doc.setTextColor(COLOR_PRIMARY)
         doc.setFont(FONT_BOLD, "bold")
-        doc.text(label, x + 5, y + 6)
+        doc.text(label, x + 4, y + 9)
+
+        // Value (Dark text)
+        doc.setTextColor(COLOR_TEXT)
         doc.setFont(FONT_REG, "normal")
-        doc.text(val, x + boxW - 5, y + 6, { align: "right" })
+        doc.text(val, x + boxW - 4, y + 9, { align: "right" })
     }
 
-    drawStackItem(startX, "Infraestructura", "Azure / AWS")
-    drawStackItem(startX + boxW + 10, "Procesamiento", "Databricks / Python")
+    drawItem(startX, "Infraestructura", "Azure / AWS")
+    drawItem(startX + boxW + 4, "Procesamiento", "Databricks / Python")
     y += boxH + 2
-    drawStackItem(startX, "Visualización", "Power BI / Tableau")
-    drawStackItem(startX + boxW + 10, "Almacenamiento", "Snowflake / Delta")
+    drawItem(startX, "Visualización", "Power BI / Tableau")
+    drawItem(startX + boxW + 4, "Almacenamiento", "Snowflake / Delta")
 
     drawFooter(2)
 
-    // --- PAGE 3: BUDGET & FINANCIALS ---
+    // --- PAGE 3: INVESTMENT & SUMMARY ---
     doc.addPage()
     drawHeader()
     y = 50
 
     doc.setFont(FONT_BOLD, "bold")
     doc.setFontSize(16)
-    doc.setTextColor(COLOR_PRIMARY) // Blue Title
+    doc.setTextColor(COLOR_PRIMARY)
     doc.text("2. DETALLE DE INVERSIÓN", margin, y)
     y += 15
 
-    // Table Header (Blue)
+    // Table Header
     doc.setFillColor(COLOR_PRIMARY)
     doc.rect(margin, y, contentWidth, 10, 'F')
     doc.setTextColor(255)
@@ -357,16 +371,15 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     if (data.riskCost > 0) drawRow("Fee de Riesgo", `${((data.criticitnessLevel?.margin || 0) * 100).toFixed(0)}%`, fmt(data.riskCost), fmt(data.riskCost * data.durationMonths))
     if (data.discountAmount > 0) drawRow("Descuento", `${data.commercialDiscount}%`, `-${fmt(data.discountAmount)}`, `-${fmt(data.discountAmount * data.durationMonths)}`)
 
-    // --- CONSOLIDATED TOTALS ON PAGE 3 ---
+    // CONSOLIDATED SUMMARY
     y += 10
-    // Check space
     if (y > pageHeight - 60) {
         doc.addPage()
         drawHeader()
         y = 50
     }
 
-    // Totals Box (Blue Border)
+    // Totals Box
     doc.setDrawColor(COLOR_PRIMARY)
     doc.setLineWidth(0.8)
     doc.rect(margin + 20, y, contentWidth - 40, 45)
@@ -375,7 +388,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     doc.setFontSize(12)
     doc.setTextColor(COLOR_TEXT)
     doc.setFont(FONT_REG, "normal")
-    doc.text("Inversión Mensual:", margin + 30, ty)
+    doc.text("Inversión Mensual Estimada:", margin + 30, ty)
     doc.setFont(FONT_BOLD, "bold")
     doc.text(fmt(data.finalTotal), pageWidth - margin - 30, ty, { align: "right" })
 
@@ -383,7 +396,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     doc.setFontSize(14)
     doc.setTextColor(COLOR_CHARCOAL)
     doc.text(`TOTAL PROYECTO (${durationText()}):`, margin + 30, ty)
-    doc.setTextColor(COLOR_PRIMARY) // Blue Highlight
+    doc.setTextColor(COLOR_PRIMARY)
     doc.setFontSize(18)
     doc.text(fmt(data.finalTotal * data.durationMonths), pageWidth - margin - 30, ty, { align: "right" })
 
@@ -392,15 +405,16 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     doc.setFontSize(9)
     doc.setTextColor(COLOR_TEXT)
     doc.setFont(FONT_REG, "normal")
-    doc.text("* Valores mostrados sin IVA.", margin, y)
+    // Use clear text
+    doc.text("* Valores no incluyen impuestos aplicables.", margin, y)
     if (data.retention?.enabled) {
         y += 5
-        doc.text(`* Retención financiera interna del ${data.retention.percentage}% aplicada pro-forma.`, margin, y)
+        doc.text(`* Retención financiera interna del ${data.retention.percentage}%.`, margin, y)
     }
 
     drawFooter(3)
 
-    // --- PAGE 4: APPROVALS ---
+    // --- PAGE 4: APPROVAL ---
     doc.addPage()
     drawHeader()
     y = 50
@@ -414,9 +428,9 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     doc.setFont(FONT_REG, "normal")
     doc.setFontSize(10)
     doc.setTextColor(COLOR_TEXT)
-    doc.text("Firma de conformidad con los términos técnicos y económicos expuestos.", margin, y)
+    doc.text("Firma de conformidad con la propuesta presentada.", margin, y)
 
-    y += 50 // Space
+    y += 50
 
     doc.setDrawColor(150)
     doc.setLineWidth(0.2)
@@ -451,7 +465,7 @@ export async function exportToWord(data: any) {
             properties: {},
             children: [
                 new Paragraph({ children: [new TextRun({ text: "Propuesta Técnica (Versión Editable)", bold: true, size: 48 })] }),
-                new Paragraph({ text: "Documento generado para revisión.", spacing: { after: 200 } }),
+                new Paragraph({ text: "Versión simplificada.", spacing: { after: 200 } }),
                 new Paragraph({ text: `Cliente: ${data.clientName}` }),
                 new Paragraph({ text: `Total: $${(data.finalTotal * data.durationMonths).toLocaleString()}` })
             ]
