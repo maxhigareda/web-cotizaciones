@@ -160,7 +160,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     // --- Header & Footer ---
     const drawHeader = () => {
         const siH = 6.5    // 6.5mm fixed height for symmetry
-        const nestleH = 6.5 // 6.5mm fixed height for symmetry
+        const nestleH = 8.5 // 8.5mm fixed height for visual balance
 
         // SI Logo (Left)
         if (LOGO_SI) {
