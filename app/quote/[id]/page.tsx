@@ -1,4 +1,4 @@
-import { QuoteBuilder } from "@/components/quote-builder"
+import QuoteBuilder from "@/components/quote-builder"
 import { prisma } from "@/lib/prisma"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
@@ -30,7 +30,6 @@ export default async function EditQuotePage({ params }: { params: { id: string }
     const serializedQuote = {
         ...quote,
         createdAt: quote.createdAt.toISOString(),
-        updatedAt: quote.updatedAt.toISOString(),
         estimatedCost: Number(quote.estimatedCost)
     }
 
