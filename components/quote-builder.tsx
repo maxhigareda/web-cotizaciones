@@ -27,11 +27,18 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 const FALLBACK_RATES = {
     data_analyst: 2500,
     data_science: 5100,
-    bi_developer: 4128,
-    data_engineer: 4950,
+    bi_developer: 4128.70, // Updated
+    data_engineer: 4954.44, // Updated
     power_apps: 4000,
     react_dev: 4500,
-    power_automate: 4000
+    power_automate: 4000,
+    // New Roles
+    bi_visualization: 4128.70,
+    azure_developer: 4128.70,
+    data_architect: 5308.33,
+    bi_data_scientist: 5190.37,
+    operations_analyst: 3538.89,
+    project_manager: 5308.33
 }
 
 const SENIORITY_MODIFIERS = {
@@ -188,7 +195,14 @@ const INITIAL_STATE: QuoteState = {
         power_apps: 0,
         react_dev: 0,
         power_automate: 0,
-        data_analyst: 0
+        data_analyst: 0,
+        // New Roles Init
+        bi_visualization: 0,
+        azure_developer: 0,
+        data_architect: 0,
+        bi_data_scientist: 0,
+        operations_analyst: 0,
+        project_manager: 0
     },
     pipelinesCount: 0,
     notebooksCount: 0,
@@ -1618,171 +1632,43 @@ graph TD
                         </>
                     )}
 
-                    {/* 4. TEAM */}
-                    <SectionCard number={state.serviceType === 'Staffing' ? "02" : "04"} title={state.serviceType !== 'Proyecto' ? "Perfiles y Talento" : "Equipo Requerido"} icon={Briefcase}>
-                        {(state.serviceType === 'Staffing' || state.serviceType === 'Sustain') ? (
-                            <div className="space-y-6">
-                                {state.staffingDetails.profiles.map((profile, idx) => (
-                                    <div key={idx} className="bg-[#333533] p-6 rounded-[2rem] border border-white/5 shadow-lg relative group transition-all hover:border-[#F5CB5C]/30 hover:shadow-xl hover:shadow-black/50 overflow-hidden">
-
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                                const newProfiles = [...state.staffingDetails.profiles]
-                                                newProfiles.splice(idx, 1)
-                                                updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
-                                            }}
-                                            className="absolute top-4 right-4 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-full h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </Button>
-
-                                        <div className="grid grid-cols-4 gap-6">
-
-                                            {/* Row 1: Labels (Perfect Alignment) */}
-                                            <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Rol / Perfil</Label>
-                                            <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Seniority</Label>
-                                            <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1">Dedicación</Label>
-                                            <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider pl-1 text-center">Cantidad</Label>
-
-                                            {/* Row 2: Inputs (Perfect Alignment) */}
-
-                                            {/* 1. Rol Input */}
-                                            <Input
-                                                placeholder="Ej. Java Developer"
-                                                value={profile.role}
-                                                onChange={(e) => {
-                                                    const newProfiles = [...state.staffingDetails.profiles]
-                                                    newProfiles[idx].role = e.target.value
-                                                    updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
-                                                }}
-                                                className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] text-sm font-medium focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
-                                            />
-
-                                            {/* 2. Seniority Input */}
-                                            <Select value={profile.seniority} onValueChange={(v) => {
-                                                const newProfiles = [...state.staffingDetails.profiles]
-                                                newProfiles[idx].seniority = v
-                                                updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
-                                            }}>
-                                                <SelectTrigger className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] text-sm hover:border-[#F5CB5C]/50 transition-all focus:ring-0 focus:border-[#F5CB5C]"><SelectValue /></SelectTrigger>
-                                                <SelectContent className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]">
-                                                    <SelectItem value="Jr">Junior</SelectItem>
-                                                    <SelectItem value="Ssr">Semi-Senior</SelectItem>
-                                                    <SelectItem value="Sr">Senior</SelectItem>
-                                                    <SelectItem value="Lead">Tech Lead / Architect</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-
-                                            {/* 3. Dedicación Input (Clon Visual) */}
-                                            <div className="flex h-[50px] bg-[#242423] border border-[#4A4D4A] rounded-[1rem] overflow-hidden hover:border-[#F5CB5C]/50 transition-colors group/dedication relative">
-                                                <Button
-                                                    variant="ghost"
-                                                    onClick={() => {
-                                                        let val = (profile.allocationPercentage ?? 100) - 5;
-                                                        if (val < 0) val = 0;
-                                                        const newProfiles = [...state.staffingDetails.profiles];
-                                                        newProfiles[idx].allocationPercentage = val;
-                                                        updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles });
-                                                    }}
-                                                    className="h-full w-10 absolute left-0 top-0 z-10 hover:bg-[#F5CB5C]/10 hover:text-[#F5CB5C] text-[#CFDBD5]/30 rounded-none transition-colors"
-                                                >
-                                                    -
-                                                </Button>
-
-                                                <div className="flex-1 flex flex-col items-center justify-center relative w-full pointer-events-none">
-                                                    <div className="flex items-baseline gap-0.5">
-                                                        <span className="text-[#E8EDDF] text-base font-bold tracking-tight">
-                                                            {profile.allocationPercentage ?? 100}
-                                                        </span>
-                                                        <span className="text-[#F5CB5C] text-xs font-bold mb-0.5">%</span>
-                                                    </div>
-                                                    <span className="text-[9px] text-[#CFDBD5]/50 font-mono tracking-tight leading-none -mt-0.5">
-                                                        {(160 * ((profile.allocationPercentage ?? 100) / 100)).toFixed(0)} h/mes
-                                                    </span>
-                                                </div>
-
-                                                <Button
-                                                    variant="ghost"
-                                                    onClick={() => {
-                                                        let val = (profile.allocationPercentage ?? 100) + 5;
-                                                        if (val > 100) val = 100;
-                                                        const newProfiles = [...state.staffingDetails.profiles];
-                                                        newProfiles[idx].allocationPercentage = val;
-                                                        updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles });
-                                                    }}
-                                                    className="h-full w-10 absolute right-0 top-0 z-10 hover:bg-[#F5CB5C]/10 hover:text-[#F5CB5C] text-[#CFDBD5]/30 rounded-none transition-colors"
-                                                >
-                                                    +
-                                                </Button>
-                                            </div>
-
-                                            {/* 4. Cantidad Input */}
-                                            <Input
-                                                type="number"
-                                                min={1}
-                                                value={profile.count}
-                                                onChange={(e) => {
-                                                    const newProfiles = [...state.staffingDetails.profiles]
-                                                    newProfiles[idx].count = parseInt(e.target.value) || 1
-                                                    updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
-                                                }}
-                                                className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-[50px] rounded-[1rem] text-center font-bold text-base focus:border-[#F5CB5C] transition-all hover:border-[#F5CB5C]/50"
-                                            />
-
-                                        </div>
-                                        <div className="mt-4">
-                                            <Input
-                                                placeholder="Skills / Tecnologías (Ej. React, Node.js, AWS, Kubernetes)"
-                                                value={profile.skills}
-                                                onChange={(e) => {
-                                                    const newProfiles = [...state.staffingDetails.profiles]
-                                                    newProfiles[idx].skills = e.target.value
-                                                    updateState('staffingDetails', { ...state.staffingDetails, profiles: newProfiles })
-                                                }}
-                                                className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-10 rounded-lg text-xs hover:border-[#F5CB5C]/50 transition-all focus:border-[#F5CB5C]"
-                                            />
-                                        </div>
-
-                                    </div>
-                                ))}
-                                <Button
-                                    onClick={() => {
-                                        updateState('staffingDetails', {
-                                            ...state.staffingDetails,
-                                            profiles: [...state.staffingDetails.profiles, { id: Date.now().toString(), role: '', seniority: 'Ssr', skills: '', count: 1, startDate: '', endDate: '', allocationPercentage: 100 }]
-                                        })
-                                    }}
-                                    className="w-full h-12 border-dashed border border-[#4A4D4A] bg-transparent text-[#CFDBD5] hover:border-[#F5CB5C] hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/5 rounded-xl text-sm font-bold uppercase tracking-widest transition-all"
-                                >
-                                    + Agregar Perfil
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-6">
-                                {Object.entries(state.roles).map(([key, count]) => {
+                    {/* 4. TEAM (Standardized for ALL Service Types) */}
+                    <SectionCard number={state.serviceType === 'Staffing' ? "02" : "04"} title={state.serviceType === 'Staffing' ? "Selección de Perfiles" : "Equipo Requerido"} icon={Briefcase}>
+                        <div className="grid grid-cols-1 gap-6">
+                            {Object.entries(state.roles)
+                                .sort((a, b) => b[1] - a[1]) // Sort selected first
+                                .map(([key, count]) => {
                                     const roleName = key.replace(/_/g, ' ')
                                     // Use dynamic lookup or fallback
                                     const dynamicRate = findDynamicRate(roleName)
                                     const rate = dynamicRate || FALLBACK_RATES[key as RoleKey] || 4500
 
                                     return (
-                                        <div key={key} className="flex items-center justify-between p-6 rounded-[1.5rem] border border-[#4A4D4A] bg-[#333533] hover:bg-[#404240] transition-colors group">
-                                            <div>
-                                                <div className="font-bold capitalize text-[#E8EDDF] text-lg group-hover:text-[#F5CB5C] transition-colors">{key.replace('_', ' ')}</div>
-                                                <div className="text-sm text-[#CFDBD5] font-mono">${rate}/mes</div>
+                                        <div key={key} className={cn(
+                                            "flex items-center justify-between p-6 rounded-[1.5rem] border transition-all group",
+                                            count > 0 ? "bg-[#333533] border-[#F5CB5C] shadow-[0_0_15px_rgba(245,203,92,0.1)]" : "bg-[#333533] border-[#4A4D4A] hover:border-[#CFDBD5]"
+                                        )}>
+                                            <div className="flex items-center gap-4">
+                                                <div className={cn(
+                                                    "w-12 h-12 rounded-full flex items-center justify-center border transition-colors",
+                                                    count > 0 ? "bg-[#F5CB5C]/20 border-[#F5CB5C] text-[#F5CB5C]" : "bg-[#242423] border-[#4A4D4A] text-[#7C7F7C]"
+                                                )}>
+                                                    <Users className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <div className={cn("font-bold capitalize text-lg transition-colors", count > 0 ? "text-[#F5CB5C]" : "text-[#E8EDDF]")}>{roleName}</div>
+                                                    <div className="text-sm text-[#CFDBD5] font-mono">${rate.toLocaleString()}/mes</div>
+                                                </div>
                                             </div>
                                             <div className="flex items-center gap-4">
                                                 <Button variant="outline" size="icon" className="h-10 w-10 border-[#4A4D4A] text-[#E8EDDF] hover:bg-[#F5CB5C] hover:text-[#242423] rounded-full" onClick={() => updateRole(key as RoleKey, -1)}>-</Button>
-                                                <span className="w-8 text-center text-xl font-bold text-[#E8EDDF]">{count}</span>
+                                                <span className={cn("w-8 text-center text-xl font-bold", count > 0 ? "text-[#F5CB5C]" : "text-[#7C7F7C]")}>{count}</span>
                                                 <Button variant="outline" size="icon" className="h-10 w-10 border-[#4A4D4A] text-[#E8EDDF] hover:bg-[#F5CB5C] hover:text-[#242423] rounded-full" onClick={() => updateRole(key as RoleKey, 1)}>+</Button>
                                             </div>
                                         </div>
                                     )
                                 })}
-                            </div>
-                        )}
+                        </div>
                     </SectionCard>
 
 

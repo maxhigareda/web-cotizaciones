@@ -576,6 +576,11 @@ export async function exportToPDF(data: any) {
     doc.save(filename)
 }
 
+export async function generatePDFBlob(data: any) {
+    const doc = createPDFDocument(data)
+    return doc.output('blob')
+}
+
 export async function exportToWord(data: any) {
     // Safety Calcs (Direct Dashboard Sync)
     // Use values EXACTLY as they are in the QuoteBuilder state
