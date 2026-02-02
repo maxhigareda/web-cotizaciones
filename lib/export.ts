@@ -480,15 +480,15 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         doc.text(fmt(data.finalTotal * data.durationMonths), pageWidth - margin - 30, ty, { align: "right" })
     }
 
-    // Notes
-    y += 50
+    // Notes - Positioned BELOW the box
+    y += boxHeight + 8 // Move Y past the box + gap
     doc.setFontSize(8)
     doc.setTextColor(COLOR_TEXT)
     doc.setFont(FONT_REG, "normal")
-    doc.text("* Valores no incluyen impuestos aplicables.", margin, y)
+    doc.text("* Valores no incluyen impuestos aplicables.", margin + 20, y)
     if (data.retention?.enabled) {
         y += 4
-        doc.text(`* Retención financiera interna del ${data.retention.percentage}% aplicada pro-forma.`, margin, y)
+        doc.text(`* Retención financiera interna del ${data.retention.percentage}% aplicada pro-forma.`, margin + 20, y)
     }
 
     drawFooter(3)
@@ -569,6 +569,16 @@ export async function generatePDFBlob(data: any) {
 
 // -- Word Export --
 export async function exportToWord(data: any) {
+    // Safety Calcs
+    const rawGross = data.grossTotal || data.finalTotal
+    let safeRetentionVal = data.retentionAmount || 0
+    let safeFinal = data.finalTotal
+
+    if (data.retention?.enabled && (safeRetentionVal === 0 || !safeRetentionVal)) {
+        safeRetentionVal = rawGross * (data.retention.percentage / 100)
+        safeFinal = rawGross - safeRetentionVal
+    }
+
     const doc = new Document({
         sections: [{
             properties: {},
@@ -582,21 +592,21 @@ export async function exportToWord(data: any) {
                     new Paragraph({
                         children: [
                             new TextRun({ text: "Subtotal: ", bold: true }),
-                            new TextRun({ text: `$${(data.grossTotal * data.durationMonths).toLocaleString()}` })
+                            new TextRun({ text: `$${(rawGross * data.durationMonths).toLocaleString()}` })
                         ],
                         alignment: AlignmentType.RIGHT
                     }),
                     new Paragraph({
                         children: [
                             new TextRun({ text: `Retención (${data.retention.percentage}%): `, bold: true }),
-                            new TextRun({ text: `-$${(data.retentionAmount * data.durationMonths).toLocaleString()}`, color: "DC3232", bold: true })
+                            new TextRun({ text: `-$${(safeRetentionVal * data.durationMonths).toLocaleString()}`, color: "DC3232", bold: true })
                         ],
                         alignment: AlignmentType.RIGHT
                     }),
                     new Paragraph({
                         children: [
                             new TextRun({ text: "Total Neto: ", bold: true, size: 28, color: "004B8D" }),
-                            new TextRun({ text: `$${(data.finalTotal * data.durationMonths).toLocaleString()}`, bold: true, size: 28, color: "004B8D" })
+                            new TextRun({ text: `$${(safeFinal * data.durationMonths).toLocaleString()}`, bold: true, size: 28, color: "004B8D" })
                         ],
                         spacing: { before: 100 },
                         alignment: AlignmentType.RIGHT
