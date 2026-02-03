@@ -87,7 +87,28 @@ export function AdminRatesEditor() {
 
     useEffect(() => {
         loadRates()
-    }, [])
+
+        // POLLING: Check for updates every 60 seconds (Proactive Visual Feedback)
+        const interval = setInterval(async () => {
+            try {
+                const freshData = await getServiceRates()
+                const dataString = JSON.stringify(freshData)
+                const currentString = JSON.stringify(rates)
+
+                if (rates.length > 0 && dataString !== currentString) {
+                    setRates(freshData as any)
+                    toast.info("Tarifas Actualizadas", {
+                        description: "Los precios han sido sincronizados desde Google Sheets.",
+                        duration: 5000
+                    })
+                }
+            } catch (e) {
+                console.error("Polling failed", e)
+            }
+        }, 60000)
+
+        return () => clearInterval(interval)
+    }, [rates])
 
     const handleDelete = async (id: string) => {
         if (confirm('¿Está seguro de eliminar esta tarifa?')) {
@@ -198,6 +219,17 @@ export function AdminRatesEditor() {
                         </CardDescription>
                     </div>
                 </div>
+
+                {/* CENTRALIZED CONTROL WARNING */}
+                <div className="flex-1 max-w-lg bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center gap-4">
+                    <div className="p-2 bg-amber-500/20 rounded-lg">
+                        <Tag className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <div>
+                        <p className="text-amber-500 font-bold text-sm">Control de Precios Centralizado</p>
+                        <p className="text-amber-500/70 text-xs">La edición manual está deshabilitada. Los valores se actualizan desde Google Sheets.</p>
+                    </div>
+                </div>
             </CardHeader>
 
             <Tabs defaultValue="staffing" onValueChange={setActiveTab} className="w-full">
@@ -210,7 +242,7 @@ export function AdminRatesEditor() {
                             <Clock className="w-4 h-4 mr-2" /> Otros Servicios
                         </TabsTrigger>
                     </TabsList>
-                    <Button onClick={activeTab === 'staffing' ? handleNewMatrix : () => { }} className="bg-[#2EB886] hover:bg-[#2EB886]/90 text-white font-bold rounded-xl h-10 px-6 w-full md:w-auto">
+                    <Button disabled className="bg-[#333533] text-[#CFDBD5] font-bold rounded-xl h-10 px-6 w-full md:w-auto cursor-not-allowed">
                         <Plus className="w-4 h-4 mr-2" />
                         Nuevo Perfil
                     </Button>
@@ -286,8 +318,8 @@ export function AdminRatesEditor() {
                                                     onClick={() => handleEditMatrix(group)}
                                                     className="text-[#CFDBD5] hover:text-[#F5CB5C] hover:bg-[#F5CB5C]/10"
                                                 >
-                                                    <Pencil className="w-4 h-4 mr-2" />
-                                                    Editar
+                                                    <Briefcase className="w-4 h-4 mr-2" />
+                                                    Detalles
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
@@ -315,7 +347,7 @@ export function AdminRatesEditor() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="bg-[#242423] border-[#333533] text-[#E8EDDF] sm:max-w-[500px]">
                     <DialogHeader>
-                        <DialogTitle>Editar Matriz de Precios</DialogTitle>
+                        <DialogTitle>Detalles del Perfil (Solo Lectura)</DialogTitle>
                     </DialogHeader>
 
                     <div className="grid gap-6 py-4">
@@ -325,7 +357,7 @@ export function AdminRatesEditor() {
                                 value={matrixForm.service}
                                 onValueChange={(val) => setMatrixForm({ ...matrixForm, service: val })}
                             >
-                                <SelectTrigger className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]">
+                                <SelectTrigger disabled className="bg-[#333533] border-[#4A4D4A] text-[#E8EDDF] opacity-100">
                                     <SelectValue placeholder="Seleccionar Perfil Oficial" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -343,9 +375,9 @@ export function AdminRatesEditor() {
                                 <Label className="text-right text-[#CFDBD5]">Junior</Label>
                                 <Input
                                     type="number"
+                                    readOnly
                                     value={matrixForm.prices.Jr}
-                                    onChange={(e) => setMatrixForm({ ...matrixForm, prices: { ...matrixForm.prices, Jr: Number(e.target.value) } })}
-                                    className="col-span-2 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
+                                    className="col-span-2 bg-[#333533]/50 border-[#333533] text-[#CFDBD5] cursor-default"
                                 />
                             </div>
 
@@ -353,9 +385,9 @@ export function AdminRatesEditor() {
                                 <Label className="text-right text-[#CFDBD5]">Medium</Label>
                                 <Input
                                     type="number"
+                                    readOnly
                                     value={matrixForm.prices.Med}
-                                    onChange={(e) => setMatrixForm({ ...matrixForm, prices: { ...matrixForm.prices, Med: Number(e.target.value) } })}
-                                    className="col-span-2 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
+                                    className="col-span-2 bg-[#333533]/50 border-[#333533] text-[#CFDBD5] cursor-default"
                                 />
                             </div>
 
@@ -363,9 +395,9 @@ export function AdminRatesEditor() {
                                 <Label className="text-right text-[#CFDBD5]">Senior</Label>
                                 <Input
                                     type="number"
+                                    readOnly
                                     value={matrixForm.prices.Sr}
-                                    onChange={(e) => setMatrixForm({ ...matrixForm, prices: { ...matrixForm.prices, Sr: Number(e.target.value) } })}
-                                    className="col-span-2 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
+                                    className="col-span-2 bg-[#333533]/50 border-[#333533] text-[#CFDBD5] cursor-default"
                                 />
                             </div>
 
@@ -373,9 +405,9 @@ export function AdminRatesEditor() {
                                 <Label className="text-right text-[#CFDBD5]">Expert</Label>
                                 <Input
                                     type="number"
+                                    readOnly
                                     value={matrixForm.prices.Expert}
-                                    onChange={(e) => setMatrixForm({ ...matrixForm, prices: { ...matrixForm.prices, Expert: Number(e.target.value) } })}
-                                    className="col-span-2 bg-[#333533] border-[#4A4D4A] text-[#E8EDDF]"
+                                    className="col-span-2 bg-[#333533]/50 border-[#333533] text-[#CFDBD5] cursor-default"
                                 />
                             </div>
                         </div>
@@ -383,12 +415,10 @@ export function AdminRatesEditor() {
 
                     <DialogFooter>
                         <Button
-                            onClick={handleSaveMatrix}
-                            disabled={isSaving}
-                            className="bg-[#F5CB5C] hover:bg-[#E0B84C] text-[#242423] font-bold w-full"
+                            onClick={() => setIsDialogOpen(false)}
+                            className="bg-[#333533] hover:bg-[#4A4D4A] text-[#E8EDDF] font-bold w-full"
                         >
-                            {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                            Guardar Cambios
+                            Cerrar
                         </Button>
                     </DialogFooter>
                 </DialogContent>
