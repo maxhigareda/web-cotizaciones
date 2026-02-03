@@ -608,17 +608,25 @@ export default function QuoteBuilder({ dbRates = [], initialData }: { dbRates?: 
         // Helper: Get best available rate
         const getRate = (role: string, level: string = 'Ssr') => {
             // Mapping internal keys to DB Service Names
+            // Mapping internal keys to DB Service Names
             const roleMap: Record<string, string> = {
                 'data_engineer': 'Data Engineer',
                 'data_analyst': 'Data Analyst',
-                'data_science': 'Data Science',
-                'bi_developer': 'BI Developer',
-                'project_manager': 'Project Manager',
+                'data_science': 'Data Science', // Legacy
+                'bi_developer': 'BI Developer', // Legacy
+                'project_manager': 'Project Manager & Product MGR',
                 'qa_automation': 'QA Automation',
-                'arquitecto': 'Arquitecto de Datos',
-                'power_apps': 'Power Apps', // Assuming exists or fallback
-                'react_dev': 'Frontend Developer', // Assuming exists or fallback
-                'power_automate': 'Power Automate'
+                'arquitecto': 'Data Architect',
+                'power_apps': 'Power Apps / Power Automate',
+                'react_dev': 'React Dev',
+                'power_automate': 'Power Apps / Power Automate',
+                // New Roles
+                'bi_visualization': 'BI Visualization Developer',
+                'azure_developer': 'Azure Developer',
+                'data_architect': 'Data Architect',
+                'bi_data_scientist': 'BI Data Scientist',
+                'operations_analyst': 'Operations Analyst',
+                'bi_visualization_developer': 'BI Visualization Developer' // Safety alias
             }
 
             const dbRoleName = roleMap[role.toLowerCase()] || role
