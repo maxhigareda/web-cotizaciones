@@ -300,9 +300,7 @@ export async function searchClients(query: string) {
     try {
         const clients = await prisma.client.findMany({
             where: {
-                // Filter by User Ownership
-                userId: userId,
-                // Partial match if query exists
+                // Partial match if query exists (UserId filter removed for globalization)
                 ...(query ? {
                     companyName: {
                         contains: query,
@@ -311,7 +309,6 @@ export async function searchClients(query: string) {
                 } : {})
             },
             orderBy: { companyName: 'asc' },
-            // Removed 'take: 10' to show ALL clients as requested ("Consulta Global")
             select: { id: true, companyName: true, contactName: true, email: true, status: true, clientLogoUrl: true }
         })
         return clients
@@ -866,7 +863,7 @@ export async function updateClient(clientId: string, data: { companyName: string
 
     try {
         const updatedClient = await prisma.client.update({
-            where: { id: clientId, userId: userId }, // Ensure ownership
+            where: { id: clientId }, // Ownership check removed for globalization
             data: {
                 companyName: data.companyName,
                 contactName: data.contactName,

@@ -93,9 +93,9 @@ export function ClientsManager({ initialClients }: { initialClients: any[] }) {
             {/* CLIENTS TABLE */}
             <Card className="bg-[#333533]/50 border-[#333533] shadow-xl backdrop-blur-sm overflow-hidden rounded-3xl">
                 <CardHeader className="p-8 border-b border-[#333533]/50">
-                    <CardTitle className="text-2xl text-[#F5CB5C]">Listado Global</CardTitle>
+                    <CardTitle className="text-2xl text-[#F5CB5C]">Directorio de Clientes</CardTitle>
                     <CardDescription className="text-[#CFDBD5] text-base">
-                        Tus clientes están disponibles en todos los módulos de cotización.
+                        Base de datos compartida. Los clientes creados están disponibles para todos los consultores.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
