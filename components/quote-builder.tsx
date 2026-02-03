@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { MermaidDiagram } from "@/components/mermaid-diagram"
 import { Wand2, Download, FileText, Check, ShieldAlert, Network, Cpu, Calculator, Save, Loader2, ClipboardList, Database, Users, Briefcase, Layers, AlertTriangle, Activity, Zap, Edit, X, RefreshCw, ImageDown, Sparkles, Undo2, ArrowRight, Plus, Minus, Trash2 } from "lucide-react"
+import { SenioritySelector } from "@/components/seniority-selector"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { saveQuote } from "@/lib/actions"
@@ -26,21 +27,24 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 // Hardcoded fallback rates in case DB fails or during transition
 // Updated Q3 Rates based on User Request
+// Updated Q3 Rates based on User Request (Excel)
 const FALLBACK_RATES = {
-    data_analyst: 2500,
-    data_science: 5100,
-    bi_developer: 4128.70, // Updated
-    data_engineer: 4954.44, // Updated
-    power_apps: 4000,
+    data_analyst: 2500, // Not specified in recent list, keeping
+    data_science: 5190.37, // Ssr aligned
+    bi_developer: 4128.70, // Aligned with BI Vis
+    data_engineer: 4954.44, // Ssr aligned
+    power_apps: 3538.00, // Aligned with Low Code
     react_dev: 4500,
-    power_automate: 4000,
+    power_automate: 3538.00,
     // New Roles
-    bi_visualization: 4128.70,
-    azure_developer: 4128.70,
-    data_architect: 5308.33,
-    bi_data_scientist: 5190.37,
-    operations_analyst: 3538.89,
-    project_manager: 5308.33
+    bi_visualization: 4128.70, // Ssr
+    azure_developer: 4128.70, // Ssr
+    data_architect: 5308.33, // Ssr
+    bi_data_scientist: 5190.37, // Ssr
+    operations_analyst: 3538.89, // Ssr
+    project_manager: 5308.33,
+    solution_architect: 5308.33, // Ssr
+    low_code_dev: 3538.00 // Ssr
 }
 
 const SENIORITY_MODIFIERS = {
@@ -205,7 +209,9 @@ const INITIAL_STATE: QuoteState = {
         data_architect: 0,
         bi_data_scientist: 0,
         operations_analyst: 0,
-        project_manager: 0
+        project_manager: 0,
+        solution_architect: 0,
+        low_code_dev: 0
     },
     pipelinesCount: 0,
     notebooksCount: 0,
@@ -399,7 +405,16 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
             }
         }
         fetchRates()
+        fetchRates()
     }, [])
+
+    // --- Dynamic Diagram Logic (Sustain) ---
+    useEffect(() => {
+        if (state.serviceType !== 'Sustain' || manualDiagramCode) return
+
+        const code = generateSustainDiagram(state.sustainDetails.techStack)
+        setChartCode(code)
+    }, [state.serviceType, state.sustainDetails.techStack, manualDiagramCode])
 
     const convert = useCallback((amount: number) => {
         const rate = exchangeRates[currency] || 1.0
@@ -1724,60 +1739,34 @@ graph TD
                                             <div key={roleKey} className="flex items-center justify-between p-3 bg-[#333533] border border-[#4A4D4A] rounded-xl hover:border-[#F5CB5C] transition-colors group">
                                                 <div className="font-bold capitalize text-[#E8EDDF] text-sm">{roleName}</div>
 
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button size="icon" className="h-8 w-8 rounded-full bg-[#242423] text-[#F5CB5C] border border-[#F5CB5C]/30 hover:bg-[#F5CB5C] hover:text-[#242423]">
-                                                            <Plus className="w-4 h-4" />
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-56 bg-[#242423] border-[#F5CB5C] text-[#E8EDDF] p-2" side="right" align="start">
-                                                        <h5 className="text-xs font-bold text-[#F5CB5C] uppercase tracking-wider mb-2 px-2">Seleccionar Seniority</h5>
-                                                        <div className="space-y-1">
-                                                            {capabilities.map(level => {
-                                                                // Find exact rate
-                                                                const rateObj = serviceRates.find(r => r.complexity === level)
-                                                                // Fallback if DB rate missing: Base * Modifier
-                                                                const fallbackBase = FALLBACK_RATES[roleKey as RoleKey] || 4000
-                                                                const modifier = SENIORITY_MODIFIERS[level as keyof typeof SENIORITY_MODIFIERS] || 1.0
-                                                                const price = rateObj ? rateObj.basePrice : Math.round(fallbackBase * modifier)
-
-                                                                return (
-                                                                    <button
-                                                                        key={level}
-                                                                        onClick={() => {
-                                                                            // Add to Profiles List
-                                                                            const newProfile = {
-                                                                                id: crypto.randomUUID(),
-                                                                                role: roleName,
-                                                                                seniority: level,
-                                                                                count: 1,
-                                                                                price: price, // STORE SNAPSHOT PRICE
-                                                                                skills: '',
-                                                                                startDate: new Date().toISOString(),
-                                                                                endDate: new Date().toISOString()
-                                                                            }
-                                                                            // Update State: Add profile AND Increment legacy role counter
-                                                                            const currentCount = state.roles[roleKey as RoleKey] || 0
-                                                                            setState(prev => ({
-                                                                                ...prev,
-                                                                                roles: { ...prev.roles, [roleKey]: currentCount + 1 },
-                                                                                staffingDetails: {
-                                                                                    ...prev.staffingDetails,
-                                                                                    profiles: [...prev.staffingDetails.profiles, newProfile]
-                                                                                }
-                                                                            }))
-                                                                            toast.success(`${roleName} (${level}) agregado`)
-                                                                        }}
-                                                                        className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-[#333533] rounded-md text-sm transition-colors text-left"
-                                                                    >
-                                                                        <span className="font-medium">{level}</span>
-                                                                        <span className="text-[#F5CB5C] font-mono text-xs">${price.toLocaleString()}</span>
-                                                                    </button>
-                                                                )
-                                                            })}
-                                                        </div>
-                                                    </PopoverContent>
-                                                </Popover>
+                                                <SenioritySelector
+                                                    roleName={roleName}
+                                                    roleKey={roleKey}
+                                                    capabilities={capabilities}
+                                                    serviceRates={serviceRates}
+                                                    onSelect={(level, price) => {
+                                                        const newProfile = {
+                                                            id: crypto.randomUUID(),
+                                                            role: roleName,
+                                                            seniority: level,
+                                                            count: 1,
+                                                            price: price,
+                                                            skills: '',
+                                                            startDate: new Date().toISOString(),
+                                                            endDate: new Date().toISOString()
+                                                        }
+                                                        const currentCount = state.roles[roleKey as RoleKey] || 0
+                                                        setState(prev => ({
+                                                            ...prev,
+                                                            roles: { ...prev.roles, [roleKey]: currentCount + 1 },
+                                                            staffingDetails: {
+                                                                ...prev.staffingDetails,
+                                                                profiles: [...prev.staffingDetails.profiles, newProfile]
+                                                            }
+                                                        }))
+                                                        toast.success(`${roleName} (${level}) agregado`)
+                                                    }}
+                                                />
                                             </div>
                                         )
                                     })}
@@ -2459,6 +2448,68 @@ graph TD
 
 
 // --- HELPERS ---
+
+function generateSustainDiagram(stack: string[]): string {
+    const hasSource = stack.includes('sql') || stack.includes('snowflake') || stack.includes('other')
+    const hasIngest = stack.includes('azure_df') || stack.includes('python')
+    const hasProcess = stack.includes('databricks') || stack.includes('datascience') || stack.includes('dotnet')
+    const hasViz = stack.includes('powerbi') || stack.includes('streamlit') || stack.includes('react')
+
+    let code = `graph LR
+    %% Styles
+    classDef dark fill:#242423,stroke:#F5CB5C,stroke-width:2px,color:#E8EDDF,rx:5,ry:5;
+    classDef gold fill:#F5CB5C,stroke:#F5CB5C,stroke-width:2px,color:#242423,rx:5,ry:5,font-weight:bold;
+
+`
+
+    // SOURCES
+    if (hasSource) {
+        code += `    subgraph Sources [Fuentes]\n`
+        code += `      direction TB\n`
+        if (stack.includes('sql')) code += `      src1[SQL Server]:::dark\n`
+        if (stack.includes('snowflake')) code += `      src2[Snowflake]:::dark\n`
+        if (stack.includes('other')) code += `      src3[Otros Sistemas]:::dark\n`
+        code += `    end\n`
+    }
+
+    // PLATFORM
+    if (hasIngest || hasProcess) {
+        code += `    subgraph Platform [Plataforma de Datos]\n`
+        code += `      direction TB\n`
+        if (stack.includes('azure_df')) code += `      ing1[Azure Data Factory]:::dark\n`
+        if (stack.includes('python')) code += `      ing2[Python Scripts]:::dark\n`
+
+        if (stack.includes('databricks')) code += `      proc1[Databricks]:::dark\n`
+        if (stack.includes('datascience')) code += `      proc2[Modelos ML]:::dark\n`
+        if (stack.includes('dotnet')) code += `      proc3[.NET Core]:::dark\n`
+
+        // Internal Links
+        if (stack.includes('azure_df') && stack.includes('databricks')) code += `      ing1 --> proc1\n`
+        code += `    end\n`
+    }
+
+    // CONSUMPTION
+    if (hasViz) {
+        code += `    subgraph Usage [Visualización & Consumo]\n`
+        code += `      direction TB\n`
+        if (stack.includes('powerbi')) code += `      viz1[Power BI]:::dark\n`
+        if (stack.includes('streamlit')) code += `      viz2[Streamlit]:::dark\n`
+        if (stack.includes('react')) code += `      viz3[React App]:::dark\n`
+        code += `    end\n`
+    }
+
+    // LINKS (Edges)
+    if (hasSource && (hasIngest || hasProcess)) {
+        code += `    Sources --> Platform\n`
+    }
+    if ((hasIngest || hasProcess) && hasViz) {
+        code += `    Platform --> Usage\n`
+    } else if (hasSource && hasViz && !hasIngest && !hasProcess) {
+        code += `    Sources --> Usage\n`
+    }
+
+    return code
+}
 
 interface SectionCardProps {
     title: string

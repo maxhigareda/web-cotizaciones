@@ -24,7 +24,7 @@ export function middleware(request: NextRequest) {
     }
 
     // 3. Admin Only Route
-    if (path.startsWith('/admin') && authRole !== 'ADMIN') {
+    if (path.startsWith('/admin') && authRole?.toLowerCase() !== 'admin') {
         // Decide: Redirect to login or to dashboard (if user)? 
         // For security, maybe just login, or show 403 (but middleware can just redirect)
         // Let's redirect to login for simplicity or /quote if user
