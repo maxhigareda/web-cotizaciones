@@ -970,7 +970,7 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
             description: '',
             complexity: 'medium',
             updateFrequency: 'daily',
-            roles: Object.keys(FALLBACK_RATES).reduce((acc, key) => ({ ...acc, [key]: 0 }), {} as Record<RoleKey, number>),
+            roles: Object.keys(ROLE_CONFIG).reduce((acc, key) => ({ ...acc, [key]: 0 }), {} as Record<RoleKey, number>),
             pipelinesCount: 0,
             notebooksCount: 0,
             manualProcessPct: 0,
@@ -1805,8 +1805,8 @@ graph TD
                                                                 newProfiles.splice(idx, 1)
 
                                                                 // Decrement role counter
-                                                                const keyEntry = Object.entries(FALLBACK_RATES).find(([k, v]) => k.replace(/_/g, ' ') === profile.role)
-                                                                const roleKey = keyEntry ? keyEntry[0] : null
+                                                                const keyEntry = Object.entries(ROLE_CONFIG).find(([k, v]) => v.label === profile.role)
+                                                                const roleKey = keyEntry ? keyEntry[0] as RoleKey : null
 
                                                                 setState(prev => ({
                                                                     ...prev,
