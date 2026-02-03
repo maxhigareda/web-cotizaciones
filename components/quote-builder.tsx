@@ -24,6 +24,7 @@ import { ClientSelector, ClientData } from "@/components/client-selector"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 // Hardcoded fallback rates in case DB fails or during transition
+// Updated Q3 Rates based on User Request
 const FALLBACK_RATES = {
     data_analyst: 2500,
     data_science: 5100,
