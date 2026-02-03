@@ -40,6 +40,7 @@ export interface ClientData {
     companyName: string
     contactName?: string | null
     email?: string | null
+    clientLogoUrl?: string | null
 }
 
 interface ClientSelectorProps {

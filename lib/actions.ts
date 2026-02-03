@@ -310,11 +310,9 @@ export async function searchClients(query: string) {
                     }
                 } : {})
             },
-            // Global List: Show A-Z for better finding, or Created Desc if preferred?
-            // "Globalizar" implies access to everything. A-Z is standard for lists.
             orderBy: { companyName: 'asc' },
             // Removed 'take: 10' to show ALL clients as requested ("Consulta Global")
-            select: { id: true, companyName: true, contactName: true, email: true, status: true }
+            select: { id: true, companyName: true, contactName: true, email: true, status: true, clientLogoUrl: true }
         })
         return clients
     } catch (e) {
@@ -323,7 +321,7 @@ export async function searchClients(query: string) {
     }
 }
 
-export async function createClient(data: { companyName: string, contactName: string, email: string }) {
+export async function createClient(data: { companyName: string, contactName: string, email: string, clientLogoUrl?: string }) {
     const cookieStore = await cookies()
     const userId = cookieStore.get('session_user_id')?.value
 
@@ -337,6 +335,7 @@ export async function createClient(data: { companyName: string, contactName: str
                 companyName: data.companyName,
                 contactName: data.contactName,
                 email: data.email,
+                clientLogoUrl: data.clientLogoUrl,
                 status: 'PROSPECTO',
                 userId: userId // Link to Owner
             }
@@ -857,7 +856,7 @@ export async function updateQuoteStatus(quoteId: string, status: string) {
     }
 }
 
-export async function updateClient(clientId: string, data: { companyName: string, contactName: string, email: string }) {
+export async function updateClient(clientId: string, data: { companyName: string, contactName: string, email: string, clientLogoUrl?: string }) {
     const cookieStore = await cookies()
     const userId = cookieStore.get('session_user_id')?.value
 
@@ -871,7 +870,8 @@ export async function updateClient(clientId: string, data: { companyName: string
             data: {
                 companyName: data.companyName,
                 contactName: data.contactName,
-                email: data.email
+                email: data.email,
+                clientLogoUrl: data.clientLogoUrl
             }
         })
         return { success: true, client: updatedClient }

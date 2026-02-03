@@ -94,6 +94,7 @@ interface QuoteState {
         email: string
         areaLeader?: string
     }
+    clientLogoBase64?: string
 }
 
 export function downloadCSV(data: any[], filename: string) {
@@ -200,9 +201,35 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     }
 
     const drawFooter = () => {
-        const pageCount = doc.internal.pages.length - 1
+        const pageCount = (doc as any).internal.getNumberOfPages()
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i)
+
+            // 1. Client Logo (Bottom Right - Fixed Coordinate)
+            if (data.clientLogoBase64) {
+                try {
+                    const props = doc.getImageProperties(data.clientLogoBase64)
+                    const maxW = 15
+                    const maxH = 10
+                    let w = (props.width * maxH) / props.height
+                    let h = maxH
+
+                    if (w > maxW) {
+                        w = maxW
+                        h = (props.height * maxW) / props.width
+                    }
+
+                    // Security Coordinates: x: 185mm, y: 275mm
+                    // Adjusted for centering within the 15x10 area if smaller
+                    const logoX = 185 + (maxW - w) / 2
+                    const logoY = 275 + (maxH - h) / 2
+
+                    doc.addImage(data.clientLogoBase64, 'PNG', logoX, logoY, w, h)
+                } catch (e) {
+                    console.error("Error drawing client logo:", e)
+                }
+            }
+
             doc.setFontSize(7)
             doc.setFont(FONT_REG, "normal")
             doc.setTextColor(150)

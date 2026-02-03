@@ -78,6 +78,7 @@ interface QuoteState {
     description: string
     complexity: 'low' | 'medium' | 'high'
     updateFrequency: 'daily' | 'weekly' | 'monthly' | 'realtime'
+    clientLogoUrl?: string | null
 
     // 2. Team
     roles: Record<RoleKey, number>
@@ -190,6 +191,7 @@ const INITIAL_STATE: QuoteState = {
     description: '',
     complexity: 'medium',
     updateFrequency: 'daily',
+    clientLogoUrl: null,
     serviceType: 'Proyecto',
     roles: {
         bi_visualization_developer: 0,
@@ -1045,6 +1047,22 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
         setChartCode('graph LR\n  Start --> End') // Reset Diagram
     }
 
+    const imageUrlToBase64 = async (url: string): Promise<string> => {
+        try {
+            const response = await fetch(url)
+            const blob = await response.blob()
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader()
+                reader.onloadend = () => resolve(reader.result as string)
+                reader.onerror = reject
+                reader.readAsDataURL(blob)
+            })
+        } catch (e) {
+            console.error("Error converting image to base64:", e)
+            return ""
+        }
+    }
+
     const handleExport = async (type: 'pdf' | 'word') => {
         setIsExporting(true)
         setExportType(type)
@@ -1065,6 +1083,12 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
                 diagramDataUrl = canvas.toDataURL('image/png')
             }
 
+            // Capture Client Logo to Base64 (CORS Handling)
+            let clientLogoBase64 = undefined
+            if (state.clientLogoUrl) {
+                clientLogoBase64 = await imageUrlToBase64(state.clientLogoUrl)
+            }
+
             if (type === 'pdf') {
                 await exportToPDF({
                     ...state,
@@ -1080,7 +1104,8 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
                     grossTotal,
                     retentionAmount,
                     finalTotal,
-                    durationMonths: getDurationInMonths()
+                    durationMonths: getDurationInMonths(),
+                    clientLogoBase64
                 })
             } else {
                 await exportToWord({
@@ -1276,6 +1301,7 @@ graph TD
                                             clientId: client.id,
                                             isNewClient: isNew,
                                             newClientData: client,
+                                            clientLogoUrl: client.clientLogoUrl,
                                             // Auto-fill contact info if available
                                             clientContact: {
                                                 ...prev.clientContact,

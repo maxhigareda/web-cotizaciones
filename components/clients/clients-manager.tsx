@@ -40,7 +40,8 @@ export function ClientsManager({ initialClients }: { initialClients: any[] }) {
             id: client.id,
             companyName: client.companyName,
             contactName: client.contactName,
-            email: client.email
+            email: client.email,
+            clientLogoUrl: client.clientLogoUrl
         })
         setIsEditOpen(true)
     }
@@ -119,8 +120,12 @@ export function ClientsManager({ initialClients }: { initialClients: any[] }) {
                                 {initialClients.map((client) => (
                                     <TableRow key={client.id} className="border-[#333533] hover:bg-[#333533]/60 transition-colors group">
                                         <TableCell className="font-medium text-[#E8EDDF] py-6 pl-10 flex items-center gap-4">
-                                            <div className="p-3 rounded-xl bg-[#242423] text-[#CFDBD5] group-hover:text-[#F5CB5C] transition-colors shadow-sm">
-                                                <Building className="w-5 h-5" />
+                                            <div className="p-1 rounded-xl bg-[#242423] text-[#CFDBD5] group-hover:text-[#F5CB5C] transition-colors shadow-sm w-12 h-12 flex items-center justify-center overflow-hidden border border-[#333533]">
+                                                {client.clientLogoUrl ? (
+                                                    <img src={client.clientLogoUrl} alt={client.companyName} className="max-w-full max-h-full object-contain" />
+                                                ) : (
+                                                    <Building className="w-5 h-5" />
+                                                )}
                                             </div>
                                             <span className="text-lg tracking-tight">{client.companyName}</span>
                                         </TableCell>

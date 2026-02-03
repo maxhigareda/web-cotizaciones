@@ -120,8 +120,12 @@ export function QuoteDetailSheet({ quoteId, isOpen, onClose }: QuoteDetailSheetP
                                 <div className="space-y-4">
                                     <div className="text-[10px] font-bold text-[#004B8D] uppercase tracking-widest border-b border-[#333533] pb-1">Cotizado a:</div>
                                     <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-[#f0f5fa] rounded-xl text-[#004B8D]">
-                                            <Building2 className="w-6 h-6" />
+                                        <div className="p-3 bg-[#f0f5fa] rounded-xl text-[#004B8D] w-12 h-12 flex items-center justify-center overflow-hidden border border-[#BDC9D7]">
+                                            {details.clientLogoUrl ? (
+                                                <img src={details.clientLogoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
+                                            ) : (
+                                                <Building2 className="w-6 h-6" />
+                                            )}
                                         </div>
                                         <div>
                                             <div className="text-lg font-bold text-white leading-tight">{quote.clientName || 'Cliente Confidencial'}</div>

@@ -15,6 +15,7 @@ export interface ClientData {
     companyName: string
     contactName: string
     email: string
+    clientLogoUrl?: string
 }
 
 interface ClientFormModalProps {
@@ -32,7 +33,8 @@ export function ClientFormModal({ initialData, isOpen, onOpenChange, onClientSav
     const [formData, setFormData] = useState<ClientData>({
         companyName: '',
         contactName: '',
-        email: ''
+        email: '',
+        clientLogoUrl: ''
     })
 
     // Sync open state
@@ -51,11 +53,12 @@ export function ClientFormModal({ initialData, isOpen, onOpenChange, onClientSav
                     id: initialData.id,
                     companyName: initialData.companyName,
                     contactName: initialData.contactName || '',
-                    email: initialData.email || ''
+                    email: initialData.email || '',
+                    clientLogoUrl: initialData.clientLogoUrl || ''
                 })
             } else {
                 // Reset for Create Mode
-                setFormData({ companyName: '', contactName: '', email: '' })
+                setFormData({ companyName: '', contactName: '', email: '', clientLogoUrl: '' })
             }
         }
     }, [open, initialData])
@@ -142,6 +145,21 @@ export function ClientFormModal({ initialData, isOpen, onOpenChange, onClientSav
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="clientLogoUrl" className="text-[#CFDBD5]">URL del Logo (Opcional)</Label>
+                        <Input
+                            id="clientLogoUrl"
+                            placeholder="https://ejemplo.com/logo.png"
+                            className="bg-[#333533] border-transparent focus:border-[#F5CB5C] text-[#E8EDDF]"
+                            value={formData.clientLogoUrl}
+                            onChange={(e) => setFormData({ ...formData, clientLogoUrl: e.target.value })}
+                        />
+                        {formData.clientLogoUrl && (
+                            <div className="mt-2 p-2 bg-white/5 rounded-lg border border-dashed border-[#333533] flex justify-center">
+                                <img src={formData.clientLogoUrl} alt="Preview" className="h-8 object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                            </div>
+                        )}
                     </div>
                     <div className="pt-4 flex justify-end gap-2">
                         <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-[#CFDBD5] hover:text-[#E8EDDF] hover:bg-[#333533]">
