@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
+import { ServiceRate } from "@prisma/client"
 import { MermaidDiagram } from "@/components/mermaid-diagram"
 import { Wand2, Download, FileText, Check, ShieldAlert, Network, Cpu, Calculator, Save, Loader2, ClipboardList, Database, Users, Briefcase, Layers, AlertTriangle, Activity, Zap, Edit, X, RefreshCw, ImageDown, Sparkles, Undo2, ArrowRight, Plus, Minus, Trash2 } from "lucide-react"
 import { SenioritySelector } from "@/components/seniority-selector"
@@ -307,15 +308,6 @@ const SUSTAIN_TECH_OPTIONS = [
 
 // --- 2. COMPONENT ---
 
-// Match Prisma Model roughly
-type ServiceRate = {
-    id: string
-    service: string
-    frequency: string
-    complexity: string
-    basePrice: number
-    multiplier: number
-}
 
 export default function QuoteBuilder({ dbRates = [], initialData, readOnly = false }: { dbRates?: ServiceRate[], initialData?: any, readOnly?: boolean }) {
     const [state, setState] = useState<QuoteState>(JSON.parse(JSON.stringify(INITIAL_STATE)))
