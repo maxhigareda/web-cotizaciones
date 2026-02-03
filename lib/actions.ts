@@ -988,3 +988,17 @@ export async function reviewQuote(quoteId: string, status: 'APROBADA' | 'RECHAZA
         return { success: false, error: e.message }
     }
 }
+
+export async function getQuoteById(id: string) {
+    const cookieStore = await cookies()
+    const role = cookieStore.get('session_role')?.value
+    // Case insensitive check
+    if (role?.toLowerCase() !== 'admin') {
+        throw new Error('Unauthorized')
+    }
+
+    const quote = await prisma.quote.findUnique({
+        where: { id },
+    })
+    return quote
+}
