@@ -348,6 +348,175 @@ export async function createClient(data: { companyName: string, contactName: str
     }
 }
 
+// --- CLIENT LOGO MANAGEMENT ---
+
+export async function uploadClientLogo(formData: FormData, oldLogoUrl?: string) {
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('session_user_id')?.value
+
+    if (!userId) {
+        return { success: false, error: "Sesión expirada. Recarga la página." }
+    }
+
+    try {
+        const file = formData.get('file') as File
+        if (!file) {
+            return { success: false, error: "No se seleccionó ningún archivo" }
+        }
+
+        // Validate file type
+        const validTypes = ['image/png', 'image/jpeg', 'image/jpg']
+        if (!validTypes.includes(file.type)) {
+            return { success: false, error: "Formato inválido. Solo se permiten PNG y JPG." }
+        }
+
+        // Validate file size (2MB max)
+        const maxSize = 2 * 1024 * 1024 // 2MB in bytes
+        if (file.size > maxSize) {
+            return { success: false, error: "El archivo es demasiado grande. Máximo 2MB." }
+        }
+
+        // Create Supabase client
+        const { createClient } = await import('@supabase/supabase-js')
+        const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+        )
+
+        // Delete old logo if it exists and is from Supabase Storage
+        if (oldLogoUrl && oldLogoUrl.includes('supabase')) {
+            await deleteClientLogo(oldLogoUrl)
+        }
+
+        // Generate unique filename
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${userId}-${Date.now()}.${fileExt}`
+        const filePath = `client-logos/${fileName}`
+
+        // Convert File to ArrayBuffer
+        const arrayBuffer = await file.arrayBuffer()
+        const buffer = Buffer.from(arrayBuffer)
+
+        // Upload to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('client-logos')
+            .upload(filePath, buffer, {
+                contentType: file.type,
+                upsert: false
+            })
+
+        if (uploadError) {
+            console.error('Supabase upload error:', uploadError)
+            return { success: false, error: `Error al subir archivo: ${uploadError.message}` }
+        }
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+            .from('client-logos')
+            .getPublicUrl(filePath)
+
+        return { success: true, url: publicUrl }
+
+    } catch (e: any) {
+        console.error('Upload client logo failed:', e)
+        return { success: false, error: e.message || "Error al subir logo" }
+    }
+}
+
+export async function validateExternalLogoUrl(url: string) {
+    try {
+        // Basic URL validation
+        let parsedUrl: URL
+        try {
+            parsedUrl = new URL(url)
+        } catch {
+            return { success: false, error: "URL inválida", valid: false }
+        }
+
+        // Only allow http/https
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+            return { success: false, error: "Solo se permiten URLs HTTP/HTTPS", valid: false }
+        }
+
+        // Fetch headers to validate
+        const response = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(5000) })
+
+        if (!response.ok) {
+            return { success: false, error: `URL no accesible (${response.status})`, valid: false }
+        }
+
+        // Check content type
+        const contentType = response.headers.get('content-type')
+        if (!contentType || !contentType.startsWith('image/')) {
+            return { success: false, error: "La URL no apunta a una imagen", valid: false }
+        }
+
+        // Check content length if available
+        const contentLength = response.headers.get('content-length')
+        if (contentLength) {
+            const size = parseInt(contentLength)
+            const maxSize = 2 * 1024 * 1024 // 2MB
+            if (size > maxSize) {
+                return { success: false, error: "La imagen es demasiado grande (máx 2MB)", valid: false }
+            }
+        }
+
+        // URL is valid
+        return { success: true, valid: true, url: url }
+
+    } catch (e: any) {
+        console.error('URL validation failed:', e)
+        if (e.name === 'TimeoutError' || e.name === 'AbortError') {
+            return { success: false, error: "Timeout: La URL no responde", valid: false }
+        }
+        return { success: false, error: "No se pudo validar la URL", valid: false }
+    }
+}
+
+export async function deleteClientLogo(logoUrl: string) {
+    try {
+        // Check if URL is from Supabase Storage
+        if (!logoUrl || !logoUrl.includes('supabase')) {
+            return { success: true, message: "Not a Supabase Storage URL, skipping delete" }
+        }
+
+        // Extract file path from URL
+        // URL format: https://{project}.supabase.co/storage/v1/object/public/client-logos/{filename}
+        const urlParts = logoUrl.split('/client-logos/')
+        if (urlParts.length < 2) {
+            return { success: false, error: "Invalid Supabase Storage URL format" }
+        }
+
+        const fileName = urlParts[1]
+        const filePath = `client-logos/${fileName}`
+
+        // Create Supabase client
+        const { createClient } = await import('@supabase/supabase-js')
+        const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+        )
+
+        // Delete file
+        const { error } = await supabase.storage
+            .from('client-logos')
+            .remove([filePath])
+
+        if (error) {
+            console.error('Failed to delete logo:', error)
+            // Don't throw error, just log it (silent fail to not block updates)
+            return { success: false, error: error.message }
+        }
+
+        return { success: true }
+
+    } catch (e: any) {
+        console.error('Delete client logo error:', e)
+        // Silent fail - don't block client updates
+        return { success: false, error: e.message }
+    }
+}
+
 
 export async function saveQuote(data: {
     clientName: string,
@@ -862,6 +1031,21 @@ export async function updateClient(clientId: string, data: { companyName: string
     }
 
     try {
+        // Fetch existing client to check if logo changed
+        const existingClient = await prisma.client.findUnique({
+            where: { id: clientId },
+            select: { clientLogoUrl: true }
+        })
+
+        // If logo URL changed and old logo was from Supabase Storage, delete it
+        if (existingClient &&
+            existingClient.clientLogoUrl &&
+            data.clientLogoUrl !== existingClient.clientLogoUrl &&
+            existingClient.clientLogoUrl.includes('supabase')) {
+            // Delete old logo (silent fail - don't block update)
+            await deleteClientLogo(existingClient.clientLogoUrl)
+        }
+
         const updatedClient = await prisma.client.update({
             where: { id: clientId }, // Ownership check removed for globalization
             data: {
