@@ -163,9 +163,9 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     // --- Header & Footer ---
     const drawHeader = () => {
         // FIXED COORDINATES - Immune to text flow
-        const logoSI_Y = 10
-        const logoSI_X = margin
-        const siH = 7.0 // Reduced size for prolijidad
+        const logoClient_Y = 10
+        const logoClient_X = margin
+        const clientH = 7.0 // Client logo height
 
         const block_Y = 0
         const block_H = 24  // Reduced from 32 to 24 for minimalism
@@ -181,16 +181,16 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         doc.setTextColor(255)
         doc.text("COTIZACIÓN", pageWidth - margin, 16, { align: "right" })  // Adjusted Y from 21 to 16
 
-        // 3. logo SI (Fixed Position - Left)
-        if (LOGO_SI) {
+        // 3. CLIENT LOGO (Fixed Position - Top Left) - SWAPPED
+        if (data.clientLogoBase64) {
             try {
-                const props = doc.getImageProperties(LOGO_SI)
-                const w = (props.width * siH) / props.height
-                doc.addImage(LOGO_SI, 'PNG', logoSI_X, logoSI_Y, w, siH)
+                const props = doc.getImageProperties(data.clientLogoBase64)
+                const w = (props.width * clientH) / props.height
+                doc.addImage(data.clientLogoBase64, 'PNG', logoClient_X, logoClient_Y, w, clientH)
             } catch (e) {
                 doc.setFontSize(10)
                 doc.setTextColor(COLOR_PRIMARY)
-                doc.text("THE STORE INTELLIGENCE", logoSI_X, logoSI_Y + 5)
+                doc.text(data.clientName || "CLIENTE", logoClient_X, logoClient_Y + 5)
             }
         }
 
@@ -205,12 +205,12 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i)
 
-            // 1. Client Logo (Bottom Right - Fixed Coordinate) - INCREASED 20%
-            if (data.clientLogoBase64) {
+            // 1. SI LOGO (Bottom Right - Fixed Coordinate) - SWAPPED
+            if (LOGO_SI) {
                 try {
-                    const props = doc.getImageProperties(data.clientLogoBase64)
-                    const maxW = 18  // Increased from 15 to 18 (20% larger)
-                    const maxH = 12  // Increased from 10 to 12 (20% larger)
+                    const props = doc.getImageProperties(LOGO_SI)
+                    const maxW = 18  // Same size as before
+                    const maxH = 12
                     let w = (props.width * maxH) / props.height
                     let h = maxH
 
@@ -225,9 +225,9 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
                     const logoX = 182 + (maxW - w) / 2
                     const logoY = (pageHeight - 6) - h  // Bottom of logo aligns with text baseline
 
-                    doc.addImage(data.clientLogoBase64, 'PNG', logoX, logoY, w, h)
+                    doc.addImage(LOGO_SI, 'PNG', logoX, logoY, w, h)
                 } catch (e) {
-                    console.error("Error drawing client logo:", e)
+                    console.error("Error drawing SI logo:", e)
                 }
             }
 
@@ -398,29 +398,32 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         displayNet = displayGross - displayRetention
     }
 
-    const boxH = data.retention?.enabled ? 35 : 25
+    // Fit-to-content totals box - optimized sizing
+    const boxPadding = 5
+    const boxWidth = data.retention?.enabled ? 75 : 65  // Reduced from 90
+    const boxH = data.retention?.enabled ? 28 : 18  // Reduced from 35/25
     if (y + boxH > pageHeight - 30) { doc.addPage(); drawHeader(); y = 45; }
 
-    // Professional Dark Blue Box (instead of yellow)
+    // Professional Dark Blue Box (fit-to-content)
     doc.setFillColor(0, 75, 141) // #004B8D - Professional Blue
-    doc.rect(pageWidth - margin - 90, y, 90, boxH, 'F')
+    doc.rect(pageWidth - margin - boxWidth, y, boxWidth, boxH, 'F')
 
-    let ty = y + 7
+    let ty = y + 6  // Reduced from 7
     doc.setTextColor(255, 255, 255) // White text for contrast
-    doc.setFontSize(10)
-    doc.text("TOTAL ESTIMADO:", pageWidth - margin - 85, ty)
-    doc.text(fmt(displayGross), pageWidth - margin - 5, ty, { align: 'right' })
+    doc.setFontSize(9)  // Reduced from 10
+    doc.text("TOTAL ESTIMADO:", pageWidth - margin - boxWidth + boxPadding, ty)
+    doc.text(fmt(displayGross), pageWidth - margin - boxPadding, ty, { align: 'right' })
 
     if (data.retention?.enabled) {
-        ty += 8
-        doc.setTextColor(255, 255, 255) // Keep white text
-        doc.text(`Retención (${data.retention.percentage}%):`, pageWidth - margin - 85, ty)
-        doc.text(`- ${fmt(displayRetention)}`, pageWidth - margin - 5, ty, { align: 'right' })
-        ty += 10
-        doc.setFontSize(12)
-        doc.setTextColor(255, 255, 255) // Keep white text
-        doc.text("INVERSIÓN NETA:", pageWidth - margin - 85, ty)
-        doc.text(fmt(displayNet), pageWidth - margin - 5, ty, { align: 'right' })
+        ty += 7  // Reduced from 8
+        doc.setTextColor(255, 255, 255)
+        doc.text(`Retención (${data.retention.percentage}%):`, pageWidth - margin - boxWidth + boxPadding, ty)
+        doc.text(`- ${fmt(displayRetention)}`, pageWidth - margin - boxPadding, ty, { align: 'right' })
+        ty += 8  // Reduced from 10
+        doc.setFontSize(10)  // Reduced from 12
+        doc.setTextColor(255, 255, 255)
+        doc.text("INVERSIÓN NETA:", pageWidth - margin - boxWidth + boxPadding, ty)
+        doc.text(fmt(displayNet), pageWidth - margin - boxPadding, ty, { align: 'right' })
     }
     y += boxH + 15
 

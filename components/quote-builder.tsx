@@ -393,6 +393,7 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
     }, [])
 
     // --- Dynamic Diagram Logic (Sustain) ---
+    // JSON.stringify ensures React detects array content changes, not just reference changes
     useEffect(() => {
         if (state.serviceType !== 'Sustain' || manualDiagramCode) return
 

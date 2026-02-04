@@ -555,6 +555,17 @@ export async function saveQuote(data: {
     console.log("Saving quote for user:", userId)
 
     try {
+        // Generate incremental ID per client
+        let quoteNumber = "000001" // Default for first quote
+        if (data.clientId) {
+            // Count existing quotes for this client
+            const existingQuotesCount = await prisma.quote.count({
+                where: { linkedClientId: data.clientId }
+            })
+            // Increment and format with leading zeros
+            quoteNumber = String(existingQuotesCount + 1).padStart(6, '0')
+        }
+
         const result = await prisma.quote.create({
             data: {
                 clientName: data.clientName,
@@ -567,7 +578,8 @@ export async function saveQuote(data: {
                 userId: userId,
                 status: 'BORRADOR',
                 linkedClientId: data.clientId || undefined, // Link to DB Client
-                pdfSnapshot: data.pdfBase64 || null // Store Snapshot
+                pdfSnapshot: data.pdfBase64 || null, // Store Snapshot
+                quoteNumber: quoteNumber // NEW: Incremental ID per client
             } as any
         })
 
