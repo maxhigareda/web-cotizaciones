@@ -165,7 +165,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         // FIXED COORDINATES - Immune to text flow
         const logoClient_Y = 10
         const logoClient_X = margin
-        const clientH = 8.75 // Client logo height - INCREASED 25% (from 7.0 to 8.75)
+        const clientH = 8.75 // Client logo height - INCREASED 25% (from 7.0 to 8.75) - VERIFIED 2026-02-04
 
         const block_Y = 0
         const block_H = 24  // Reduced from 32 to 24 for minimalism
@@ -209,8 +209,8 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
             if (LOGO_SI) {
                 try {
                     const props = doc.getImageProperties(LOGO_SI)
-                    const maxW = 29  // Increased 20% from 24 to 29
-                    const maxH = 19  // Increased 20% from 16 to 19
+                    const maxW = 29  // Increased 20% from 24 to 29 - VERIFIED 2026-02-04
+                    const maxH = 19  // Increased 20% from 16 to 19 - VERIFIED 2026-02-04
                     let w = (props.width * maxH) / props.height
                     let h = maxH
 
