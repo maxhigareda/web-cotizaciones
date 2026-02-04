@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf'
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, BorderStyle, WidthType, ImageRun, ShadingType, AlignmentType, Header, Footer } from 'docx'
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, BorderStyle, WidthType, ImageRun, ShadingType, AlignmentType, Header, Footer, PageBreak } from 'docx'
 import { saveAs } from 'file-saver'
 import { LOGO_NESTLE, LOGO_SI } from './logos'
 
@@ -165,7 +165,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         // FIXED COORDINATES - Immune to text flow
         const logoClient_Y = 10
         const logoClient_X = margin
-        const clientH = 7.0 // Client logo height
+        const clientH = 8.75 // Client logo height - INCREASED 25% (from 7.0 to 8.75)
 
         const block_Y = 0
         const block_H = 24  // Reduced from 32 to 24 for minimalism
@@ -181,7 +181,7 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         doc.setTextColor(255)
         doc.text("COTIZACIÓN", pageWidth - margin, 16, { align: "right" })  // Adjusted Y from 21 to 16
 
-        // 3. CLIENT LOGO (Fixed Position - Top Left) - SWAPPED
+        // 3. CLIENT LOGO (Fixed Position - Top Left) - SWAPPED & ENLARGED 25%
         if (data.clientLogoBase64) {
             try {
                 const props = doc.getImageProperties(data.clientLogoBase64)
@@ -205,12 +205,12 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i)
 
-            // 1. SI LOGO (Bottom Right - Fixed Coordinate) - SWAPPED & ENLARGED
+            // 1. SI LOGO (Bottom Right - Fixed Coordinate) - SWAPPED & ENLARGED 20%
             if (LOGO_SI) {
                 try {
                     const props = doc.getImageProperties(LOGO_SI)
-                    const maxW = 24  // Increased from 18 to 24 (33% larger)
-                    const maxH = 16  // Increased from 12 to 16 (33% larger)
+                    const maxW = 29  // Increased 20% from 24 to 29
+                    const maxH = 19  // Increased 20% from 16 to 19
                     let w = (props.width * maxH) / props.height
                     let h = maxH
 
@@ -574,66 +574,184 @@ export async function generatePDFBlob(data: any) {
 
 export async function exportToWord(data: any) {
     // Safety Calcs (Direct Dashboard Sync)
-    // Use values EXACTLY as they are in the QuoteBuilder state
     const displayGross = data.grossTotal || data.finalTotal
     let displayRetention = data.retentionAmount || 0
     let displayNet = data.finalTotal
 
-    // Safety: If retention is enabled but amount is 0, calculate it on the fly from the Single Period/Total provided
     if (data.retention?.enabled && (displayRetention === 0 || !displayRetention)) {
         displayRetention = displayGross * (data.retention.percentage / 100)
         displayNet = displayGross - displayRetention
     }
 
+    const COLOR_PRIMARY = "004B8D" // Institutional Blue
+    const COLOR_TEXT = "333533"
+    const COLOR_GOLD = "F5CB5C"
+
+    // Helper to format currency
+    const fmt = (val: number) => `$${val.toLocaleString('en-US')}`
+
     const doc = new Document({
         sections: [{
-            properties: {},
+            properties: {
+                page: {
+                    margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } // 1 inch margins
+                }
+            },
             children: [
-                new Paragraph({ children: [new TextRun({ text: "Propuesta Técnica (Versión Editable)", bold: true, size: 48 })] }),
-                new Paragraph({ text: "Versión simplificada.", spacing: { after: 200 } }),
-                new Paragraph({ text: `Cliente: ${data.clientName}` }),
+                // === HEADER SECTION ===
+                // Client Logo (Top Left) - Inline (absolute positioning has docx library limitations)
+                ...(data.clientLogoBase64 ? [
+                    new Paragraph({
+                        children: [
+                            new ImageRun({
+                                data: data.clientLogoBase64,
+                                transformation: { width: 120, height: 40 } // 25% larger than before
+                            })
+                        ],
+                        alignment: AlignmentType.LEFT,
+                        spacing: { after: 200 }
+                    })
+                ] : []),
 
-                // Financial Summary
+                // "COTIZACIÓN" Header (Top Right)
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "COTIZACIÓN",
+                            bold: true,
+                            size: 44, // 22pt
+                            color: "FFFFFF"
+                        })
+                    ],
+                    alignment: AlignmentType.RIGHT,
+                    shading: { fill: COLOR_PRIMARY },
+                    spacing: { before: 200, after: 400 }
+                }),
+
+                // === CLIENT INFO SECTION ===
+                new Paragraph({
+                    children: [new TextRun({ text: "COTIZADO A:", bold: true, size: 20, color: COLOR_PRIMARY })],
+                    spacing: { before: 400, after: 200 }
+                }),
+                new Paragraph({ text: `Cliente: ${data.clientName}`, spacing: { after: 100 } }),
+                new Paragraph({ text: `Duración: ${data.durationMonths} meses`, spacing: { after: 100 } }),
+                new Paragraph({ text: `Tipo de Servicio: ${data.serviceType}`, spacing: { after: 300 } }),
+
+                // === INVESTMENT TABLE ===
+                new Paragraph({
+                    children: [new TextRun({ text: "DETALLE DE INVERSIÓN", bold: true, size: 20, color: COLOR_PRIMARY })],
+                    spacing: { before: 400, after: 200 }
+                }),
+
+                // Table with institutional blue header
+                new Table({
+                    rows: [
+                        // Header Row
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Concepto", bold: true, color: "FFFFFF" })] })],
+                                    shading: { fill: COLOR_PRIMARY }
+                                }),
+                                new TableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Mensual", bold: true, color: "FFFFFF" })] })],
+                                    shading: { fill: COLOR_PRIMARY }
+                                }),
+                                new TableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: "Total", bold: true, color: "FFFFFF" })] })],
+                                    shading: { fill: COLOR_PRIMARY }
+                                })
+                            ]
+                        }),
+                        // Data Rows - Staffing Profiles
+                        ...(data.staffingDetails?.profiles || []).filter((p: any) => (p.count || 0) > 0).map((p: any) => {
+                            const rate = p.price || p.cost || 0
+                            const monthlySub = rate * (p.allocationPercentage || 100) / 100 * p.count
+                            return new TableRow({
+                                children: [
+                                    new TableCell({ children: [new Paragraph(`${p.role} (${p.seniority || 'Ssr'})`)] }),
+                                    new TableCell({ children: [new Paragraph(fmt(monthlySub))] }),
+                                    new TableCell({ children: [new Paragraph(fmt(monthlySub * data.durationMonths))] })
+                                ]
+                            })
+                        })
+                    ],
+                    width: { size: 100, type: 'pct' }
+                }),
+
+                // === TOTALS BOX (Fit-to-content, Institutional Blue) ===
+                new Paragraph({ text: "", spacing: { after: 300 } }),
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: "TOTAL ESTIMADO: ", bold: true, size: 22, color: "FFFFFF" }),
+                        new TextRun({ text: fmt(displayGross), bold: true, size: 22, color: "FFFFFF" })
+                    ],
+                    alignment: AlignmentType.RIGHT,
+                    shading: { fill: COLOR_PRIMARY },
+                    spacing: { before: 200, after: 200 }
+                }),
+
                 ...(data.retention?.enabled ? [
                     new Paragraph({
                         children: [
-                            new TextRun({ text: "Subtotal: ", bold: true }),
-                            new TextRun({ text: `$${displayGross.toLocaleString()}` })
+                            new TextRun({ text: `Retención (${data.retention.percentage}%): `, bold: true, color: "FFFFFF" }),
+                            new TextRun({ text: `- ${fmt(displayRetention)}`, bold: true, color: "FFFFFF" })
                         ],
-                        alignment: AlignmentType.RIGHT
+                        alignment: AlignmentType.RIGHT,
+                        shading: { fill: COLOR_PRIMARY },
+                        spacing: { after: 200 }
                     }),
                     new Paragraph({
                         children: [
-                            new TextRun({ text: `Retención (${data.retention.percentage}%): `, bold: true }),
-                            new TextRun({ text: `-$${displayRetention.toLocaleString()}`, color: "DC3232", bold: true })
+                            new TextRun({ text: "INVERSIÓN NETA: ", bold: true, size: 24, color: "FFFFFF" }),
+                            new TextRun({ text: fmt(displayNet), bold: true, size: 24, color: "FFFFFF" })
                         ],
-                        alignment: AlignmentType.RIGHT
-                    }),
-                    new Paragraph({
-                        children: [
-                            new TextRun({ text: "Total Neto: ", bold: true, size: 28, color: "004B8D" }),
-                            new TextRun({ text: `$${displayNet.toLocaleString()}`, bold: true, size: 28, color: "004B8D" })
-                        ],
-                        spacing: { before: 100 },
-                        alignment: AlignmentType.RIGHT
-                    }),
-                ] : [
-                    new Paragraph({
-                        children: [
-                            new TextRun({ text: "Total: ", bold: true, size: 28, color: "004B8D" }),
-                            new TextRun({ text: `$${(data.finalTotal).toLocaleString()}`, bold: true, size: 28, color: "004B8D" })
-                        ],
-                        alignment: AlignmentType.RIGHT
-                    }),
-                ]),
+                        alignment: AlignmentType.RIGHT,
+                        shading: { fill: COLOR_PRIMARY },
+                        spacing: { after: 300 }
+                    })
+                ] : []),
 
-                // Spacing
-                new Paragraph({ text: "", spacing: { after: 400 } }),
+                // === ARCHITECTURE DIAGRAM (Centered Inline) ===
+                ...(data.diagramImage ? [
+                    new Paragraph({
+                        children: [new TextRun({ text: "ARQUITECTURA DE LA SOLUCIÓN", bold: true, size: 20, color: COLOR_PRIMARY })],
+                        spacing: { before: 600, after: 200 }
+                    }),
+                    new Paragraph({
+                        children: [
+                            new ImageRun({
+                                data: data.diagramImage,
+                                transformation: { width: 500, height: 300 }
+                            })
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 400 }
+                    })
+                ] : []),
 
-                // Terms and Conditions
+                // === AI SUMMARY (Centered) ===
+                ...(data.aiSummary ? [
+                    new Paragraph({ text: "", spacing: { after: 400 } }),
+                    new Paragraph({
+                        children: [new TextRun({ text: "RESUMEN EJECUTIVO", bold: true, size: 20, color: COLOR_PRIMARY })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { before: 400, after: 200 }
+                    }),
+                    new Paragraph({
+                        children: [new TextRun({ text: data.aiSummary, size: 22 })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 400 }
+                    })
+                ] : []),
+
+                // === PAGE BREAK ===
+                new Paragraph({ children: [new PageBreak()] }),
+
+                // === TERMS AND CONDITIONS (Single Column) ===
                 new Paragraph({
-                    children: [new TextRun({ text: "TÉRMINOS Y CONDICIONES", bold: true, color: "004B8D", size: 22 })], // Size 22 is approx 11pt
-                    spacing: { after: 200 }
+                    children: [new TextRun({ text: "TÉRMINOS Y CONDICIONES", bold: true, color: COLOR_PRIMARY, size: 24 })],
+                    spacing: { before: 400, after: 300 }
                 }),
                 ...[
                     "Propuesta Válida durante 30 días desde su emisión.",
@@ -645,13 +763,31 @@ export async function exportToWord(data: any) {
                     "Sprints de Pago acordados al inicio del proyecto.",
                     "Acuerdo de confidencialidad absoluto sobre datos compartidos."
                 ].map(term => new Paragraph({
-                    children: [new TextRun({ text: term, size: 18 })], // Size 18 is 9pt
-                    bullet: { level: 0 }
-                }))
+                    children: [new TextRun({ text: term, size: 20 })],
+                    bullet: { level: 0 },
+                    spacing: { after: 150 }
+                })),
+
+                // === FOOTER (SI Logo - Absolute Positioning) ===
+                new Paragraph({ text: "", spacing: { after: 800 } }),
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: "The Store Intelligence | Confidencial", size: 16, color: "999999" })
+                    ],
+                    alignment: AlignmentType.LEFT
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({ text: "Propuesta Comercial SI", size: 16, color: "999999" })
+                    ],
+                    alignment: AlignmentType.LEFT
+                })
             ]
         }]
     })
+
     Packer.toBlob(doc).then(blob => {
-        saveAs(blob, `cotizacion_${(data.clientName || 'proyecto')}.docx`)
+        saveAs(blob, `cotizacion_${(data.clientName || 'proyecto').replace(/\s+/g, '_')}.docx`)
+
     })
 }
