@@ -398,7 +398,7 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
 
         const code = generateSustainDiagram(state.sustainDetails.techStack)
         setChartCode(code)
-    }, [state.serviceType, state.sustainDetails.techStack, manualDiagramCode])
+    }, [state.serviceType, JSON.stringify(state.sustainDetails.techStack), manualDiagramCode])
 
     const convert = useCallback((amount: number) => {
         const rate = exchangeRates[currency] || 1.0
