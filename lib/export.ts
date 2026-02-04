@@ -205,12 +205,12 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i)
 
-            // 1. SI LOGO (Bottom Right - Fixed Coordinate) - SWAPPED
+            // 1. SI LOGO (Bottom Right - Fixed Coordinate) - SWAPPED & ENLARGED
             if (LOGO_SI) {
                 try {
                     const props = doc.getImageProperties(LOGO_SI)
-                    const maxW = 18  // Same size as before
-                    const maxH = 12
+                    const maxW = 24  // Increased from 18 to 24 (33% larger)
+                    const maxH = 16  // Increased from 12 to 16 (33% larger)
                     let w = (props.width * maxH) / props.height
                     let h = maxH
 
