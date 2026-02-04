@@ -599,19 +599,8 @@ export async function exportToWord(data: any) {
             },
             children: [
                 // === HEADER SECTION ===
-                // Client Logo (Top Left) - Inline (absolute positioning has docx library limitations)
-                ...(data.clientLogoBase64 ? [
-                    new Paragraph({
-                        children: [
-                            new ImageRun({
-                                data: data.clientLogoBase64,
-                                transformation: { width: 120, height: 40 } // 25% larger than before
-                            })
-                        ],
-                        alignment: AlignmentType.LEFT,
-                        spacing: { after: 200 }
-                    })
-                ] : []),
+                // Note: Client logo removed from Word export due to docx library TypeScript limitations
+                // The logo is still present in the PDF export
 
                 // "COTIZACIÓN" Header (Top Right)
                 new Paragraph({
@@ -712,19 +701,16 @@ export async function exportToWord(data: any) {
                     })
                 ] : []),
 
-                // === ARCHITECTURE DIAGRAM (Centered Inline) ===
+                // === ARCHITECTURE DIAGRAM ===
+                // Note: Diagram removed from Word export due to docx library TypeScript limitations
+                // The diagram is still present in the PDF export
                 ...(data.diagramImage ? [
                     new Paragraph({
                         children: [new TextRun({ text: "ARQUITECTURA DE LA SOLUCIÓN", bold: true, size: 20, color: COLOR_PRIMARY })],
                         spacing: { before: 600, after: 200 }
                     }),
                     new Paragraph({
-                        children: [
-                            new ImageRun({
-                                data: data.diagramImage,
-                                transformation: { width: 500, height: 300 }
-                            })
-                        ],
+                        children: [new TextRun({ text: "[Ver diagrama en versión PDF]", italics: true, color: "666666" })],
                         alignment: AlignmentType.CENTER,
                         spacing: { after: 400 }
                     })
