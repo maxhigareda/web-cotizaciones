@@ -49,7 +49,7 @@ export function ClientFormModal({ initialData, isOpen, onOpenChange, onClientSav
     const [validationError, setValidationError] = useState<string>('')
 
     const fileInputRef = useRef<HTMLInputElement>(null)
-    const urlDebounceRef = useRef<NodeJS.Timeout>()
+    const urlDebounceRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
     // Sync open state
     const isControlled = isOpen !== undefined
