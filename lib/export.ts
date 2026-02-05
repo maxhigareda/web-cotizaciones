@@ -574,6 +574,19 @@ export async function generatePDFBlob(data: any) {
     return doc.output('blob')
 }
 
+// Helper for Base64 Type Detection
+function getDataURLType(dataURL: string): 'png' | 'jpg' | 'gif' {
+    const match = dataURL.match(/^data:image\/(\w+);base64,/)
+    if (match) {
+        const type = match[1].toLowerCase()
+        if (type === 'jpg') return 'jpg'
+        if (type === 'jpeg') return 'jpg' // docx expects 'jpg'
+        if (type === 'png') return 'png'
+        if (type === 'gif') return 'gif'
+    }
+    return 'png'
+}
+
 // Helper for Base64
 function base64DataURLToUint8Array(dataURL: string): Uint8Array {
     if (!dataURL) return new Uint8Array(0)
@@ -611,10 +624,15 @@ export async function exportToWord(data: any) {
     // Helper to format currency
     const fmt = (val: number) => `$${val.toLocaleString('en-US')}`
 
-    // Prepare Images
+    // Prepare Images & Types
     const clientLogoData = data.clientLogoBase64 ? base64DataURLToUint8Array(data.clientLogoBase64) : null
+    const clientType = data.clientLogoBase64 ? getDataURLType(data.clientLogoBase64) : 'png'
+
     const siLogoData = LOGO_SI ? base64DataURLToUint8Array(LOGO_SI) : null
+    const siType = LOGO_SI ? getDataURLType(LOGO_SI) : 'png'
+
     const diagramData = data.diagramImage ? base64DataURLToUint8Array(data.diagramImage) : null
+    const diagramType = data.diagramImage ? getDataURLType(data.diagramImage) : 'png'
 
     const doc = new Document({
         sections: [{
@@ -633,17 +651,17 @@ export async function exportToWord(data: any) {
                                     new ImageRun({
                                         data: clientLogoData,
                                         transformation: { width: 120, height: 60 }, // +25% size approx
-                                        type: 'png', // REQUIRED
+                                        type: clientType,
                                         floating: {
                                             horizontalPosition: {
                                                 relative: HorizontalPositionRelativeFrom.PAGE,
-                                                align: HorizontalPositionAlign.LEFT,
-                                                offset: 1440 // Margin
+                                                // align: HorizontalPositionAlign.LEFT, // Removed to avoid conflict with offset
+                                                offset: 1440 // Margin (1 inch) absolute
                                             },
                                             verticalPosition: {
                                                 relative: VerticalPositionRelativeFrom.PAGE,
-                                                align: VerticalPositionAlign.TOP,
-                                                offset: 720 // 0.5 inch
+                                                // align: VerticalPositionAlign.TOP,
+                                                offset: 720 // 0.5 inch absolute
                                             },
                                             wrap: { type: TextWrappingType.TIGHT },
                                             behindDocument: false
@@ -671,19 +689,19 @@ export async function exportToWord(data: any) {
                                     new ImageRun({
                                         data: siLogoData,
                                         transformation: { width: 120, height: 40 },
-                                        type: 'png',
+                                        type: siType,
                                         floating: {
                                             horizontalPosition: {
-                                                relative: HorizontalPositionRelativeFrom.PAGE,
+                                                relative: HorizontalPositionRelativeFrom.MARGIN,
                                                 align: HorizontalPositionAlign.RIGHT,
-                                                offset: 1440
+                                                // offset: 0 // Removed unnecessary offset
                                             },
                                             verticalPosition: {
-                                                relative: VerticalPositionRelativeFrom.PAGE,
+                                                relative: VerticalPositionRelativeFrom.MARGIN,
                                                 align: VerticalPositionAlign.BOTTOM,
-                                                offset: 720
+                                                // offset: 0 // Removed necessary offset
                                             },
-                                            wrap: { type: TextWrappingType.NONE }, // Fix: Front
+                                            wrap: { type: TextWrappingType.NONE },
                                             behindDocument: false
                                         }
                                     })
@@ -834,7 +852,7 @@ export async function exportToWord(data: any) {
                             new ImageRun({
                                 data: diagramData,
                                 transformation: { width: 600, height: 400 }, // Scaled
-                                type: 'png' // REQUIRED
+                                type: diagramType // REQUIRED
                             })
                         ],
                         alignment: AlignmentType.CENTER
