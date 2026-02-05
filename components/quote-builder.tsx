@@ -301,6 +301,28 @@ const SUSTAIN_TECH_OPTIONS = [
 // --- 2. COMPONENT ---
 
 
+
+const DEFAULT_DIAGRAM = `graph TD
+    %% Graphite Theme
+    classDef default fill:#242423,stroke:#CFDBD5,stroke-width:2px,color:#E8EDDF;
+    classDef highlight fill:#242423,stroke:#F5CB5C,stroke-width:2px,color:#F5CB5C;
+    linkStyle default stroke:#CFDBD5,stroke-width:2px;
+    
+    Source[Fuentes]
+    Pipe[Ingesta]
+    Store[Lakehouse]
+    Vis[Power BI]
+    User((Usuario))
+    
+    Source --> Pipe
+    Pipe --> Store
+    Store --> Vis
+    Vis --> User
+    
+    class Source,User default
+    class Pipe,Store,Vis highlight
+`
+
 export default function QuoteBuilder({ dbRates = [], initialData, readOnly = false }: { dbRates?: ServiceRate[], initialData?: any, readOnly?: boolean }) {
     const [state, setState] = useState<QuoteState>(JSON.parse(JSON.stringify(INITIAL_STATE)))
 
@@ -348,7 +370,7 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
     }, [initialData, readOnly])
 
     // ... existing state ... : 
-    const [chartCode, setChartCode] = useState('')
+    const [chartCode, setChartCode] = useState(DEFAULT_DIAGRAM)
     const [manualDiagramCode, setManualDiagramCode] = useState<string | null>(null)
     const [isEditingDiagram, setIsEditingDiagram] = useState(false)
     const [tempDiagramCode, setTempDiagramCode] = useState('')
