@@ -575,7 +575,7 @@ export async function saveQuote(data: {
                 estimatedCost: data.estimatedCost !== undefined ? data.estimatedCost : data.breakdown.totalMonthlyCost, // Use override or breakdown
                 staffingRequirements: JSON.stringify(data.breakdown.roles),
                 diagramDefinition: data.breakdown.diagramCode,
-                userId: userId,
+                user: { connect: { id: userId } },
                 status: 'BORRADOR',
                 linkedClientId: data.clientId || undefined, // Link to DB Client
                 pdfSnapshot: data.pdfBase64 || null, // Store Snapshot
