@@ -1014,6 +1014,11 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
                 }
             }
 
+            // Update local state to show the new ID immediately
+            if (result.quote && result.quote.quoteNumber) {
+                updateState('quoteNumber', result.quote.quoteNumber)
+            }
+
             toast.success("Cotización guardada exitosamente.")
 
             // Redirect to Dashboard (Mis Cotizaciones) after 1s delay
@@ -1352,13 +1357,19 @@ graph TD
                         <Button variant="ghost" className="text-[#CFDBD5] hover:text-[#E8EDDF]" onClick={() => setWizardStep(0)}>
                             <ArrowRight className="w-6 h-6 rotate-180" />
                         </Button>
-                        <div>
+                        <div className="flex-1">
                             <h1 className="text-3xl lg:text-5xl font-black text-[#E8EDDF] tracking-tighter mb-1">
                                 {state.serviceType === 'Staffing' ? 'Levantamiento de Perfiles' :
                                     state.serviceType === 'Sustain' ? 'Levantamiento de Servicio' :
                                         'Arquitectura de Proyecto'}
                             </h1>
                             <p className="text-[#F5CB5C] font-bold text-lg uppercase tracking-widest">{state.serviceType}</p>
+                        </div>
+                        <div className="text-right">
+                            <div className="text-xs text-[#CFDBD5] uppercase tracking-wider mb-1">ID Cotización</div>
+                            <div className="text-3xl font-bold text-[#F5CB5C] font-mono tracking-widest">
+                                {state.quoteNumber ? state.quoteNumber.toString().padStart(6, '0') : '[PENDIENTE]'}
+                            </div>
                         </div>
                     </div>
 

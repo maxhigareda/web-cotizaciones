@@ -182,6 +182,13 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
         doc.setTextColor(255)
         doc.text("COTIZACIÓN", pageWidth - margin, 16, { align: "right" })  // Adjusted Y from 21 to 16
 
+        // Quote Number
+        if (data.quoteNumber) {
+            doc.setFontSize(10)
+            doc.setFont(FONT_REG, "normal")
+            doc.text(`#${data.quoteNumber.toString().padStart(6, '0')}`, pageWidth - margin, 21, { align: "right" })
+        }
+
         // 3. CLIENT LOGO (Fixed Position - Top Left) - SWAPPED & ENLARGED 25%
         if (data.clientLogoBase64) {
             try {
@@ -734,7 +741,7 @@ export async function exportToWord(data: any) {
                     spacing: { before: 400, after: 200 }
                 }),
                 new Paragraph({ children: [new TextRun({ text: `Cliente: ${data.clientName}` })], spacing: { after: 100 } }),
-                new Paragraph({ children: [new TextRun({ text: `Referencia Global: ${data.quoteNumber ? data.quoteNumber.toString().padStart(6, '0') : '[NUEVO]'}` })], spacing: { after: 100 }, style: "Heading2" }), // ID
+                new Paragraph({ children: [new TextRun({ text: `Referencia Global: ${data.quoteNumber ? data.quoteNumber.toString().padStart(6, '0') : '[PENDIENTE]'}` })], spacing: { after: 100 }, style: "Heading2" }), // ID
                 new Paragraph({ children: [new TextRun({ text: `Duración: ${data.durationMonths} meses` })], spacing: { after: 100 } }),
                 new Paragraph({ children: [new TextRun({ text: `Tipo de Servicio: ${data.serviceType}` })], spacing: { after: 300 } }),
 
