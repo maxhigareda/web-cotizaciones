@@ -848,7 +848,15 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
                         backgroundColor: '#ffffff',
                         scale: 3,
                         useCORS: true,
-                        logging: false
+                        logging: false,
+                        onclone: (clonedDoc) => {
+                            const clonedEl = clonedDoc.getElementById('diagram-capture-target')
+                            if (clonedEl) {
+                                // Force Hex to avoid Tailwind 4 'lab' color crash
+                                clonedEl.style.backgroundColor = '#ffffff'
+                                clonedEl.style.borderColor = '#CFDBD5'
+                            }
+                        }
                     })
                     diagramDataUrl = canvas.toDataURL('image/png')
                 }
@@ -1118,13 +1126,25 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
                 // Critical Wait for Mermaid Render (Ensuring all nodes are present)
                 await new Promise(resolve => setTimeout(resolve, 1500))
 
-                const canvas = await html2canvas(element, {
-                    backgroundColor: '#ffffff',
-                    scale: 3,
-                    useCORS: true,
-                    logging: false
-                })
-                diagramDataUrl = canvas.toDataURL('image/png')
+                try {
+                    const canvas = await html2canvas(element, {
+                        backgroundColor: '#ffffff',
+                        scale: 3,
+                        useCORS: true,
+                        logging: false,
+                        onclone: (clonedDoc) => {
+                            const clonedEl = clonedDoc.getElementById('diagram-capture-target')
+                            if (clonedEl) {
+                                // Force Hex to avoid Tailwind 4 'lab' color crash
+                                clonedEl.style.backgroundColor = '#ffffff'
+                                clonedEl.style.borderColor = '#CFDBD5'
+                            }
+                        }
+                    })
+                    diagramDataUrl = canvas.toDataURL('image/png')
+                } catch (err) {
+                    console.warn("Diagram capture failed (likely CSS lab() mismatch), proceeding without image.", err);
+                }
             }
 
             // Capture Client Logo to Base64 (CORS Handling)
