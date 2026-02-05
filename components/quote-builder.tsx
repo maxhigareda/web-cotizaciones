@@ -392,16 +392,7 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
 
     }, [])
 
-    // --- Dynamic Diagram Logic (Sustain) ---
-    // JSON.stringify ensures React detects array content changes, not just reference changes
-    useEffect(() => {
-        if (state.serviceType !== 'Sustain') return
-        if (manualDiagramCode) return
 
-        const stack = state.sustainDetails?.techStack || []
-        const code = generateSustainDiagram(Array.isArray(stack) ? stack : [])
-        setChartCode(code)
-    }, [state.serviceType, JSON.stringify(state.sustainDetails?.techStack), manualDiagramCode])
 
     const convert = useCallback((amount: number) => {
         const rate = exchangeRates[currency] || 1.0
@@ -1137,7 +1128,18 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
     }
 
     useEffect(() => {
-        if (state.serviceType === 'Sustain') return
+        // Unified Diagram Logic - Runs on any state change to ensure immediate feedback
+        if (manualDiagramCode !== null) return
+
+        // 1. SUSTAIN LOGIC
+        if (state.serviceType === 'Sustain') {
+            const stack = state.sustainDetails?.techStack || []
+            const code = generateSustainDiagram(Array.isArray(stack) ? stack : [])
+            setChartCode(code)
+            return
+        }
+
+        // 2. PROJECT / STAFFING LOGIC (Generic)
         const { techStack, dsModelsCount } = state
         let nodes = `
     Source[Fuentes]
