@@ -263,8 +263,8 @@ function createPDFDocument(data: QuoteState & { totalMonthlyCost: number, l2Supp
     doc.setFont(FONT_REG, "normal")
     doc.setTextColor(COLOR_TEXT)
     doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, rightX, y)
-    const idStr = data.quoteNumber ? data.quoteNumber.toString().padStart(6, '0') : "BORRADOR"
-    doc.text(`ID: SI-${idStr}`, pageWidth - margin, y, { align: 'right' })
+    const idStr = data.quoteNumber ? data.quoteNumber.toString().padStart(6, '0') : "000000"
+    doc.text(`ID: ${idStr}`, pageWidth - margin, y, { align: 'right' })
 
     y += 5
     if (data.clientContact?.name) {
@@ -680,7 +680,7 @@ export async function exportToWord(data: any) {
                             children: [
                                 // Confidentiality Text
                                 new TextRun({
-                                    text: `Confidencial - Propiedad de Store Intelligence - ID Referencia: ${data.quoteNumber || 'BORRADOR'}`,
+                                    text: `Confidencial - Propiedad de Store Intelligence - ID Referencia: ${data.quoteNumber ? data.quoteNumber.toString().padStart(6, '0') : '[NUEVO]'}`,
                                     size: 16,
                                     color: "999999"
                                 }),
@@ -734,7 +734,7 @@ export async function exportToWord(data: any) {
                     spacing: { before: 400, after: 200 }
                 }),
                 new Paragraph({ children: [new TextRun({ text: `Cliente: ${data.clientName}` })], spacing: { after: 100 } }),
-                new Paragraph({ children: [new TextRun({ text: `Referencia Global: ${data.quoteNumber || 'N/A'}` })], spacing: { after: 100 }, style: "Heading2" }), // ID
+                new Paragraph({ children: [new TextRun({ text: `Referencia Global: ${data.quoteNumber ? data.quoteNumber.toString().padStart(6, '0') : '[NUEVO]'}` })], spacing: { after: 100 }, style: "Heading2" }), // ID
                 new Paragraph({ children: [new TextRun({ text: `Duración: ${data.durationMonths} meses` })], spacing: { after: 100 } }),
                 new Paragraph({ children: [new TextRun({ text: `Tipo de Servicio: ${data.serviceType}` })], spacing: { after: 300 } }),
 

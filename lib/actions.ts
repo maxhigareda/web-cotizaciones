@@ -207,7 +207,7 @@ export async function sendQuoteToN8N(quoteData: any, pdfBase64: string, filename
             userName: userName, // Optional but good to have
             clientName: quoteData.clientName,
             serviceType: quoteData.serviceType,
-            status: quoteData.status || "BORRADOR",
+            status: quoteData.status || "NUEVA",
             totalCost: Number(quoteData.estimatedCost || 0).toFixed(2), // Ensure 2 decimals
             currency: currency, // GLOBAL CURRENCY
             exchangeRate: exchangeRate,
@@ -567,7 +567,7 @@ export async function saveQuote(data: {
                 staffingRequirements: JSON.stringify(data.breakdown.roles),
                 diagramDefinition: data.breakdown.diagramCode,
                 user: { connect: { id: userId } },
-                status: 'BORRADOR',
+                status: 'NUEVA',
                 client: data.clientId ? { connect: { id: data.clientId } } : undefined, // Link to DB Client
                 pdfSnapshot: data.pdfBase64 || null, // Store Snapshot
 
@@ -650,7 +650,10 @@ export async function updateQuote(id: string, data: {
                 // Update linked client only if explicitly changed? 
                 // Mostly we just update the quote content.
                 client: data.clientId ? { connect: { id: data.clientId } } : undefined,
-                pdfSnapshot: data.pdfBase64 || undefined // NEW: Snapshot
+                pdfSnapshot: data.pdfBase64 || undefined, // NEW: Snapshot
+                // Preserve quoteNumber if passed in technicalParameters but Prisma handles it.
+                // However, we want to make sure we don't accidentally try to "create" a new one if it's an update.
+                // Prisma autoincrement doesn't change on update.
             } as any
         })
 
@@ -817,15 +820,15 @@ export async function getAdminStats() {
         const conversionRate = totalQuotes > 0 ? Math.round((approvedCount / totalQuotes) * 100) : 0
 
         // Status Distribution - Explicit Counts for Robustness
-        const borradorCount = await prisma.quote.count({ where: { status: 'BORRADOR' } })
+        const nuevaCount = await prisma.quote.count({ where: { status: 'NUEVA' } })
         const enviadaCount = await prisma.quote.count({ where: { status: 'ENVIADA' } })
         const aprobadaCount = await prisma.quote.count({ where: { status: 'APROBADA' } })
         const rechazadaCount = await prisma.quote.count({ where: { status: 'RECHAZADA' } })
 
-        console.log("Status Counts:", { borradorCount, enviadaCount, aprobadaCount, rechazadaCount }) // DEBUG
+        console.log("Status Counts:", { nuevaCount, enviadaCount, aprobadaCount, rechazadaCount }) // DEBUG
 
         const statusCounts: Record<string, number> = {
-            'BORRADOR': borradorCount,
+            'NUEVA': nuevaCount,
             'ENVIADA': enviadaCount,
             'APROBADA': aprobadaCount,
             'RECHAZADA': rechazadaCount

@@ -49,7 +49,7 @@ interface AdminOverviewProps {
 
 export function AdminOverview({ stats }: AdminOverviewProps) {
     // Calculate distribution for chart directly from props (No State)
-    const statusCounts = stats.statusCounts || { 'BORRADOR': 0, 'ENVIADA': 0, 'APROBADA': 0, 'RECHAZADA': 0 }
+    const statusCounts = stats.statusCounts || { 'NUEVA': 0, 'ENVIADA': 0, 'APROBADA': 0, 'RECHAZADA': 0 }
     const totalQuotes = Object.values(statusCounts).reduce((a, b) => a + (b as number), 0) || 1
 
     const getStatusColor = (status: string) => {

@@ -50,7 +50,7 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
     const [isEditingDiagram, setIsEditingDiagram] = useState(false)
     const [editedDiagramCode, setEditedDiagramCode] = useState(quote.diagramDefinition || '')
     const [isSavingDiagram, setIsSavingDiagram] = useState(false)
-    const [status, setStatus] = useState(quote.status || 'BORRADOR')
+    const [status, setStatus] = useState(quote.status || 'NUEVA')
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
 
     // AI Assistant State
@@ -88,11 +88,11 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
         } catch (e) {
             console.error(e)
             // Revert on error
-            setStatus(quote.status || 'BORRADOR')
+            setStatus(quote.status || 'NUEVA')
             alert("Error al actualizar estado")
             // Revert parent too
             if (onQuoteUpdated) {
-                onQuoteUpdated({ ...quote, status: quote.status || 'BORRADOR' })
+                onQuoteUpdated({ ...quote, status: quote.status || 'NUEVA' })
             }
         } finally {
             setIsUpdatingStatus(false)
@@ -141,7 +141,7 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="bg-[#1F1F1F] border-[#2D2D2D] text-[#E8EDDF]">
-                                    <SelectItem value="BORRADOR">Borrador</SelectItem>
+                                    <SelectItem value="NUEVA">Nueva</SelectItem>
                                     <SelectItem value="ENVIADA">Enviada</SelectItem>
                                     <SelectItem value="APROBADA">Aprobada</SelectItem>
                                     <SelectItem value="RECHAZADA">Rechazada</SelectItem>

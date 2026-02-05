@@ -16,7 +16,7 @@ const getStatusStyles = (status: string) => {
         case 'ENVIADA': return "bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20"
         case 'APROBADA': return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20"
         case 'RECHAZADA': return "bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20"
-        default: return "bg-slate-500/10 text-slate-400 border-slate-500/30 hover:bg-slate-500/20" // BORRADOR
+        default: return "bg-slate-500/10 text-slate-400 border-slate-500/30 hover:bg-slate-500/20" // NUEVA
     }
 }
 
@@ -25,7 +25,7 @@ const getStatusTooltip = (status: string) => {
         case 'ENVIADA': return "Enviada al cliente, esperando respuesta."
         case 'APROBADA': return "Cliente aceptó la propuesta. ¡Éxito!"
         case 'RECHAZADA': return "Esta cotización no fue aceptada por el cliente."
-        default: return "Cotización en progreso, no visible para el cliente." // BORRADOR
+        default: return "Cotización en progreso, no visible para el cliente." // NUEVA
     }
 }
 
@@ -202,7 +202,7 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
                                     {/* Mobile Only Status Badge (Top Right) */}
                                     <div className="md:hidden">
                                         <Badge variant="outline" className={`${getStatusStyles(quote.status)} text-[10px] px-2 h-5 flex items-center gap-1`}>
-                                            {(quote.status || 'BORRADOR')}
+                                            {(quote.status || 'NUEVA')}
                                             {quote.status === 'RECHAZADA' && quote.adminComment && (
                                                 <div className="relative group p-0.5" onClick={(e) => {
                                                     // On mobile, maybe click to toggle? For now simple hover/active
@@ -226,7 +226,7 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
                                         </Badge>
                                         {/* Status Badge (Desktop) */}
                                         <Badge variant="outline" className={`hidden md:inline-flex ${getStatusStyles(quote.status)} text-[10px] px-2 h-5 flex items-center gap-1`}>
-                                            {(quote.status || 'BORRADOR')}
+                                            {(quote.status || 'NUEVA')}
                                             {quote.status === 'RECHAZADA' && quote.adminComment && (
                                                 <div className="relative group p-0.5">
                                                     <Activity className="w-3 h-3 text-red-400 cursor-help" />
@@ -288,7 +288,7 @@ export function DashboardQuotesList({ serverQuotes = [] }: { serverQuotes?: any[
                                                     quote={{
                                                         ...quote,
                                                         estimatedCost: Number(quote.estimatedCost) || 0,
-                                                        status: quote.status || 'BORRADOR'
+                                                        status: quote.status || 'NUEVA'
                                                     }}
                                                     onQuoteUpdated={(updated) => {
                                                         const newQuotes = mergedQuotes.map(q => q.id === updated.id ? { ...q, status: updated.status } : q)

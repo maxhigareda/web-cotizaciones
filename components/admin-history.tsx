@@ -176,10 +176,10 @@ export function AdminHistory({ quotes: serverQuotes, consultants: serverConsulta
             }
 
             return {
-                ID: q.id,
+                ID: q.quoteNumber ? q.quoteNumber.toString().padStart(6, '0') : '[NUEVA]',
                 Cliente: q.clientName,
                 Tipo: q.serviceType || 'Proyecto',
-                Estado: q.status || 'BORRADOR',
+                Estado: q.status || 'NUEVA',
                 Proyecto: q.projectType,
                 Fecha: q.createdAt ? format(new Date(q.createdAt), 'dd/MM/yyyy HH:mm') : '-',
                 Costo_Estimado: q.estimatedCost,
@@ -429,7 +429,7 @@ export function AdminHistory({ quotes: serverQuotes, consultants: serverConsulta
                                         {/* Status */}
                                         <TableCell className="text-[#CFDBD5] py-5">
                                             <Badge variant="outline" className={`${getStatusStyles(quote.status)} text-[10px] px-2 h-5`}>
-                                                {(quote.status || 'BORRADOR').toUpperCase()}
+                                                {(quote.status || 'NUEVA').toUpperCase()}
                                             </Badge>
                                         </TableCell>
 
