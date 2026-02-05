@@ -1135,6 +1135,7 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
     }
 
     useEffect(() => {
+        if (state.serviceType === 'Sustain') return
         const { techStack, dsModelsCount } = state
         let nodes = `
     Source[Fuentes]
@@ -2480,15 +2481,11 @@ graph TD
 // --- HELPERS ---
 
 function generateSustainDiagram(stack: string[]): string {
-    const hasSource = stack.includes('sql') || stack.includes('snowflake') || stack.includes('other')
-    const hasIngest = stack.includes('azure_df') || stack.includes('python') || stack.includes('databricks')
-    const hasProcess = stack.includes('datascience') || stack.includes('dotnet')
-    const hasViz = stack.includes('powerbi') || stack.includes('streamlit') || stack.includes('react')
-
-    let code = `graph LR
+    let code = `graph TD
     %% Styles
     classDef dark fill:#242423,stroke:#F5CB5C,stroke-width:2px,color:#E8EDDF,rx:5,ry:5;
     classDef gold fill:#F5CB5C,stroke:#F5CB5C,stroke-width:2px,color:#242423,rx:5,ry:5,font-weight:bold;
+    linkStyle default stroke:#CFDBD5,stroke-width:2px;
 
     Fuentes[Fuentes]:::dark
     Ingesta[Ingesta]:::gold
@@ -2500,53 +2497,35 @@ function generateSustainDiagram(stack: string[]): string {
     Ingesta --> Lakehouse
     Lakehouse --> PowerBI
     PowerBI --> Usuario
-
 `
 
-    // SOURCES
-    if (hasSource) {
-        code += `    subgraph Sources [FUENTES]\n`
-        code += `      direction TB\n`
-        if (stack.includes('sql')) code += `      src1[SQL Server]:::dark\n`
-        if (stack.includes('snowflake')) code += `      src2[Snowflake]:::dark\n`
-        if (stack.includes('other')) code += `      src3[Otros Sistemas]:::dark\n`
-        code += `    end\n`
-    }
+    // Tech Stack Overlay
+    if (stack.length > 0) {
+        code += `\n    subgraph TechStack [Stack Tecnológico]`
+        code += `\n    direction TB`
 
-    // INGESTION / PROCESSING
-    if (hasIngest || hasProcess) {
-        code += `    subgraph Platform [INGESTA & PROCESO]\n`
-        code += `      direction TB\n`
-        if (stack.includes('azure_df')) code += `      ing1[Azure Data Factory]:::dark\n`
-        if (stack.includes('python')) code += `      ing2[Python Scripts]:::dark\n`
-        if (stack.includes('databricks')) code += `      ing3[Databricks]:::dark\n`
+        const chunkSize = 4
+        for (let i = 0; i < stack.length; i += chunkSize) {
+            const chunk = stack.slice(i, i + chunkSize)
+            const rowId = `Row${i}`
+            code += `\n    subgraph ${rowId} [ ]` // invisible
+            code += `\n    direction LR`
 
-        if (stack.includes('datascience')) code += `      proc2[Modelos ML]:::dark\n`
-        if (stack.includes('dotnet')) code += `      proc3[.NET Core]:::dark\n`
+            chunk.forEach(t => {
+                // Try to resolve name from options if available
+                const option = (typeof SUSTAIN_TECH_OPTIONS !== 'undefined' ? SUSTAIN_TECH_OPTIONS : []).find((o: any) => o.id === t)
+                const name = option ? option.name : t
+                const cleanId = `Tech${t.replace(/[^a-zA-Z0-9]/g, '')}`
+                code += `\n        ${cleanId}[${name}]:::dark`
+                code += `\n        style ${cleanId} stroke-dasharray: 5 5`
+            })
+            code += `\n    end`
+            code += `\n    style ${rowId} fill:none,stroke:none`
+        }
+        code += `\n    end`
 
-        // Internal Links
-        if (stack.includes('azure_df') && stack.includes('databricks')) code += `      ing1 --> ing3\n`
-        code += `    end\n`
-    }
-
-    // CONSUMPTION
-    if (hasViz) {
-        code += `    subgraph Usage [CONSUMO]\n`
-        code += `      direction TB\n`
-        if (stack.includes('powerbi')) code += `      viz1[Power BI]:::dark\n`
-        if (stack.includes('streamlit')) code += `      viz2[Streamlit]:::dark\n`
-        if (stack.includes('react')) code += `      viz3[React App]:::dark\n`
-        code += `    end\n`
-    }
-
-    // LINKS (Edges)
-    if (hasSource && (hasIngest || hasProcess)) {
-        code += `    Sources --> Platform\n`
-    }
-    if ((hasIngest || hasProcess) && hasViz) {
-        code += `    Platform --> Usage\n`
-    } else if (hasSource && hasViz && !hasIngest && !hasProcess) {
-        code += `    Sources --> Usage\n`
+        // Link Stack to Lakehouse
+        code += `\n    TechStack -.- Lakehouse`
     }
 
     return code
