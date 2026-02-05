@@ -389,17 +389,19 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
             }
         }
         fetchRates()
-        fetchRates()
+
     }, [])
 
     // --- Dynamic Diagram Logic (Sustain) ---
     // JSON.stringify ensures React detects array content changes, not just reference changes
     useEffect(() => {
-        if (state.serviceType !== 'Sustain' || manualDiagramCode) return
+        if (state.serviceType !== 'Sustain') return
+        if (manualDiagramCode) return
 
-        const code = generateSustainDiagram(state.sustainDetails.techStack)
+        const stack = state.sustainDetails?.techStack || []
+        const code = generateSustainDiagram(Array.isArray(stack) ? stack : [])
         setChartCode(code)
-    }, [state.serviceType, JSON.stringify(state.sustainDetails.techStack), manualDiagramCode])
+    }, [state.serviceType, JSON.stringify(state.sustainDetails?.techStack), manualDiagramCode])
 
     const convert = useCallback((amount: number) => {
         const rate = exchangeRates[currency] || 1.0
