@@ -957,7 +957,7 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
                     contact: state.newClientData.contactName || '',
                     email: state.newClientData.email || ''
                 } : undefined,
-                pdfBase64: pdfBase64 || null
+                pdfBase64: pdfBase64 || undefined // PASSING THE SNAPSHOT
             }
 
             if (initialData && initialData.id) {
