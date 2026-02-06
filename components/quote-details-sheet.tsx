@@ -127,24 +127,48 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                 </Button>
             </SheetTrigger>
             <SheetContent className="bg-[#171717] border-l-[#2D2D2D] w-[400px] sm:w-[600px] md:w-[800px] overflow-y-auto overflow-x-hidden">
-                <SheetHeader className="mb-8 space-y-4">
-                    <div className="flex items-end justify-between">
-                        <div>
-                            <SheetTitle className="text-2xl font-black text-[#E8EDDF]">Detalle de Cotización</SheetTitle>
-                            <SheetDescription className="text-[#CFDBD5] text-base">
-                                Información completa del proyecto y parámetros.
+                <SheetHeader className="mb-8 border-b border-[#2D2D2D] pb-6">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+                        <div className="space-y-1.5 pt-1">
+                            <SheetTitle className="text-3xl font-black text-[#E8EDDF] tracking-tight">
+                                Detalle de Cotización
+                            </SheetTitle>
+                            <SheetDescription className="text-[#CFDBD5] text-base leading-relaxed max-w-md">
+                                Información completa del proyecto, parámetros técnicos y administrativos.
                             </SheetDescription>
                         </div>
-                        <div className="w-[180px]">
-                            <Select value={status} onValueChange={handleStatusChange} disabled={isUpdatingStatus}>
-                                <SelectTrigger className="bg-[#1F1F1F] border-[#2D2D2D] text-[#E8EDDF] font-bold">
-                                    <SelectValue />
+
+                        <div className="w-full md:w-[240px] bg-[#1F1F1F] p-1 rounded-xl border border-[#2D2D2D]">
+                            <label className="text-[10px] text-[#CFDBD5]/60 font-bold uppercase tracking-widest px-3 py-1.5 block">
+                                Cambio de Estado
+                            </label>
+                            <Select
+                                value={status === 'NUEVA' ? 'BORRADOR' : status}
+                                onValueChange={handleStatusChange}
+                                disabled={isUpdatingStatus}
+                            >
+                                <SelectTrigger className="w-full bg-[#171717] border-[#2D2D2D] text-[#E8EDDF] font-bold h-10 shadow-sm focus:ring-[#F5CB5C]/20">
+                                    <SelectValue placeholder="Seleccionar Estado" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-[#1F1F1F] border-[#2D2D2D] text-[#E8EDDF]">
-                                    <SelectItem value="NUEVA">Nueva</SelectItem>
-                                    <SelectItem value="ENVIADA">Enviada</SelectItem>
-                                    <SelectItem value="APROBADA">Aprobada</SelectItem>
-                                    <SelectItem value="RECHAZADA">Rechazada</SelectItem>
+                                    <SelectItem value="BORRADOR" className="focus:bg-[#333533] focus:text-[#E8EDDF]">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-slate-500"></span>
+                                            BORRADOR
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="APROBADA" className="focus:bg-[#333533] focus:text-[#E8EDDF]">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                            APROBADA
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="RECHAZADA" className="focus:bg-[#333533] focus:text-[#E8EDDF]">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                            RECHAZADA
+                                        </div>
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
