@@ -617,7 +617,6 @@ export async function saveQuote(data: {
         success: true,
         quote: result,
         quoteNumber: result.quoteNumber, // Explicitly return ID for frontend update
-        quoteNumber: result.quoteNumber, // Explicitly return ID for frontend update
         sync: syncResult,
         userEmail,
         userName,
@@ -628,11 +627,6 @@ export async function saveQuote(data: {
             clientData: data.clientData
         }
     }
-} catch (e: any) {
-    console.error("CRITICAL DB ERROR (saveQuote):", e)
-    // Return error to client to debug Vercel issue
-    return { success: false, error: e.message || "Database Insert Failed" }
-}
 }
 
 export async function updateQuote(id: string, data: {
