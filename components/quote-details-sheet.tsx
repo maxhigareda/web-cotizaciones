@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowRight, Calendar, DollarSign, FileText, User, Edit, Save, X, Loader2, Network, Download, Sparkles, Briefcase, Rocket, Settings } from "lucide-react"
+import { ArrowRight, Calendar, DollarSign, FileText, User, Edit, Save, X, Loader2, Network, Download, Sparkles, Briefcase, Rocket, Settings, ChevronDown } from "lucide-react"
 import { MermaidDiagram } from "./mermaid-diagram"
 import { updateQuoteDiagram, updateQuoteStatus } from "@/lib/actions"
 import { generateMermaidUpdate } from "@/lib/ai"
@@ -128,17 +128,17 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
             </SheetTrigger>
             <SheetContent className="bg-[#171717] border-l-[#2D2D2D] w-[400px] sm:w-[600px] md:w-[800px] overflow-y-auto overflow-x-hidden">
                 <SheetHeader className="mb-8 border-b border-[#2D2D2D] pb-6">
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                         <div className="space-y-2 pt-1 flex-1">
                             <SheetTitle className="text-3xl font-black text-[#E8EDDF] tracking-tight">
                                 Detalle de Cotización
                             </SheetTitle>
-                            <SheetDescription className="text-[#CFDBD5]/80 text-[15px] leading-relaxed max-w-[90%] md:max-w-[420px]">
+                            <SheetDescription className="text-[#CFDBD5]/80 text-[15px] leading-relaxed max-w-[90%] md:max-w-[420px] text-justify flex items-center h-full">
                                 Información completa del proyecto, parámetros técnicos y administrativos.
                             </SheetDescription>
                         </div>
 
-                        <div className="w-full md:w-[260px] bg-[#1F1F1F] p-1.5 rounded-xl border border-[#2D2D2D] self-start shrink-0">
+                        <div className="w-full md:w-[260px] bg-[#1F1F1F] p-1.5 rounded-xl border border-[#2D2D2D] self-start shrink-0 mr-4">
                             <label className="text-[10px] text-[#CFDBD5]/60 font-bold uppercase tracking-widest px-3 py-1 block mb-1">
                                 Cambio de Estado
                             </label>
@@ -147,8 +147,9 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                                 onValueChange={handleStatusChange}
                                 disabled={isUpdatingStatus}
                             >
-                                <SelectTrigger className="w-full bg-[#171717] border-[#2D2D2D] text-[#E8EDDF] font-bold h-10 shadow-sm focus:ring-[#F5CB5C]/20 focus:ring-1">
+                                <SelectTrigger className="w-full bg-[#171717] border-[#2D2D2D] text-[#E8EDDF] font-bold h-10 shadow-sm focus:ring-[#F5CB5C]/20 focus:ring-1 flex items-center justify-between px-3">
                                     <SelectValue placeholder="Seleccionar Estado" />
+                                    <ChevronDown className="w-4 h-4 text-[#F5CB5C] opacity-70" />
                                 </SelectTrigger>
                                 <SelectContent
                                     className="bg-[#1F1F1F] border-[#2D2D2D] text-[#E8EDDF] max-h-[300px] overflow-visible"
