@@ -555,50 +555,84 @@ export async function saveQuote(data: {
 
     console.log("Saving quote for user:", userId)
 
-    try {
-        // Quote Number is handled by DB Autoincrement
+    console.log("Saving quote for user:", userId)
 
-        const result = await prisma.quote.create({
-            data: {
-                clientName: data.clientName,
-                projectType: data.projectType,
-                serviceType: data.serviceType,
-                technicalParameters: data.technicalParameters || JSON.stringify(data.params), // Use override or serialize params
-                estimatedCost: data.estimatedCost !== undefined ? data.estimatedCost : data.breakdown.totalMonthlyCost, // Use override or breakdown
-                staffingRequirements: JSON.stringify(data.breakdown.roles),
-                diagramDefinition: data.breakdown.diagramCode,
-                user: { connect: { id: userId } },
-                status: data.status || 'BORRADOR', // Default to BORRADOR
-                client: data.clientId ? { connect: { id: data.clientId } } : undefined, // Link to DB Client
-                pdfSnapshot: data.pdfBase64 || null, // Store Snapshot
+    let result: any = null
+    let attempt = 0
+    const MAX_RETRIES = 5
 
-            } as any
-        })
+    // Loop to handle Unique Constraint violations on quoteNumber (Anti-Crash)
+    while (attempt < MAX_RETRIES && !result) {
+        try {
+            // 1. Get current MAX quoteNumber
+            // We use aggregate to finding the highest number currently in the DB
+            const aggregate = await prisma.quote.aggregate({
+                _max: { quoteNumber: true }
+            })
+            const nextQuoteNumber = (aggregate._max.quoteNumber || 0) + 1
 
-        // Trigger Monday Sync (Fire and forget, but return status)
-        // DISABLED to prevent duplicate webhooks. Consolidated into sendQuoteToN8N
-        // const syncResult = await sendToMonday(result, data.params, data.breakdown, userName, userEmail)
-        const syncResult = { synced: false, reason: "Consolidated into PDF upload" }
+            // 2. Try to create with that number
+            result = await prisma.quote.create({
+                data: {
+                    clientName: data.clientName,
+                    projectType: data.projectType,
+                    serviceType: data.serviceType,
+                    technicalParameters: data.technicalParameters || JSON.stringify(data.params),
+                    estimatedCost: data.estimatedCost !== undefined ? data.estimatedCost : data.breakdown.totalMonthlyCost,
+                    staffingRequirements: JSON.stringify(data.breakdown.roles),
+                    diagramDefinition: data.breakdown.diagramCode,
+                    user: { connect: { id: userId } },
+                    status: data.status || 'BORRADOR',
+                    client: data.clientId ? { connect: { id: data.clientId } } : undefined,
+                    pdfSnapshot: data.pdfBase64 || null,
+                    quoteNumber: nextQuoteNumber // Manual assignment
+                } as any
+            })
 
-        return {
-            success: true,
-            quote: result,
-            quoteNumber: result.quoteNumber, // Explicitly return ID for frontend update
-            sync: syncResult,
-            userEmail,
-            userName,
-            // Pass back context for the next step (n8n PDF upload)
-            crmContext: {
-                clientId: data.clientId,
-                isNewClient: data.isNewClient,
-                clientData: data.clientData
+        } catch (e: any) {
+            // Check for Unique Constraint Violation (P2002 is Prisma code, but checking message is safer generic)
+            const isCollision = e.code === 'P2002' || e.message?.includes('Unique constraint') || e.message?.includes('quoteNumber')
+
+            if (isCollision) {
+                console.warn(`Quote Number Collision detected. Retrying... (Attempt ${attempt + 1}/${MAX_RETRIES})`)
+                attempt++
+                // Random delay to desync parallel requests
+                await new Promise(res => setTimeout(res, 50 + Math.random() * 150))
+            } else {
+                console.error("CRITICAL DB ERROR (saveQuote):", e)
+                return { success: false, error: e.message || "Database Insert Failed" }
             }
         }
-    } catch (e: any) {
-        console.error("CRITICAL DB ERROR (saveQuote):", e)
-        // Return error to client to debug Vercel issue
-        return { success: false, error: e.message || "Database Insert Failed" }
     }
+
+    if (!result) {
+        return { success: false, error: "Failed to generate a unique Quote Number after multiple attempts." }
+    }
+
+    // Trigger Monday Sync (Fire and forget, but return status)
+    // DISABLED to prevent duplicate webhooks. Consolidated into sendQuoteToN8N
+    const syncResult = { synced: false, reason: "Consolidated into PDF upload" }
+
+    return {
+        success: true,
+        quote: result,
+        quoteNumber: result.quoteNumber, // Explicitly return ID for frontend update
+        quoteNumber: result.quoteNumber, // Explicitly return ID for frontend update
+        sync: syncResult,
+        userEmail,
+        userName,
+        // Pass back context for the next step (n8n PDF upload)
+        crmContext: {
+            clientId: data.clientId,
+            isNewClient: data.isNewClient,
+            clientData: data.clientData
+        }
+    }
+} catch (e: any) {
+    console.error("CRITICAL DB ERROR (saveQuote):", e)
+    // Return error to client to debug Vercel issue
+    return { success: false, error: e.message || "Database Insert Failed" }
+}
 }
 
 export async function updateQuote(id: string, data: {
