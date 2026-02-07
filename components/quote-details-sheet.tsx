@@ -144,8 +144,8 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                             </div>
                         </div>
 
-                        {/* Selector Container */}
-                        <div className="w-full md:w-[260px] bg-[#1F1F1F] p-1.5 rounded-xl border border-[#2D2D2D] self-start flex-shrink-0">
+                        {/* Selector Container - Shrunk to 220px as requested to leave gap */}
+                        <div className="w-full md:w-[220px] bg-[#1F1F1F] p-1.5 rounded-xl border border-[#2D2D2D] self-start flex-shrink-0">
                             <label className="text-[10px] text-[#CFDBD5]/60 font-bold uppercase tracking-widest px-3 py-1 block mb-1">
                                 Cambio de Estado
                             </label>
