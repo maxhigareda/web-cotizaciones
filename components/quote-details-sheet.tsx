@@ -144,8 +144,8 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                             </div>
                         </div>
 
-                        {/* Selector Container - Shrunk to 220px as requested to leave gap */}
-                        <div className="w-full md:w-[220px] bg-[#1F1F1F] p-1.5 rounded-xl border border-[#2D2D2D] self-start flex-shrink-0">
+                        {/* Selector Container - Fixed width 180px and forced right margin 30px */}
+                        <div className="w-full md:w-[180px] bg-[#1F1F1F] p-1.5 rounded-xl border border-[#2D2D2D] self-start flex-shrink-0 !mr-[30px]">
                             <label className="text-[10px] text-[#CFDBD5]/60 font-bold uppercase tracking-widest px-3 py-1 block mb-1">
                                 Cambio de Estado
                             </label>
@@ -156,7 +156,6 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                             >
                                 <SelectTrigger className="w-full bg-[#171717] border-[#2D2D2D] text-[#E8EDDF] font-bold h-10 shadow-sm focus:ring-[#F5CB5C]/20 focus:ring-1 flex items-center justify-between px-3">
                                     <SelectValue placeholder="Seleccionar Estado" />
-                                    <ChevronDown className="w-4 h-4 text-[#F5CB5C] opacity-70" />
                                 </SelectTrigger>
                                 <SelectContent
                                     className="bg-[#1F1F1F] border-[#2D2D2D] text-[#E8EDDF] max-h-[300px] overflow-visible"
