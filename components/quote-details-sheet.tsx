@@ -129,22 +129,23 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
             <SheetContent className="bg-[#171717] border-l-[#2D2D2D] w-[400px] sm:w-[600px] md:w-[800px] overflow-y-auto overflow-x-hidden">
                 <SheetHeader className="mb-8 border-b border-[#2D2D2D] pb-6">
                     {/* Parent Container with pr-6 (24px) to force right spacing */}
-                    {/* Parent Container with pr-0 to let margin handle it if needed, but keeping original structure for safety, just modifying children as requested */}
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+                    {/* Parent Container with px-8 for safe margins */}
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 px-8">
                         <div className="space-y-3 pt-1 flex-1 flex flex-col justify-center">
-                            <SheetTitle className="text-3xl font-black text-[#E8EDDF] tracking-tight text-center md:text-left">
+                            {/* Reduced Title Size to text-xl */}
+                            <SheetTitle className="text-xl font-black text-[#E8EDDF] tracking-tight text-center md:text-left">
                                 Detalle de Cotización
                             </SheetTitle>
-                            {/* Description Box Centered with !max-w-[250px] !mx-auto !mt-2.5 */}
-                            <div className="!max-w-[250px] !mx-auto !mt-2.5">
-                                <SheetDescription className="text-[#CFDBD5]/80 text-[15px] leading-relaxed !text-center">
+                            {/* Description Box Centered with max-w-[220px] */}
+                            <div className="max-w-[220px] mx-auto md:mx-0">
+                                <SheetDescription className="text-[#CFDBD5]/80 text-xs leading-relaxed text-center">
                                     Información completa del proyecto, parámetros técnicos y administrativos.
                                 </SheetDescription>
                             </div>
                         </div>
 
-                        {/* Selector Container with !mr-8 */}
-                        <div className="w-full md:w-[260px] bg-[#1F1F1F] p-1.5 rounded-xl border border-[#2D2D2D] self-start shrink-0 !mr-8">
+                        {/* Selector Container with flex-shrink-0 */}
+                        <div className="w-full md:w-[260px] bg-[#1F1F1F] p-1.5 rounded-xl border border-[#2D2D2D] self-start flex-shrink-0">
                             <label className="text-[10px] text-[#CFDBD5]/60 font-bold uppercase tracking-widest px-3 py-1 block mb-1">
                                 Cambio de Estado
                             </label>
