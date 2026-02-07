@@ -133,14 +133,16 @@ export function QuoteDetailsSheet({ quote, onQuoteUpdated }: QuoteDetailsSheetPr
                             <SheetTitle className="text-3xl font-black text-[#E8EDDF] tracking-tight">
                                 Detalle de Cotización
                             </SheetTitle>
-                            <div className="max-w-[80%]">
-                                <SheetDescription className="text-[#CFDBD5]/80 text-[15px] leading-relaxed text-justify">
+                            {/* Description Box Centered */}
+                            <div className="max-w-[300px] mx-0 md:mx-0">
+                                <SheetDescription className="text-[#CFDBD5]/80 text-[15px] leading-relaxed text-left md:text-justify">
                                     Información completa del proyecto, parámetros técnicos y administrativos.
                                 </SheetDescription>
                             </div>
                         </div>
 
-                        <div className="w-full md:w-[260px] bg-[#1F1F1F] p-1.5 rounded-xl border border-[#2D2D2D] self-start shrink-0 mr-5">
+                        {/* Selector Container with mr-6 (24px) */}
+                        <div className="w-full md:w-[260px] bg-[#1F1F1F] p-1.5 rounded-xl border border-[#2D2D2D] self-start shrink-0 mr-6">
                             <label className="text-[10px] text-[#CFDBD5]/60 font-bold uppercase tracking-widest px-3 py-1 block mb-1">
                                 Cambio de Estado
                             </label>
