@@ -867,7 +867,7 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
 
 
     // --- Save Quote ---
-    const handleSaveQuote = async () => {
+    const handleSaveQuote = async (redirect: boolean = true) => {
         if (!state.clientName) {
             alert("Por favor ingrese un nombre de cliente.")
             return
@@ -1061,10 +1061,12 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
 
             toast.success("Cotización guardada exitosamente.")
 
-            // Redirect to Dashboard (Mis Cotizaciones) after 1s delay
-            setTimeout(() => {
-                router.push('/dashboard')
-            }, 1000)
+            if (redirect) {
+                // Redirect to Dashboard (Mis Cotizaciones) after 1s delay
+                setTimeout(() => {
+                    router.push('/dashboard')
+                }, 1000)
+            }
 
         } catch (e: any) {
             console.error("Failed to save quote (DB Error):", e)
@@ -1639,30 +1641,34 @@ graph TD
                                                             </div>
                                                             <div className="space-y-1">
                                                                 <Label className="text-[#7C7F7C] text-[10px] uppercase">¿Procesos Manuales?</Label>
-                                                                <div className="flex items-center h-9 gap-3">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <Switch
-                                                                            checked={state.sustainDetails.metrics.manualProcess}
-                                                                            onCheckedChange={v => updateState('sustainDetails', { ...state.sustainDetails, metrics: { ...state.sustainDetails.metrics, manualProcess: v } })}
-                                                                            className="data-[state=checked]:bg-[#F5CB5C] data-[state=checked]:border-[#F5CB5C]"
-                                                                        />
-                                                                        <span className={cn(
-                                                                            "text-xs font-bold uppercase transition-colors",
-                                                                            state.sustainDetails.metrics.manualProcess ? "text-[#F5CB5C]" : "text-[#7C7F7C]"
-                                                                        )}>
-                                                                            {state.sustainDetails.metrics.manualProcess ? 'SÍ' : 'NO'}
-                                                                        </span>
-                                                                    </div>
+                                                                <div className="flex items-center h-9 gap-1 bg-[#333533] p-1 rounded-lg border border-[#4A4D4A]">
+                                                                    <button
+                                                                        onClick={() => updateState('sustainDetails', { ...state.sustainDetails, metrics: { ...state.sustainDetails.metrics, manualProcess: true } })}
+                                                                        className={cn(
+                                                                            "flex-1 text-[10px] font-bold uppercase py-1.5 px-3 rounded-md transition-all duration-200",
+                                                                            state.sustainDetails.metrics.manualProcess
+                                                                                ? "bg-[#F5CB5C] text-[#242423] shadow-sm transform scale-105"
+                                                                                : "text-[#7C7F7C] hover:text-[#CFDBD5]"
+                                                                        )}
+                                                                    >
+                                                                        SÍ
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => updateState('sustainDetails', { ...state.sustainDetails, metrics: { ...state.sustainDetails.metrics, manualProcess: false } })}
+                                                                        className={cn(
+                                                                            "flex-1 text-[10px] font-bold uppercase py-1.5 px-3 rounded-md transition-all duration-200",
+                                                                            !state.sustainDetails.metrics.manualProcess
+                                                                                ? "bg-[#4A4D4A] text-[#CFDBD5] shadow-sm"
+                                                                                : "text-[#7C7F7C] hover:text-[#CFDBD5]"
+                                                                        )}
+                                                                    >
+                                                                        NO
+                                                                    </button>
                                                                 </div>
                                                             </div>
-                                                            <div className="col-span-2 relative">
+                                                            <div className="col-span-2 relative space-y-2">
                                                                 <Label className="text-[#7C7F7C] text-[10px] uppercase flex justify-between items-center">
                                                                     Dependencias Externas
-                                                                    {state.sustainDetails.metrics.systemDependencies && (
-                                                                        <span className="text-[#F5CB5C] text-[9px] flex items-center gap-1 animate-in fade-in">
-                                                                            <Check className="w-3 h-3" /> Guardado
-                                                                        </span>
-                                                                    )}
                                                                 </Label>
                                                                 <Textarea
                                                                     className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] min-h-[80px] focus:border-[#F5CB5C] transition-colors"
@@ -1670,6 +1676,22 @@ graph TD
                                                                     value={state.sustainDetails.metrics.systemDependencies}
                                                                     onChange={e => updateState('sustainDetails', { ...state.sustainDetails, metrics: { ...state.sustainDetails.metrics, systemDependencies: e.target.value } })}
                                                                 />
+                                                                <div className="flex justify-end">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() => handleSaveQuote(false)}
+                                                                        className="bg-[#F5CB5C] text-[#242423] hover:bg-[#F5CB5C]/90 text-xs h-7 px-3 font-bold uppercase tracking-wider"
+                                                                        disabled={isSaving}
+                                                                    >
+                                                                        {isSaving ? (
+                                                                            <>
+                                                                                <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Cargando...
+                                                                            </>
+                                                                        ) : (
+                                                                            "Guardar Dependencias"
+                                                                        )}
+                                                                    </Button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -2595,7 +2617,7 @@ graph TD
 
                 <div className="flex flex-col gap-4">
                     <Button
-                        onClick={handleSaveQuote}
+                        onClick={() => handleSaveQuote(true)}
                         disabled={isSaving}
                         className="bg-[#F5CB5C] hover:bg-[#E0B84C] text-[#242423] border-0 rounded-2xl h-14 font-bold w-full transition-all text-base shadow-[0_0_20px_rgba(245,203,92,0.3)] hover:shadow-[0_0_25px_rgba(245,203,92,0.5)] transform hover:scale-[1.02]"
                     >
