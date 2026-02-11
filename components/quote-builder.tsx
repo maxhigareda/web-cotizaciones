@@ -1344,8 +1344,8 @@ graph TD
         if (state.serviceType === 'Sustain') {
             const { pipelinesCount, notebooksCount, dsModelsCount } = state.sustainDetails.metrics
 
-            // Heuristic: If complex (>10 pipelines or high volume), suggest Data Engineer
-            if (pipelinesCount > 10 || notebooksCount > 15 || dsModelsCount > 5) {
+            // Heuristic: If complex (>10 pipelines or >10 notebooks or >5 models), suggest Data Engineer
+            if (pipelinesCount > 10 || notebooksCount > 10 || dsModelsCount > 5) {
                 const hasDataEngineer = state.staffingDetails.profiles.some(p => p.role === 'Data Engineer')
 
                 if (!hasDataEngineer) {
@@ -1639,19 +1639,33 @@ graph TD
                                                             </div>
                                                             <div className="space-y-1">
                                                                 <Label className="text-[#7C7F7C] text-[10px] uppercase">¿Procesos Manuales?</Label>
-                                                                <div className="flex items-center h-9">
-                                                                    <Switch
-                                                                        checked={state.sustainDetails.metrics.manualProcess}
-                                                                        onCheckedChange={v => updateState('sustainDetails', { ...state.sustainDetails, metrics: { ...state.sustainDetails.metrics, manualProcess: v } })}
-                                                                        className="data-[state=checked]:bg-[#F5CB5C]"
-                                                                    />
-                                                                    <span className="ml-2 text-xs text-[#CFDBD5]">{state.sustainDetails.metrics.manualProcess ? 'Sí' : 'No'}</span>
+                                                                <div className="flex items-center h-9 gap-3">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Switch
+                                                                            checked={state.sustainDetails.metrics.manualProcess}
+                                                                            onCheckedChange={v => updateState('sustainDetails', { ...state.sustainDetails, metrics: { ...state.sustainDetails.metrics, manualProcess: v } })}
+                                                                            className="data-[state=checked]:bg-[#F5CB5C] data-[state=checked]:border-[#F5CB5C]"
+                                                                        />
+                                                                        <span className={cn(
+                                                                            "text-xs font-bold uppercase transition-colors",
+                                                                            state.sustainDetails.metrics.manualProcess ? "text-[#F5CB5C]" : "text-[#7C7F7C]"
+                                                                        )}>
+                                                                            {state.sustainDetails.metrics.manualProcess ? 'SÍ' : 'NO'}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="col-span-2">
-                                                                <Label className="text-[#7C7F7C] text-[10px] uppercase">Dependencias Externas</Label>
+                                                            <div className="col-span-2 relative">
+                                                                <Label className="text-[#7C7F7C] text-[10px] uppercase flex justify-between items-center">
+                                                                    Dependencias Externas
+                                                                    {state.sustainDetails.metrics.systemDependencies && (
+                                                                        <span className="text-[#F5CB5C] text-[9px] flex items-center gap-1 animate-in fade-in">
+                                                                            <Check className="w-3 h-3" /> Guardado
+                                                                        </span>
+                                                                    )}
+                                                                </Label>
                                                                 <Textarea
-                                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] min-h-[80px]"
+                                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] min-h-[80px] focus:border-[#F5CB5C] transition-colors"
                                                                     placeholder="Ej. API Salesforce, FTP Cliente..."
                                                                     value={state.sustainDetails.metrics.systemDependencies}
                                                                     onChange={e => updateState('sustainDetails', { ...state.sustainDetails, metrics: { ...state.sustainDetails.metrics, systemDependencies: e.target.value } })}
@@ -1717,12 +1731,25 @@ graph TD
                                                     </div>
 
                                                     <div className="flex items-center justify-between bg-[#333533] p-3 rounded-lg border border-[#4A4D4A]">
-                                                        <Label className="text-[#E8EDDF] text-xs font-bold">¿Uso Fines de Semana?</Label>
-                                                        <Switch
-                                                            checked={state.sustainDetails.weekendUsage}
-                                                            onCheckedChange={v => updateState('sustainDetails', { ...state.sustainDetails, weekendUsage: v })}
-                                                            className="data-[state=checked]:bg-[#F5CB5C]"
-                                                        />
+                                                        <Label className={cn(
+                                                            "text-xs font-bold transition-colors",
+                                                            state.sustainDetails.weekendUsage ? "text-[#F5CB5C]" : "text-[#E8EDDF]"
+                                                        )}>
+                                                            ¿Uso Fines de Semana?
+                                                        </Label>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={cn(
+                                                                "text-xs font-bold uppercase transition-colors mr-2",
+                                                                state.sustainDetails.weekendUsage ? "text-[#F5CB5C]" : "text-[#7C7F7C]"
+                                                            )}>
+                                                                {state.sustainDetails.weekendUsage ? 'SÍ' : 'NO'}
+                                                            </span>
+                                                            <Switch
+                                                                checked={state.sustainDetails.weekendUsage}
+                                                                onCheckedChange={v => updateState('sustainDetails', { ...state.sustainDetails, weekendUsage: v })}
+                                                                className="data-[state=checked]:bg-[#F5CB5C] data-[state=checked]:border-[#F5CB5C]"
+                                                            />
+                                                        </div>
                                                     </div>
 
                                                     {state.sustainDetails.weekendUsage && (
