@@ -1070,7 +1070,7 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
                 updateState('quoteNumber', result.quote.quoteNumber)
             }
 
-            toast.success("Cotización guardada exitosamente.")
+            toast.success(redirect ? "Cotización guardada exitosamente." : "Cambios guardados correctamente.")
 
             if (redirect) {
                 // Redirect to Dashboard (Mis Cotizaciones) after 1s delay
@@ -1661,11 +1661,11 @@ graph TD
                                                                     <Switch
                                                                         checked={state.sustainDetails.metrics.manualProcess}
                                                                         onCheckedChange={(c) => updateState('sustainDetails', { ...state.sustainDetails, metrics: { ...state.sustainDetails.metrics, manualProcess: c } })}
-                                                                        className="data-[state=checked]:bg-[#F5CB5C]"
+                                                                        className="data-[state=checked]:bg-[#F5CB5C] data-[state=checked]:border-[#F5CB5C]"
                                                                     />
-                                                                    <span className="text-xs text-[#E8EDDF] font-bold">
-                                                                        {state.sustainDetails.metrics.manualProcess ? "SÍ" : "NO"}
-                                                                    </span>
+                                                                    {state.sustainDetails.metrics.manualProcess && (
+                                                                        <span className="text-xs text-[#F5CB5C] font-bold animate-in fade-in zoom-in">SÍ</span>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                             <div className="col-span-2 relative space-y-2">
@@ -1715,7 +1715,7 @@ graph TD
                                                         <Input
                                                             value={state.sustainDetails.businessOwner}
                                                             onChange={e => updateState('sustainDetails', { ...state.sustainDetails, businessOwner: e.target.value })}
-                                                            className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]"
+                                                            className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] focus:border-[#F5CB5C]"
                                                         />
                                                     </div>
                                                     <div>
@@ -1725,7 +1725,7 @@ graph TD
                                                                 value={state.sustainDetails.updateDuration}
                                                                 onChange={e => updateState('sustainDetails', { ...state.sustainDetails, updateDuration: e.target.value })}
                                                                 placeholder="Ej. 2 horas"
-                                                                className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] pr-12"
+                                                                className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] pr-12 focus:border-[#F5CB5C]"
                                                             />
                                                             <span className="absolute right-3 top-2.5 text-[#7C7F7C] text-xs">min/hs</span>
                                                         </div>
@@ -1748,7 +1748,7 @@ graph TD
                                                             type="time"
                                                             value={state.sustainDetails.updateSchedule}
                                                             onChange={e => updateState('sustainDetails', { ...state.sustainDetails, updateSchedule: e.target.value })}
-                                                            className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]"
+                                                            className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] focus:border-[#F5CB5C]"
                                                         />
                                                     </div>
 
@@ -1756,7 +1756,7 @@ graph TD
                                                         <Label className="text-[#F5CB5C] mb-4 block text-xs uppercase font-bold tracking-wider">Soporte y Tiempos</Label>
                                                     </div>
 
-                                                    <div className="flex items-center justify-between bg-[#333533] p-3 rounded-lg border border-[#4A4D4A]">
+                                                    <div className="flex items-center justify-between bg-[#333533] p-3 rounded-xl border border-[#4A4D4A]">
                                                         <Label className={cn(
                                                             "text-xs font-bold transition-colors",
                                                             state.sustainDetails.weekendUsage ? "text-[#F5CB5C]" : "text-[#E8EDDF]"
@@ -1764,12 +1764,9 @@ graph TD
                                                             ¿Uso Fines de Semana?
                                                         </Label>
                                                         <div className="flex items-center gap-2">
-                                                            <span className={cn(
-                                                                "text-xs font-bold uppercase transition-colors mr-2",
-                                                                state.sustainDetails.weekendUsage ? "text-[#F5CB5C]" : "text-[#7C7F7C]"
-                                                            )}>
-                                                                {state.sustainDetails.weekendUsage ? 'SÍ' : 'NO'}
-                                                            </span>
+                                                            {state.sustainDetails.weekendUsage && (
+                                                                <span className="text-xs font-bold text-[#F5CB5C] uppercase mr-2 animate-in fade-in zoom-in">SÍ</span>
+                                                            )}
                                                             <Switch
                                                                 checked={state.sustainDetails.weekendUsage}
                                                                 onCheckedChange={v => updateState('sustainDetails', { ...state.sustainDetails, weekendUsage: v })}
@@ -1785,7 +1782,7 @@ graph TD
                                                                 value={state.sustainDetails.weekendSupportHours}
                                                                 onChange={e => updateState('sustainDetails', { ...state.sustainDetails, weekendSupportHours: e.target.value })}
                                                                 placeholder="Ej. Sábados 9-13hs"
-                                                                className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]"
+                                                                className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] focus:border-[#F5CB5C]"
                                                             />
                                                         </div>
                                                     )}
@@ -1795,7 +1792,7 @@ graph TD
                                                         <Input type="number"
                                                             value={state.sustainDetails.incidentRate}
                                                             onChange={e => updateState('sustainDetails', { ...state.sustainDetails, incidentRate: parseInt(e.target.value) || 0 })}
-                                                            className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]"
+                                                            className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] focus:border-[#F5CB5C]"
                                                             placeholder="Tickets/mes"
                                                         />
                                                     </div>
@@ -1879,14 +1876,19 @@ graph TD
                                                     <div className="space-y-2">
                                                         <div className="flex items-center justify-between">
                                                             <Label className="text-[#CFDBD5] text-xs uppercase font-bold">¿Fechas Críticas?</Label>
-                                                            <Switch
-                                                                checked={state.sustainDetails.criticalityMatrix.hasCriticalDates}
-                                                                onCheckedChange={(c) => updateState('sustainDetails', {
-                                                                    ...state.sustainDetails,
-                                                                    criticalityMatrix: { ...state.sustainDetails.criticalityMatrix, hasCriticalDates: c }
-                                                                })}
-                                                                className="data-[state=checked]:bg-[#F5CB5C]"
-                                                            />
+                                                            <div className="flex items-center gap-2">
+                                                                {state.sustainDetails.criticalityMatrix.hasCriticalDates && (
+                                                                    <span className="text-xs font-bold text-[#F5CB5C] uppercase animate-in fade-in zoom-in">SÍ</span>
+                                                                )}
+                                                                <Switch
+                                                                    checked={state.sustainDetails.criticalityMatrix.hasCriticalDates}
+                                                                    onCheckedChange={(c) => updateState('sustainDetails', {
+                                                                        ...state.sustainDetails,
+                                                                        criticalityMatrix: { ...state.sustainDetails.criticalityMatrix, hasCriticalDates: c }
+                                                                    })}
+                                                                    className="data-[state=checked]:bg-[#F5CB5C] data-[state=checked]:border-[#F5CB5C]"
+                                                                />
+                                                            </div>
                                                         </div>
                                                         {state.sustainDetails.criticalityMatrix.hasCriticalDates && (
                                                             <Input
@@ -1896,7 +1898,7 @@ graph TD
                                                                     ...state.sustainDetails,
                                                                     criticalityMatrix: { ...state.sustainDetails.criticalityMatrix, criticalDatesDescription: e.target.value }
                                                                 })}
-                                                                className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] animate-in fade-in slide-in-from-top-1"
+                                                                className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] animate-in fade-in slide-in-from-top-1 focus:border-[#F5CB5C]"
                                                             />
                                                         )}
                                                     </div>
@@ -1914,9 +1916,9 @@ graph TD
                                                                         ...state.sustainDetails,
                                                                         criticalityMatrix: { ...state.sustainDetails.criticalityMatrix, marketsImpacted: parseInt(e.target.value) || 0 }
                                                                     })}
-                                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] pr-8"
+                                                                    className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] pr-10 focus:border-[#F5CB5C]"
                                                                 />
-                                                                <span className="absolute right-2 top-2.5 text-[#7C7F7C] text-[10px] font-bold">MKTS</span>
+                                                                <span className="absolute right-3 top-2.5 text-[#F5CB5C] text-[10px] font-bold">MKTS</span>
                                                             </div>
                                                             <div className="relative">
                                                                 <Input
@@ -1927,9 +1929,9 @@ graph TD
                                                                         ...state.sustainDetails,
                                                                         criticalityMatrix: { ...state.sustainDetails.criticalityMatrix, usersImpacted: parseInt(e.target.value) || 0 }
                                                                     })}
-                                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] pr-8"
+                                                                    className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] pr-10 focus:border-[#F5CB5C]"
                                                                 />
-                                                                <span className="absolute right-2 top-2.5 text-[#7C7F7C] text-[10px] font-bold">USRS</span>
+                                                                <span className="absolute right-3 top-2.5 text-[#F5CB5C] text-[10px] font-bold">USRS</span>
                                                             </div>
                                                         </div>
                                                     </div>
