@@ -1339,6 +1339,68 @@ graph TD
         }
     }, [state, manualDiagramCode])
 
+    // Intelligent Logic for Sustain (Auto-Staffing)
+    useEffect(() => {
+        if (state.serviceType === 'Sustain') {
+            const { pipelinesCount, notebooksCount, dsModelsCount } = state.sustainDetails.metrics
+
+            // Heuristic: If complex (>10 pipelines or high volume), suggest Data Engineer
+            if (pipelinesCount > 10 || notebooksCount > 15 || dsModelsCount > 5) {
+                const hasDataEngineer = state.staffingDetails.profiles.some(p => p.role === 'Data Engineer')
+
+                if (!hasDataEngineer) {
+                    // Find Data Engineer config
+                    const deConfigEntry = Object.entries(ROLE_CONFIG).find(([k, v]) => v.label === 'Data Engineer')
+                    if (deConfigEntry) {
+                        const [roleKey, config] = deConfigEntry
+                        const basePrice = config.defaultPrice
+
+                        const newProfile = {
+                            id: crypto.randomUUID(),
+                            role: 'Data Engineer',
+                            seniority: 'SSR',
+                            qty: 1,
+                            count: 1,
+                            hours: 160,
+                            price: basePrice,
+                            skills: 'Python, SQL, Spark',
+                            startDate: new Date().toISOString().split('T')[0],
+                            endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0],
+                            allocationPercentage: 100
+                        }
+
+                        // Use functional update to avoid dependency loops, but be careful with 'state' dependency
+                        // actually we can't easily use functional update if we need 'state' props inside.
+                        // But since we are inside useEffect depending on metrics, we should be fine calling setState.
+                        setState(prev => ({
+                            ...prev,
+                            staffingDetails: {
+                                ...prev.staffingDetails,
+                                profiles: [...prev.staffingDetails.profiles, newProfile]
+                            }
+                        }))
+
+                        toast.success("Sugerencia: Se agregó un Data Engineer por volumen de datos.")
+                    }
+                }
+            }
+
+            // Heuristic: Dev Hours Suggestion
+            const suggestedHours = (pipelinesCount * 2) + (notebooksCount * 1) + (dsModelsCount * 4)
+            if (suggestedHours > 0 && suggestedHours > state.sustainDetails.devHours) {
+                setState(prev => ({
+                    ...prev,
+                    sustainDetails: {
+                        ...prev.sustainDetails,
+                        devHours: suggestedHours
+                    }
+                }))
+                // Debounce toast or just show it (might be too spammy if typing numbers, but OK for now)
+                // toast.info(`Se an actualiza las horas de desarrollo sugeridas a ${suggestedHours}hs basedo en volumetría.`) 
+            }
+        }
+    }, [state.serviceType, state.sustainDetails.metrics.pipelinesCount, state.sustainDetails.metrics.notebooksCount, state.sustainDetails.metrics.dsModelsCount])
+
     // --- RENDER WIZARD STEP 0 (SELECTION) ---
     if (wizardStep === 0) {
         return (
@@ -1588,8 +1650,8 @@ graph TD
                                                             </div>
                                                             <div className="col-span-2">
                                                                 <Label className="text-[#7C7F7C] text-[10px] uppercase">Dependencias Externas</Label>
-                                                                <Input
-                                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-9"
+                                                                <Textarea
+                                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] min-h-[80px]"
                                                                     placeholder="Ej. API Salesforce, FTP Cliente..."
                                                                     value={state.sustainDetails.metrics.systemDependencies}
                                                                     onChange={e => updateState('sustainDetails', { ...state.sustainDetails, metrics: { ...state.sustainDetails.metrics, systemDependencies: e.target.value } })}
@@ -1621,9 +1683,10 @@ graph TD
                                                     <div>
                                                         <Label className="text-[#CFDBD5] mb-2 block text-xs uppercase font-bold">Duración Proceso (Hs)</Label>
                                                         <Input
+                                                            type="number"
                                                             value={state.sustainDetails.updateDuration}
                                                             onChange={e => updateState('sustainDetails', { ...state.sustainDetails, updateDuration: e.target.value })}
-                                                            placeholder="Ej. 2 horas"
+                                                            placeholder="Horas"
                                                             className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF]"
                                                         />
                                                     </div>
