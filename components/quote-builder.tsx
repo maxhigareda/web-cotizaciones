@@ -1836,23 +1836,26 @@ graph TD
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
-                                                    <div>
-                                                        <Label className="text-[#CFDBD5] mb-2 block text-xs uppercase font-bold">Horario Actualización (Principal)</Label>
-                                                        <Input
-                                                            type="time"
-                                                            value={state.sustainDetails.updateSchedule}
-                                                            onChange={e => updateState('sustainDetails', { ...state.sustainDetails, updateSchedule: e.target.value })}
-                                                            className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] focus:border-[#F5CB5C]"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <Label className="text-[#CFDBD5] mb-2 block text-xs uppercase font-bold text-opacity-70">Horario Secundario (Opcional)</Label>
-                                                        <Input
-                                                            type="time"
-                                                            value={state.sustainDetails.secondaryUpdateSchedule}
-                                                            onChange={e => updateState('sustainDetails', { ...state.sustainDetails, secondaryUpdateSchedule: e.target.value })}
-                                                            className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] focus:border-[#F5CB5C] border-dashed"
-                                                        />
+                                                    {/* Schedule Inputs - Side by Side */}
+                                                    <div className="md:col-span-2 flex flex-wrap gap-6 items-end mt-2">
+                                                        <div className="space-y-2">
+                                                            <Label className="text-[#CFDBD5] text-xs uppercase font-bold block">Horario 1</Label>
+                                                            <Input
+                                                                type="time"
+                                                                value={state.sustainDetails.updateSchedule}
+                                                                onChange={e => updateState('sustainDetails', { ...state.sustainDetails, updateSchedule: e.target.value })}
+                                                                className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] focus:border-[#F5CB5C] w-[150px] [color-scheme:dark]"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-[#CFDBD5] text-xs uppercase font-bold block text-opacity-70">Horario 2</Label>
+                                                            <Input
+                                                                type="time"
+                                                                value={state.sustainDetails.secondaryUpdateSchedule}
+                                                                onChange={e => updateState('sustainDetails', { ...state.sustainDetails, secondaryUpdateSchedule: e.target.value })}
+                                                                className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] focus:border-[#F5CB5C] border-dashed w-[150px] [color-scheme:dark]"
+                                                            />
+                                                        </div>
                                                     </div>
 
                                                     <div className="col-span-1 md:col-span-2 border-t border-[#4A4D4A] my-2 pt-4">
