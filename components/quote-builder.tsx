@@ -2375,7 +2375,7 @@ graph TD
                                             return (
                                                 <div key={profile.id || idx} className="flex items-center justify-between p-2.5 bg-zinc-900/40 border border-zinc-800 rounded-lg w-full gap-3 group hover:border-zinc-700/50 transition-all">
                                                     {/* LEFT: Avatar + Name + Seniority */}
-                                                    <div className="flex items-center gap-2.5 flex-1 min-w-0 overflow-hidden">
+                                                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
                                                         <div className={cn(
                                                             "w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border shrink-0",
                                                             profile.seniority === 'Expert' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
@@ -2387,7 +2387,7 @@ graph TD
                                                         </div>
 
                                                         <div className="flex flex-col justify-center min-w-0">
-                                                            <span className="text-[#E8EDDF] font-bold text-xs leading-tight truncate" title={displayName}>
+                                                            <span className="text-[#E8EDDF] font-bold text-xs leading-tight whitespace-normal break-words">
                                                                 {displayName}
                                                             </span>
                                                             <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wide mt-0.5">
@@ -2401,32 +2401,9 @@ graph TD
                                                         {/* Quantity: Clean Text Style - No Box */}
                                                         <div className="flex items-center gap-1.5">
                                                             <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-wide">CANT:</span>
-                                                            <Input
-                                                                type="number"
-                                                                min={1}
-                                                                value={profile.count}
-                                                                onChange={(e) => {
-                                                                    const val = parseInt(e.target.value) || 1
-                                                                    const diff = val - profile.count
-
-                                                                    // Update profile count
-                                                                    const newProfiles = [...state.staffingDetails.profiles]
-                                                                    newProfiles[idx].count = val
-
-                                                                    // Update Role Total Global
-                                                                    const keyEntry = Object.entries(ROLE_CONFIG).find(([k, v]) => v.label === profile.role) || Object.entries(ROLE_CONFIG).find(([k, v]) => k === profile.role)
-                                                                    const roleKey = keyEntry ? keyEntry[0] as RoleKey : null
-
-                                                                    if (roleKey) {
-                                                                        setState(prev => ({
-                                                                            ...prev,
-                                                                            roles: { ...prev.roles, [roleKey]: Math.max(0, (prev.roles[roleKey] || 0) + diff) },
-                                                                            staffingDetails: { ...prev.staffingDetails, profiles: newProfiles }
-                                                                        }))
-                                                                    }
-                                                                }}
-                                                                className="w-8 h-auto p-0 bg-transparent border-none text-[#F5CB5C] font-bold text-sm text-center shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none hover:text-[#E8EDDF] transition-colors"
-                                                            />
+                                                            <span className="text-[#F5CB5C] font-bold text-sm">
+                                                                {profile.count}
+                                                            </span>
                                                         </div>
 
                                                         {/* Price */}
