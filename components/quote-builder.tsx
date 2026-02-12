@@ -2363,6 +2363,7 @@ graph TD
                                         {state.staffingDetails.profiles.map((profile, idx) => {
                                             const monthlyPrice = (profile.price || 0) * profile.count
                                             const displayPrice = viewMode === 'annual' ? monthlyPrice * 12 : monthlyPrice
+                                            const periodLabel = viewMode === 'annual' ? 'ANUALIZADO' : 'MENSUAL'
 
                                             // Resolve Display Name
                                             let displayName = profile.role;
@@ -2407,9 +2408,12 @@ graph TD
                                                         </div>
 
                                                         {/* Price */}
-                                                        <div className="text-right min-w-[60px]">
+                                                        <div className="text-right min-w-[70px]">
                                                             <div className="text-[#F5CB5C] font-mono font-bold text-sm leading-none">
                                                                 ${displayPrice.toLocaleString()}
+                                                            </div>
+                                                            <div className="text-[8px] text-zinc-500 font-bold tracking-tighter mt-1 opacity-60">
+                                                                {periodLabel}
                                                             </div>
                                                         </div>
 
@@ -2844,33 +2848,38 @@ graph TD
 
                     {state.commercialDiscount > 0 && (
                         <div className="flex justify-between items-center text-green-400">
-                            <span>Ahorro Aplicado</span>
-                            <span className="font-mono">- {formatMoney(discountAmount)}</span>
+                            <span>Ahorro Aplicado {viewMode === 'annual' ? 'Anual' : 'Mensual'}</span>
+                            <span className="font-mono">- {formatMoney(viewMode === 'annual' ? discountAmount * 12 : discountAmount)}</span>
                         </div>
                     )}
 
                     {state.retention.enabled && (
                         <div className="flex justify-between items-center text-[#F5CB5C]/70 border-t border-[#4A4D4A]/50 pt-2">
-                            <span>Retención ({state.retention.percentage}%)</span>
-                            <span className="font-mono">- {formatMoney(retentionAmount)}</span>
+                            <span>Retención ({state.retention.percentage}%) {viewMode === 'annual' ? 'Anual' : 'Mensual'}</span>
+                            <span className="font-mono">- {formatMoney(viewMode === 'annual' ? retentionAmount * 12 : retentionAmount)}</span>
                         </div>
                     )}
 
                     <Separator className="bg-[#4A4D4A]" />
                     <div className="space-y-1">
                         <div className="flex justify-between items-center text-[#E8EDDF] font-medium text-lg">
-                            <span>Subtotal</span>
-                            <span className="font-mono">{formatMoney(grossTotal)}</span>
+                            <span>Subtotal {viewMode === 'annual' ? 'Anualizado' : ''}</span>
+                            <span className="font-mono">{formatMoney(viewMode === 'annual' ? grossTotal * 12 : grossTotal)}</span>
                         </div>
                         {state.retention.enabled && (
                             <div className="flex justify-between items-center text-[#E8EDDF]/70 text-base border-t border-[#4A4D4A]/50 pt-1 mt-1">
-                                <span>Retención (-{state.retention.percentage}%)</span>
-                                <span className="font-mono text-red-400">- {formatMoney(retentionAmount)}</span>
+                                <span>Retención (-{state.retention.percentage}%) {viewMode === 'annual' ? 'Anual' : ''}</span>
+                                <span className="font-mono text-red-400">- {formatMoney(viewMode === 'annual' ? retentionAmount * 12 : retentionAmount)}</span>
                             </div>
                         )}
                         <div className="flex justify-between items-center text-[#F5CB5C] font-black text-2xl pt-2 mt-2 border-t border-[#4A4D4A]">
-                            <span>Inversión Neta Final</span>
-                            <span>{formatMoney(finalTotal)}</span>
+                            <div className="flex flex-col">
+                                <span>Inversión Neta Final</span>
+                                <span className="text-[10px] text-[#F5CB5C]/50 uppercase tracking-tighter leading-none mt-1">
+                                    {viewMode === 'annual' ? 'PROYECTADA ANUAL' : 'COSTO MENSUAL ESTIMADO'}
+                                </span>
+                            </div>
+                            <span>{formatMoney(viewMode === 'annual' ? finalTotal * 12 : finalTotal)}</span>
                         </div>
                     </div>
                 </div>
