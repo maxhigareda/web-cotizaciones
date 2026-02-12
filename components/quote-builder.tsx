@@ -1616,7 +1616,7 @@ graph TD
                                             </AccordionTrigger>
                                             <AccordionContent className="p-4 space-y-6 bg-[#242423]/50 rounded-b-xl">
                                                 <div className="space-y-4">
-                                                    <div>
+                                                    <div className="mb-12">
                                                         <Label className="text-[#CFDBD5] mb-2 block text-xs uppercase font-bold">Nombre Solución / Producto</Label>
                                                         <Input
                                                             value={state.sustainDetails.solutionName}
@@ -1625,7 +1625,7 @@ graph TD
                                                             placeholder="Ej. Data Lake Comercial"
                                                         />
                                                     </div>
-                                                    <div>
+                                                    <div className="mb-12">
                                                         <Label className="text-[#CFDBD5] mb-2 block text-xs uppercase font-bold">Descripción Funcional</Label>
                                                         <Textarea
                                                             value={state.sustainDetails.technicalDescription}
@@ -1636,7 +1636,7 @@ graph TD
                                                     </div>
 
                                                     {/* Tech Stack Multi-Select */}
-                                                    <div>
+                                                    <div className="mb-12">
                                                         <Label className="text-[#CFDBD5] mb-3 block text-xs uppercase font-bold">Stack Tecnológico</Label>
                                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                                             {SUSTAIN_TECH_OPTIONS.map((item) => {
