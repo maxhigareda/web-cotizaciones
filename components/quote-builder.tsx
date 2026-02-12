@@ -2375,7 +2375,7 @@ graph TD
                                             return (
                                                 <div key={profile.id || idx} className="flex items-center justify-between p-2.5 bg-zinc-900/40 border border-zinc-800 rounded-lg w-full gap-3 group hover:border-zinc-700/50 transition-all">
                                                     {/* LEFT: Avatar + Name + Seniority */}
-                                                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
                                                         <div className={cn(
                                                             "w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border shrink-0",
                                                             profile.seniority === 'Expert' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
@@ -2399,9 +2399,9 @@ graph TD
                                                     {/* RIGHT: Quantity + Price + Trash */}
                                                     <div className="flex items-center gap-4 shrink-0">
                                                         {/* Quantity: Clean Text Style - No Box */}
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-wide">CANT:</span>
-                                                            <span className="text-[#F5CB5C] font-bold text-sm">
+                                                        <div className="flex items-baseline gap-2">
+                                                            <span className="text-xs text-zinc-400 font-medium uppercase tracking-wide">CANT:</span>
+                                                            <span className="text-white font-bold text-sm">
                                                                 {profile.count}
                                                             </span>
                                                         </div>
