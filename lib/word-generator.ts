@@ -409,7 +409,10 @@ export function createQuoteWordDoc(data: any): Document {
                         children: [
                             new TextRun({ text: `NIVEL DE SERVICIO: ${data.criticitnessLevel?.label || 'MEDIA'}`, bold: true }),
                             new TextRun({ text: `  • Impacto Financiero: ${data.isFinancialOrSales ? "Crítico" : "Estándar"}`, size: 18 }),
-                            new TextRun({ text: `  • Frecuencia: ${(data.sustainDetails.criticalityMatrix?.frequencyOfUse || 'Diario').toUpperCase()}`, size: 18 })
+                            new TextRun({ text: `  • Frecuencia: ${(data.sustainDetails.criticalityMatrix?.frequencyOfUse || 'Diario').toUpperCase()}`, size: 18 }),
+                            ...(data.sustainDetails.criticalityMatrix?.hasCriticalDates ? [
+                                new TextRun({ text: `  • Fechas Críticas: ${data.sustainDetails.criticalityMatrix.criticalDatesDescription || 'N/A'}`, size: 18, break: 1 })
+                            ] : [])
                         ]
                     }),
                     ...(data.sustainDetails.metrics?.systemDependencies ? [

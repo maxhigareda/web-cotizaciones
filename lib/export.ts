@@ -656,7 +656,16 @@ function createPDFDocument(data: QuoteState & {
         doc.text((matrix.frequencyOfUse || 'Diario').toUpperCase(), margin + 140, y + 4)
         doc.text(data.isFinancialOrSales ? "SÍ" : "NO", margin + 140, y + 9)
 
-        y += 18
+        if (matrix.hasCriticalDates && matrix.criticalDatesDescription) {
+            y += 13
+            doc.setFont(FONT_BOLD, "bold")
+            doc.text("Fechas Críticas:", margin + 45, y)
+            doc.setFont(FONT_REG, "normal")
+            doc.text(cleanText(matrix.criticalDatesDescription), margin + 80, y)
+            y += 5
+        } else {
+            y += 18
+        }
 
         // DEPENDENCIES TAGS
         if (data.sustainDetails.metrics.systemDependencies) {

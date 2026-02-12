@@ -2002,35 +2002,58 @@ graph TD
                                                     </div>
 
                                                     {/* NEW FIELD: Critical Dates */}
-                                                    {/* NEW FIELD: Critical Dates */}
-                                                    <div className="bg-[#333533]/50 border border-[#4A4D4A] p-4 rounded-xl space-y-3">
+                                                    <div className="bg-[#333533]/50 border border-[#4A4D4A] p-4 rounded-xl space-y-4">
                                                         <div className="flex items-center justify-between">
                                                             <Label className="text-[#CFDBD5] text-xs uppercase font-bold">¿Fechas Críticas?</Label>
-                                                            <div className="flex items-center gap-2">
-                                                                {state.sustainDetails.criticalityMatrix.hasCriticalDates && (
-                                                                    <span className="text-xs font-bold text-[#F5CB5C] uppercase animate-in fade-in zoom-in">SÍ</span>
-                                                                )}
-                                                                <Switch
-                                                                    checked={state.sustainDetails.criticalityMatrix.hasCriticalDates}
-                                                                    onCheckedChange={(c) => updateState('sustainDetails', {
+                                                            <ToggleGroup
+                                                                type="single"
+                                                                value={state.sustainDetails.criticalityMatrix.hasCriticalDates ? 'yes' : 'no'}
+                                                                onValueChange={(val) => {
+                                                                    if (val) updateState('sustainDetails', {
                                                                         ...state.sustainDetails,
-                                                                        criticalityMatrix: { ...state.sustainDetails.criticalityMatrix, hasCriticalDates: c }
-                                                                    })}
-                                                                    className="data-[state=checked]:bg-[#F5CB5C] data-[state=checked]:border-[#F5CB5C] data-[state=unchecked]:bg-zinc-600 border-transparent"
-                                                                />
-                                                            </div>
+                                                                        criticalityMatrix: { ...state.sustainDetails.criticalityMatrix, hasCriticalDates: val === 'yes' }
+                                                                    })
+                                                                }}
+                                                                className="justify-start gap-0 h-10"
+                                                            >
+                                                                <ToggleGroupItem
+                                                                    value="yes"
+                                                                    className="w-16 rounded-l-lg rounded-r-none border border-r-0 border-[#4A4D4A] data-[state=on]:bg-yellow-500 data-[state=on]:text-black data-[state=off]:bg-transparent data-[state=off]:text-[#CFDBD5] data-[state=off]:hover:bg-[#333533] h-10 transition-all font-bold text-xs"
+                                                                >
+                                                                    SÍ
+                                                                </ToggleGroupItem>
+                                                                <ToggleGroupItem
+                                                                    value="no"
+                                                                    className="w-16 rounded-r-lg rounded-l-none border border-l-0 border-[#4A4D4A] data-[state=on]:bg-yellow-500 data-[state=on]:text-black data-[state=off]:bg-transparent data-[state=off]:text-[#CFDBD5] data-[state=off]:hover:bg-[#333533] h-10 transition-all font-bold text-xs"
+                                                                >
+                                                                    NO
+                                                                </ToggleGroupItem>
+                                                            </ToggleGroup>
                                                         </div>
-                                                        {state.sustainDetails.criticalityMatrix.hasCriticalDates && (
-                                                            <Input
-                                                                placeholder="Describir fechas (ej. día 5, 20...)"
-                                                                value={state.sustainDetails.criticalityMatrix.criticalDatesDescription}
-                                                                onChange={(e) => updateState('sustainDetails', {
-                                                                    ...state.sustainDetails,
-                                                                    criticalityMatrix: { ...state.sustainDetails.criticalityMatrix, criticalDatesDescription: e.target.value }
-                                                                })}
-                                                                className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] animate-in fade-in slide-in-from-top-1 focus:border-[#F5CB5C]"
-                                                            />
-                                                        )}
+
+                                                        <AnimatePresence>
+                                                            {state.sustainDetails.criticalityMatrix.hasCriticalDates && (
+                                                                <motion.div
+                                                                    initial={{ height: 0, opacity: 0 }}
+                                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                                    exit={{ height: 0, opacity: 0 }}
+                                                                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                                                    className="overflow-hidden"
+                                                                >
+                                                                    <div className="pt-2">
+                                                                        <Input
+                                                                            placeholder="Describir fechas (ej. día 5, 20...)"
+                                                                            value={state.sustainDetails.criticalityMatrix.criticalDatesDescription}
+                                                                            onChange={(e) => updateState('sustainDetails', {
+                                                                                ...state.sustainDetails,
+                                                                                criticalityMatrix: { ...state.sustainDetails.criticalityMatrix, criticalDatesDescription: e.target.value }
+                                                                            })}
+                                                                            className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] focus:border-[#F5CB5C]"
+                                                                        />
+                                                                    </div>
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
                                                     </div>
 
                                                     {/* NEW FIELD: Scope (Markets & Users) */}
