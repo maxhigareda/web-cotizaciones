@@ -1375,24 +1375,46 @@ graph TD
 
     // --- Manual Process & Dependencies Logic ---
     const [isDependencySaving, setIsDependencySaving] = useState(false)
+    const [dependencyInput, setDependencyInput] = useState("") // New local state for tag input
 
-    const handleSaveDependencies = async () => {
+    // Helper to persist dependencies (tags)
+    const persistDependencies = async (newDependencies: string) => {
         setIsDependencySaving(true)
-        // Artificial delay for UX
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        updateState('sustainDetails', { ...state.sustainDetails, metrics: { ...state.sustainDetails.metrics, systemDependencies: newDependencies } })
 
+        // Save to DB immediately (Partial Save)
         try {
             await performSave({
                 redirect: false,
-                validate: false // Bypass validation for partial save
+                validate: false // Bypass validation
             })
-            toast.success("Dependencias actualizadas correctamente")
         } catch (error) {
             console.error(error)
             toast.error("Error al guardar dependencias")
         } finally {
             setIsDependencySaving(false)
         }
+    }
+
+    const handleAddDependency = async () => {
+        if (!dependencyInput.trim()) return
+
+        const currentDeps = state.sustainDetails.metrics.systemDependencies ? state.sustainDetails.metrics.systemDependencies.split(',').map(d => d.trim()).filter(Boolean) : []
+        const newDeps = [...currentDeps, dependencyInput.trim()]
+        const newDepsString = newDeps.join(',')
+
+        setDependencyInput("") // Clear input
+        await persistDependencies(newDepsString)
+        toast.success("Dependencia añadida")
+    }
+
+    const handleRemoveDependency = async (indexToRemove: number) => {
+        const currentDeps = state.sustainDetails.metrics.systemDependencies ? state.sustainDetails.metrics.systemDependencies.split(',').map(d => d.trim()).filter(Boolean) : []
+        const newDeps = currentDeps.filter((_, idx) => idx !== indexToRemove)
+        const newDepsString = newDeps.join(',')
+
+        await persistDependencies(newDepsString)
+        toast.success("Dependencia eliminada")
     }
 
     // Intelligent Logic for Sustain (Auto-Staffing)
@@ -1722,27 +1744,49 @@ graph TD
                                                             <Label className="text-[#7C7F7C] text-[10px] uppercase flex justify-between items-center mb-2">
                                                                 Dependencias Externas
                                                             </Label>
-                                                            <Textarea
-                                                                className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-10 min-h-[40px] focus:border-[#F5CB5C] transition-colors resize-y overflow-hidden"
-                                                                placeholder="Ej. API Salesforce, FTP Cliente..."
-                                                                value={state.sustainDetails.metrics.systemDependencies}
-                                                                onChange={e => updateState('sustainDetails', { ...state.sustainDetails, metrics: { ...state.sustainDetails.metrics, systemDependencies: e.target.value } })}
-                                                            />
-                                                            <div className="flex justify-start mt-2">
-                                                                <Button
-                                                                    size="sm"
-                                                                    onClick={handleSaveDependencies}
-                                                                    className="bg-[#F5CB5C] text-[#242423] hover:bg-[#F5CB5C]/90 text-xs h-8 px-4 font-bold uppercase tracking-wider rounded-lg"
-                                                                    disabled={isDependencySaving}
-                                                                >
-                                                                    {isDependencySaving ? (
-                                                                        <>
-                                                                            <Loader2 className="w-3 h-3 mr-2 animate-spin" /> Cargando...
-                                                                        </>
-                                                                    ) : (
-                                                                        "Guardar Dependencias"
+
+                                                            <div className="flex gap-4 items-start">
+                                                                {/* Left: Input + Add Button */}
+                                                                <div className="w-1/2 flex gap-2">
+                                                                    <Input
+                                                                        className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] h-10 flex-1 focus:border-[#F5CB5C] transition-colors"
+                                                                        placeholder="Ej. API Salesforce"
+                                                                        value={dependencyInput}
+                                                                        onChange={(e) => setDependencyInput(e.target.value)}
+                                                                        onKeyDown={(e) => {
+                                                                            if (e.key === 'Enter') {
+                                                                                e.preventDefault()
+                                                                                handleAddDependency()
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={handleAddDependency}
+                                                                        className="bg-[#F5CB5C] text-[#242423] hover:bg-[#F5CB5C]/90 text-xs h-10 px-3 font-bold uppercase tracking-wider rounded-lg"
+                                                                        disabled={isDependencySaving}
+                                                                    >
+                                                                        {isDependencySaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Añadir"}
+                                                                    </Button>
+                                                                </div>
+
+                                                                {/* Right: Tags Display */}
+                                                                <div className="w-1/2 flex flex-wrap gap-2 content-start min-h-[40px]">
+                                                                    {state.sustainDetails.metrics.systemDependencies && state.sustainDetails.metrics.systemDependencies.split(',').filter(d => d.trim()).map((dep, idx) => (
+                                                                        <div key={idx} className="bg-zinc-800 border border-zinc-700 text-yellow-500 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+                                                                            <span>{dep.trim()}</span>
+                                                                            <button
+                                                                                onClick={() => handleRemoveDependency(idx)}
+                                                                                className="hover:text-red-400 transition-colors focus:outline-none"
+                                                                            >
+                                                                                <X className="w-3 h-3" />
+                                                                            </button>
+                                                                        </div>
+                                                                    ))}
+                                                                    {(!state.sustainDetails.metrics.systemDependencies || !state.sustainDetails.metrics.systemDependencies.trim()) && (
+                                                                        <span className="text-zinc-600 text-xs italic py-2">Sin dependencias registradas</span>
                                                                     )}
-                                                                </Button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
