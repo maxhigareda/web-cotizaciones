@@ -1664,47 +1664,51 @@ graph TD
                                                             </div>
                                                             <div className="space-y-1">
                                                                 <Label className="text-[#7C7F7C] text-[10px] uppercase">¿Procesos Manuales?</Label>
-                                                                <div className="flex items-center gap-2 h-9 p-1">
+                                                                <div className="flex items-center gap-2 h-9">
                                                                     <Switch
                                                                         checked={state.sustainDetails.metrics.manualProcess}
                                                                         onCheckedChange={(c) => updateState('sustainDetails', { ...state.sustainDetails, metrics: { ...state.sustainDetails.metrics, manualProcess: c } })}
-                                                                        className="data-[state=checked]:bg-[#F5CB5C] data-[state=checked]:border-[#F5CB5C] data-[state=unchecked]:bg-zinc-600 border-transparent"
+                                                                        className="data-[state=checked]:bg-[#F5CB5C] data-[state=checked]:border-[#F5CB5C] data-[state=unchecked]:bg-zinc-700 border-transparent"
                                                                     />
-                                                                    {state.sustainDetails.metrics.manualProcess && (
-                                                                        <span className="text-xs text-[#F5CB5C] font-bold animate-in fade-in zoom-in">SÍ</span>
-                                                                    )}
+                                                                    <span className={cn(
+                                                                        "text-xs font-bold transition-colors uppercase",
+                                                                        state.sustainDetails.metrics.manualProcess ? "text-[#F5CB5C]" : "text-zinc-500"
+                                                                    )}>
+                                                                        {state.sustainDetails.metrics.manualProcess ? "SÍ" : "NO"}
+                                                                    </span>
                                                                 </div>
                                                             </div>
-                                                            <div className="col-span-2 relative space-y-2">
-                                                                <Label className="text-[#7C7F7C] text-[10px] uppercase flex justify-between items-center">
-                                                                    Dependencias Externas
-                                                                </Label>
-                                                                <Textarea
-                                                                    className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] min-h-[80px] focus:border-[#F5CB5C] transition-colors"
-                                                                    placeholder="Ej. API Salesforce, FTP Cliente..."
-                                                                    value={state.sustainDetails.metrics.systemDependencies}
-                                                                    onChange={e => updateState('sustainDetails', { ...state.sustainDetails, metrics: { ...state.sustainDetails.metrics, systemDependencies: e.target.value } })}
-                                                                />
-                                                                <div className="flex justify-end">
-                                                                    <Button
-                                                                        size="sm"
-                                                                        onClick={() => handleSaveQuote(false)}
-                                                                        className="bg-[#F5CB5C] text-[#242423] hover:bg-[#F5CB5C]/90 text-xs h-7 px-3 font-bold uppercase tracking-wider"
-                                                                        disabled={isSaving}
-                                                                    >
-                                                                        {isSaving ? (
-                                                                            <>
-                                                                                <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Guardando...
-                                                                            </>
-                                                                        ) : (
-                                                                            "Guardar Dependencias"
-                                                                        )}
-                                                                    </Button>
-                                                                </div>
+                                                        </div>
+                                                        <div className="col-span-2 relative space-y-2">
+                                                            <Label className="text-[#7C7F7C] text-[10px] uppercase flex justify-between items-center">
+                                                                Dependencias Externas
+                                                            </Label>
+                                                            <Textarea
+                                                                className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] min-h-[80px] focus:border-[#F5CB5C] transition-colors"
+                                                                placeholder="Ej. API Salesforce, FTP Cliente..."
+                                                                value={state.sustainDetails.metrics.systemDependencies}
+                                                                onChange={e => updateState('sustainDetails', { ...state.sustainDetails, metrics: { ...state.sustainDetails.metrics, systemDependencies: e.target.value } })}
+                                                            />
+                                                            <div className="flex justify-end">
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={() => handleSaveQuote(false)}
+                                                                    className="bg-[#F5CB5C] text-[#242423] hover:bg-[#F5CB5C]/90 text-xs h-7 px-3 font-bold uppercase tracking-wider"
+                                                                    disabled={isSaving}
+                                                                >
+                                                                    {isSaving ? (
+                                                                        <>
+                                                                            <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Guardando...
+                                                                        </>
+                                                                    ) : (
+                                                                        "Guardar Dependencias"
+                                                                    )}
+                                                                </Button>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
+
                                             </AccordionContent>
                                         </AccordionItem>
 
@@ -2617,12 +2621,12 @@ graph TD
                         </div>
                     </SectionCard>
                 </div>
-            </div>
+            </div >
 
             {/* ================= RIGHT COLUMN: INDEPENDENT SCROLL SUMMARY ================= */}
-            <div className="w-full lg:w-1/3 h-full overflow-y-auto scrollbar-custom bg-[#242423] border-l border-[#CFDBD5]/10 p-8 lg:p-10 space-y-10 relative">
+            < div className="w-full lg:w-1/3 h-full overflow-y-auto scrollbar-custom bg-[#242423] border-l border-[#CFDBD5]/10 p-8 lg:p-10 space-y-10 relative" >
                 {/* Cost Summary */}
-                <div className="space-y-6">
+                < div className="space-y-6" >
                     <div>
                         <div className="flex items-center justify-between mb-3">
                             <h4 className="text-[#F5CB5C] text-xs font-bold uppercase tracking-widest flex items-center gap-2">
@@ -2658,7 +2662,7 @@ graph TD
                         <span className="w-2 h-2 rounded-full bg-[#F5CB5C] animate-pulse" />
                         Total proyecto ({state.durationValue} {state.durationUnit === 'days' ? 'días' : state.durationUnit === 'weeks' ? 'semanas' : 'meses'})
                     </p>
-                </div>
+                </div >
 
                 <div className="bg-[#333533] rounded-[2rem] p-8 text-sm space-y-5 border border-[#4A4D4A] shadow-xl relative overflow-hidden">
                     <div className="flex justify-between items-center text-[#E8EDDF]">
@@ -2930,8 +2934,8 @@ graph TD
                     </div>
                 </div>
 
-            </div>
-        </motion.div>
+            </div >
+        </motion.div >
     )
 }
 
