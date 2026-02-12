@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Separator } from "@/components/ui/separator"
 import { ServiceRate } from "@prisma/client"
 import { MermaidDiagram } from "@/components/mermaid-diagram"
@@ -166,9 +166,11 @@ interface QuoteState {
 
         // New Operational Fields
         updateDuration: string
-        updateSchedule: string
         weekendUsage: boolean
+        weekendDays: string[] // NEW: ['Saturday', 'Sunday']
         weekendSupportHours: string
+        updateSchedule: string
+        secondaryUpdateSchedule?: string // NEW: Optional second slot
         hypercarePeriod: string
 
         // Section 3: Criticality Matrix (Values 1, 3, 5)
@@ -280,7 +282,9 @@ const INITIAL_STATE: QuoteState = {
         criticalDays: '',
         updateDuration: '',
         updateSchedule: '',
+        secondaryUpdateSchedule: '',
         weekendUsage: false,
+        weekendDays: [],
         weekendSupportHours: '',
         hypercarePeriod: '30_days',
         criticalityMatrix: {
@@ -1147,7 +1151,9 @@ export default function QuoteBuilder({ dbRates = [], initialData, readOnly = fal
                 criticalDays: '',
                 updateDuration: '',
                 updateSchedule: '',
+                secondaryUpdateSchedule: '',
                 weekendUsage: false,
+                weekendDays: [],
                 weekendSupportHours: '',
                 hypercarePeriod: '30_days',
                 criticalityMatrix: {
@@ -1743,7 +1749,7 @@ graph TD
                                                         </Select>
                                                     </div>
                                                     <div>
-                                                        <Label className="text-[#CFDBD5] mb-2 block text-xs uppercase font-bold">Horario Actualización</Label>
+                                                        <Label className="text-[#CFDBD5] mb-2 block text-xs uppercase font-bold">Horario Actualización (Principal)</Label>
                                                         <Input
                                                             type="time"
                                                             value={state.sustainDetails.updateSchedule}
@@ -1751,41 +1757,65 @@ graph TD
                                                             className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] focus:border-[#F5CB5C]"
                                                         />
                                                     </div>
+                                                    <div>
+                                                        <Label className="text-[#CFDBD5] mb-2 block text-xs uppercase font-bold text-opacity-70">Horario Secundario (Opcional)</Label>
+                                                        <Input
+                                                            type="time"
+                                                            value={state.sustainDetails.secondaryUpdateSchedule}
+                                                            onChange={e => updateState('sustainDetails', { ...state.sustainDetails, secondaryUpdateSchedule: e.target.value })}
+                                                            className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] focus:border-[#F5CB5C] border-dashed"
+                                                        />
+                                                    </div>
 
                                                     <div className="col-span-1 md:col-span-2 border-t border-[#4A4D4A] my-2 pt-4">
                                                         <Label className="text-[#F5CB5C] mb-4 block text-xs uppercase font-bold tracking-wider">Soporte y Tiempos</Label>
                                                     </div>
 
-                                                    <div className="flex items-center justify-between bg-[#333533] p-3 rounded-xl border border-[#4A4D4A]">
-                                                        <Label className={cn(
-                                                            "text-xs font-bold transition-colors",
-                                                            state.sustainDetails.weekendUsage ? "text-[#F5CB5C]" : "text-[#E8EDDF]"
-                                                        )}>
-                                                            ¿Uso Fines de Semana?
-                                                        </Label>
-                                                        <div className="flex items-center gap-2">
-                                                            {state.sustainDetails.weekendUsage && (
-                                                                <span className="text-xs font-bold text-[#F5CB5C] uppercase mr-2 animate-in fade-in zoom-in">SÍ</span>
+                                                    <div className="flex flex-col gap-3 bg-[#333533] p-4 rounded-xl border border-[#4A4D4A]">
+                                                        <div className="flex items-center justify-between">
+                                                            <Label className={cn(
+                                                                "text-xs font-bold transition-colors",
+                                                                (state.sustainDetails.weekendDays && state.sustainDetails.weekendDays.length > 0) ? "text-[#F5CB5C]" : "text-[#E8EDDF]"
+                                                            )}>
+                                                                ¿Uso Fines de Semana?
+                                                            </Label>
+                                                            {(state.sustainDetails.weekendDays && state.sustainDetails.weekendDays.length > 0) && (
+                                                                <span className="text-[10px] font-bold text-[#F5CB5C] uppercase animate-in fade-in zoom-in">
+                                                                    {state.sustainDetails.weekendDays.join(' & ')}
+                                                                </span>
                                                             )}
-                                                            <Switch
-                                                                checked={state.sustainDetails.weekendUsage}
-                                                                onCheckedChange={v => updateState('sustainDetails', { ...state.sustainDetails, weekendUsage: v })}
-                                                                className="data-[state=checked]:bg-[#F5CB5C] data-[state=checked]:border-[#F5CB5C] data-[state=unchecked]:bg-zinc-600 border-transparent"
-                                                            />
                                                         </div>
-                                                    </div>
 
-                                                    {state.sustainDetails.weekendUsage && (
-                                                        <div className="animate-in fade-in slide-in-from-top-2">
-                                                            <Label className="text-[#CFDBD5] mb-2 block text-xs uppercase font-bold">Horario Soporte Fininde</Label>
-                                                            <Input
-                                                                value={state.sustainDetails.weekendSupportHours}
-                                                                onChange={e => updateState('sustainDetails', { ...state.sustainDetails, weekendSupportHours: e.target.value })}
-                                                                placeholder="Ej. Sábados 9-13hs"
-                                                                className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] focus:border-[#F5CB5C]"
-                                                            />
-                                                        </div>
-                                                    )}
+                                                        <ToggleGroup
+                                                            type="multiple"
+                                                            value={state.sustainDetails.weekendDays || []}
+                                                            onValueChange={(val) => updateState('sustainDetails', {
+                                                                ...state.sustainDetails,
+                                                                weekendDays: val,
+                                                                weekendUsage: val.length > 0
+                                                            })}
+                                                            className="justify-start gap-2"
+                                                        >
+                                                            <ToggleGroupItem value="Sábado" className="data-[state=on]:bg-[#F5CB5C] data-[state=on]:text-[#242423] border border-[#4A4D4A] text-xs h-8 px-3 rounded-lg hover:bg-[#F5CB5C]/20 transition-all flex-1">
+                                                                Sábado
+                                                            </ToggleGroupItem>
+                                                            <ToggleGroupItem value="Domingo" className="data-[state=on]:bg-[#F5CB5C] data-[state=on]:text-[#242423] border border-[#4A4D4A] text-xs h-8 px-3 rounded-lg hover:bg-[#F5CB5C]/20 transition-all flex-1">
+                                                                Domingo
+                                                            </ToggleGroupItem>
+                                                        </ToggleGroup>
+
+                                                        {(state.sustainDetails.weekendDays && state.sustainDetails.weekendDays.length > 0) && (
+                                                            <div className="animate-in fade-in slide-in-from-top-2 pt-2 border-t border-[#4A4D4A]/50 mt-1">
+                                                                <Label className="text-[#F5CB5C] mb-2 block text-[10px] uppercase font-bold">Horario Específico Fin de Semana</Label>
+                                                                <Input
+                                                                    value={state.sustainDetails.weekendSupportHours}
+                                                                    onChange={e => updateState('sustainDetails', { ...state.sustainDetails, weekendSupportHours: e.target.value })}
+                                                                    placeholder="Ej. 9:00 - 13:00 hs"
+                                                                    className="bg-[#242423] border-[#4A4D4A] rounded-xl text-[#E8EDDF] focus:border-[#F5CB5C] h-8 text-xs"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
 
                                                     <div>
                                                         <Label className="text-[#CFDBD5] mb-2 block text-xs uppercase font-bold">Incidentabilidad Esperada</Label>
