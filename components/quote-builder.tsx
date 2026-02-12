@@ -2364,9 +2364,18 @@ graph TD
                                             const monthlyPrice = (profile.price || 0) * profile.count
                                             const displayPrice = viewMode === 'annual' ? monthlyPrice * 12 : monthlyPrice
 
+                                            // 1. Resolve Human Readable Name
+                                            let displayName = profile.role;
+                                            if (ROLE_CONFIG[profile.role as keyof typeof ROLE_CONFIG]) {
+                                                displayName = ROLE_CONFIG[profile.role as keyof typeof ROLE_CONFIG].label;
+                                            } else {
+                                                // Fallback: format key (e.g., 'power_app_streamlit_developer' to 'Power App Streamlit Developer')
+                                                displayName = profile.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                                            }
+
                                             return (
                                                 <div key={profile.id || idx} className="flex items-center justify-between p-3 bg-zinc-900/40 border border-zinc-800 rounded-xl w-full gap-4 group hover:border-zinc-700/50 transition-all">
-                                                    {/* LEFT BLOCK: Info */}
+                                                    {/* LEFT: Avatar + Name + Seniority */}
                                                     <div className="flex items-center gap-3 min-w-0 flex-1">
                                                         <div className={cn(
                                                             "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border shrink-0",
@@ -2377,17 +2386,22 @@ graph TD
                                                         )}>
                                                             {profile.seniority.substring(0, 2)}
                                                         </div>
-                                                        <div className="flex flex-col justify-center">
-                                                            <span className="text-[#E8EDDF] font-bold text-sm leading-tight whitespace-normal">{profile.role}</span>
-                                                            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">{profile.seniority}</span>
+
+                                                        <div className="flex flex-col justify-center min-w-0">
+                                                            <span className="text-[#E8EDDF] font-bold text-sm leading-tight truncate" title={displayName}>
+                                                                {displayName}
+                                                            </span>
+                                                            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">
+                                                                {profile.seniority}
+                                                            </span>
                                                         </div>
                                                     </div>
 
-                                                    {/* RIGHT BLOCK: Metrics & Actions */}
-                                                    <div className="flex items-center gap-4 flex-shrink-0">
-                                                        {/* Quantity */}
-                                                        <div className="flex items-center gap-1.5 bg-zinc-900/30 px-2 py-1 rounded-md border border-zinc-800/50">
-                                                            <span className="text-[10px] text-[#7C7F7C] font-bold uppercase tracking-wider">CANT:</span>
+                                                    {/* RIGHT: Quantity + Price + Trash */}
+                                                    <div className="flex items-center gap-6 flex-shrink-0">
+                                                        {/* Quantity: Text-only look */}
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">CANT:</span>
                                                             <Input
                                                                 type="number"
                                                                 min={1}
@@ -2401,7 +2415,7 @@ graph TD
                                                                     newProfiles[idx].count = val
 
                                                                     // Update Role Total Global
-                                                                    const keyEntry = Object.entries(ROLE_CONFIG).find(([k, v]) => v.label === profile.role)
+                                                                    const keyEntry = Object.entries(ROLE_CONFIG).find(([k, v]) => v.label === profile.role) || Object.entries(ROLE_CONFIG).find(([k, v]) => k === profile.role)
                                                                     const roleKey = keyEntry ? keyEntry[0] as RoleKey : null
 
                                                                     if (roleKey) {
@@ -2412,13 +2426,13 @@ graph TD
                                                                         }))
                                                                     }
                                                                 }}
-                                                                className="w-6 h-auto p-0 border-none bg-transparent text-[#E8EDDF] font-bold text-sm text-center focus-visible:ring-0 shadow-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none hover:text-[#F5CB5C] transition-colors"
+                                                                className="w-8 h-auto p-0 bg-transparent border-none text-[#E8EDDF] font-bold text-base text-center shadow-none focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none hover:text-[#F5CB5C] transition-colors"
                                                             />
                                                         </div>
 
                                                         {/* Price */}
-                                                        <div className="text-right min-w-[70px]">
-                                                            <div className="text-yellow-500 font-mono font-bold text-sm">
+                                                        <div className="text-right min-w-[80px]">
+                                                            <div className="text-yellow-500 font-mono font-bold text-base">
                                                                 ${displayPrice.toLocaleString()}
                                                             </div>
                                                         </div>
@@ -2435,7 +2449,7 @@ graph TD
                                                                 newProfiles.splice(idx, 1)
 
                                                                 // Decrement role counter
-                                                                const keyEntry = Object.entries(ROLE_CONFIG).find(([k, v]) => v.label === profile.role)
+                                                                const keyEntry = Object.entries(ROLE_CONFIG).find(([k, v]) => v.label === profile.role) || Object.entries(ROLE_CONFIG).find(([k, v]) => k === profile.role)
                                                                 const roleKey = keyEntry ? keyEntry[0] as RoleKey : null
 
                                                                 if (roleKey) {
