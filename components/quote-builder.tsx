@@ -364,6 +364,7 @@ const DEFAULT_DIAGRAM = `graph TD
 
 export default function QuoteBuilder({ dbRates = [], initialData, readOnly = false }: { dbRates?: ServiceRate[], initialData?: any, readOnly?: boolean }) {
     const [state, setState] = useState<QuoteState>(JSON.parse(JSON.stringify(INITIAL_STATE)))
+    const [viewMode, setViewMode] = useState<'monthly' | 'annual'>('monthly')
 
     // ... (rest of state) ... 
 
@@ -2360,10 +2361,14 @@ graph TD
                                 ) : (
                                     <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                                         {state.staffingDetails.profiles.map((profile, idx) => {
+                                            const monthlyPrice = (profile.price || 0) * profile.count
+                                            const displayPrice = viewMode === 'annual' ? monthlyPrice * 12 : monthlyPrice
+                                            const periodLabel = viewMode === 'annual' ? 'Anual' : 'Mensual'
+
                                             return (
-                                                <div key={profile.id || idx} className="flex items-center justify-between p-3 bg-zinc-900/50 border border-zinc-800 rounded-xl group hover:border-zinc-700 transition-all">
-                                                    {/* 1. INFO BLOCK (Left) */}
-                                                    <div className="flex items-center gap-3 min-w-0">
+                                                <div key={profile.id || idx} className="flex items-center gap-4 p-3 bg-zinc-900/60 border border-zinc-800/50 rounded-xl group hover:border-zinc-700/50 transition-all">
+                                                    {/* 1. INFO BLOCK (Left) - Fixed Width for Alignment */}
+                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
                                                         <div className={cn(
                                                             "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border shrink-0",
                                                             profile.seniority === 'Expert' ? "bg-amber-500/10 text-amber-500 border-amber-500/20" :
@@ -2373,13 +2378,14 @@ graph TD
                                                         )}>
                                                             {profile.seniority.substring(0, 2)}
                                                         </div>
-                                                        <div className="flex flex-col">
+                                                        <div className="flex flex-col truncate">
                                                             <span className="text-[#E8EDDF] font-bold text-sm capitalize truncate">{profile.role}</span>
                                                             <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">{profile.seniority}</span>
                                                         </div>
                                                     </div>
+
                                                     {/* 2. QUANTITY BLOCK (Center) */}
-                                                    <div className="flex flex-col items-center gap-1">
+                                                    <div className="flex flex-col items-center gap-1 shrink-0">
                                                         <Label className="text-[9px] text-[#7C7F7C] uppercase font-bold">CANT.</Label>
                                                         <Input
                                                             type="number"
@@ -2405,17 +2411,17 @@ graph TD
                                                                     }))
                                                                 }
                                                             }}
-                                                            className="w-12 h-8 bg-zinc-800/50 border-zinc-700 text-[#E8EDDF] text-center text-sm p-0 focus:border-[#F5CB5C] rounded-lg"
+                                                            className="w-12 h-8 bg-zinc-800/50 border-zinc-700 text-[#E8EDDF] text-center text-sm p-0 focus:border-[#F5CB5C] rounded-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                                         />
                                                     </div>
 
                                                     {/* 3. PRICE BLOCK (Right) */}
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="text-right">
+                                                    <div className="flex items-center gap-4 shrink-0">
+                                                        <div className="text-right min-w-[80px]">
                                                             <div className="text-yellow-500 font-mono font-bold text-sm">
-                                                                ${((profile.price || 0) * profile.count).toLocaleString()}
+                                                                ${displayPrice.toLocaleString()}
                                                             </div>
-                                                            <div className="text-[9px] text-zinc-500 uppercase font-medium">Mensual</div>
+                                                            <div className="text-[9px] text-zinc-500 uppercase font-medium">{periodLabel}</div>
                                                         </div>
                                                         <Button
                                                             size="icon"
@@ -2818,6 +2824,30 @@ graph TD
                                 className="bg-[#242423] border-[#4A4D4A] text-[#E8EDDF] text-right font-mono"
                             />
                             <span className="text-[#CFDBD5] font-bold">%</span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-[#4A4D4A]/50 pt-4 mt-2">
+                        <Label className="text-[#CFDBD5] text-xs font-bold uppercase tracking-wider">Vista Precios</Label>
+                        <div className="flex items-center gap-2 bg-[#242423] p-1 rounded-lg border border-[#4A4D4A]">
+                            <button
+                                onClick={() => setViewMode('monthly')}
+                                className={cn(
+                                    "px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-all",
+                                    viewMode === 'monthly' ? "bg-[#F5CB5C] text-[#242423]" : "text-[#CFDBD5] hover:text-[#E8EDDF]"
+                                )}
+                            >
+                                Mensual
+                            </button>
+                            <button
+                                onClick={() => setViewMode('annual')}
+                                className={cn(
+                                    "px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-all",
+                                    viewMode === 'annual' ? "bg-[#F5CB5C] text-[#242423]" : "text-[#CFDBD5] hover:text-[#E8EDDF]"
+                                )}
+                            >
+                                Anual
+                            </button>
                         </div>
                     </div>
 
